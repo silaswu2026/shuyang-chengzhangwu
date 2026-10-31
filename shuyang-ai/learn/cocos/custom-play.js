@@ -2,7 +2,7 @@
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·沼泽
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
  * c21: layout/CSS chrome only (desktop denser keys, phone smaller pads); CHAR_FRAC/levels unchanged.
- * c23: short — match 去玩 CTA; stagePad night under canvas; double-rAF reveal kills navy→dirt flash.
+ * c24: short — pad/clear swamp dirt #5a3a24 (90,58,36) so portrait empty frame ≠ navy; keep CTA+rAF.
  */
 (function () {
   var KEY = 'xygo-custom-level';
@@ -97,8 +97,8 @@
       /* EXACT_FIT: stretch to fill — no black SHOW_ALL bars on widescreen */
       cc.view.setDesignResolutionSize(W, H, cc.ResolutionPolicy.EXACT_FIT);
       if (cc.director && cc.director.setClearColor) {
-        /* night clear — avoid 开局闪棕; dirt bed still paints once scene builds */
-        cc.director.setClearColor(cc.color(11, 21, 32, 255));
+        /* swamp-dirt clear — pad matches first-frame bed; no navy empty flash on portrait */
+        cc.director.setClearColor(cc.color(90, 58, 36, 255));
       }
       if (cc.view._resizeEvent) cc.view._resizeEvent();
     } catch (e) {}
@@ -428,23 +428,21 @@
       this._build();
       this.reset();
       this.scheduleUpdate();
-      /* c23/c21: reveal only after night+ground; double-rAF + hide stagePad — no navy→dirt flash */
+      /* c24: after night+ground, single rAF reveal; pad/clear already swamp brown #5a3a24 */
       try {
         var cvShow = $('gameCanvas');
         if (cvShow) {
           requestAnimationFrame(function () {
-            requestAnimationFrame(function () {
-              cvShow.style.opacity = '1';
-              var pad = $('stagePad');
-              if (pad) pad.style.opacity = '0';
-            });
+            cvShow.style.opacity = '1';
+            var pad = $('stagePad');
+            if (pad) pad.style.opacity = '0';
           });
         }
       } catch (eShow) {}
       return true;
     },
     _addNightBg: function () {
-      var fallback = mkColor(W + 4, H + 4, 11, 21, 32);
+      var fallback = mkColor(W + 4, H + 4, 90, 58, 36);
       fallback.setPosition(-2, -2);
       this.addChild(fallback, -6);
       this.bgNode = null;
@@ -1152,7 +1150,7 @@
           fitStage();
           cc.view.setDesignResolutionSize(W, H, cc.ResolutionPolicy.EXACT_FIT);
           if (cc.director && cc.director.setClearColor) {
-            cc.director.setClearColor(cc.color(11, 21, 32, 255));
+            cc.director.setClearColor(cc.color(90, 58, 36, 255));
           }
           spikeTex = buildSpikeTex();
           fireTex = buildFireTex();
@@ -1187,7 +1185,7 @@
       try { cc.game.run('gameCanvas'); } catch (e) { bootErr('启动失败：' + e); }
     }
 
-    /* c23/c21: decode night forest BEFORE Cocos first GL clear — stagePad+CSS night under opacity:0 canvas */
+    /* c24/c21: decode night forest BEFORE first GL clear; stagePad CSS is swamp dirt under opacity:0 canvas */
     var pre = new Image();
     pre.onload = function () {
       forestImg = pre;
