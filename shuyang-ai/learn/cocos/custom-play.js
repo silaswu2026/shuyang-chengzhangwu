@@ -2,6 +2,7 @@
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·沼泽
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
  * c21: layout/CSS chrome only (desktop denser keys, phone smaller pads); CHAR_FRAC/levels unchanged.
+ * c23: short — match 去玩 CTA; stagePad night under canvas; double-rAF reveal kills navy→dirt flash.
  */
 (function () {
   var KEY = 'xygo-custom-level';
@@ -427,11 +428,17 @@
       this._build();
       this.reset();
       this.scheduleUpdate();
-      /* c21/c20: reveal canvas only after night forest + ground exist — kill navy→brown flash */
+      /* c23/c21: reveal only after night+ground; double-rAF + hide stagePad — no navy→dirt flash */
       try {
         var cvShow = $('gameCanvas');
         if (cvShow) {
-          requestAnimationFrame(function () { cvShow.style.opacity = '1'; });
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+              cvShow.style.opacity = '1';
+              var pad = $('stagePad');
+              if (pad) pad.style.opacity = '0';
+            });
+          });
         }
       } catch (eShow) {}
       return true;
@@ -1180,7 +1187,7 @@
       try { cc.game.run('gameCanvas'); } catch (e) { bootErr('启动失败：' + e); }
     }
 
-    /* c21/c20: decode night forest BEFORE Cocos first GL clear — CSS already shows it under opacity:0 canvas */
+    /* c23/c21: decode night forest BEFORE Cocos first GL clear — stagePad+CSS night under opacity:0 canvas */
     var pre = new Image();
     pre.onload = function () {
       forestImg = pre;

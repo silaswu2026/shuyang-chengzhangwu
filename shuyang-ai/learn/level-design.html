@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="zh-CN"><!-- ldtonight:v9 --><head><meta charset="utf-8">
+<html lang="zh-CN"><!-- ldtonight:v10 --><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="ld-build" content="ldt9">
+<meta name="ld-build" content="ldt10">
 <title>关卡设计台 · 伍澍暘</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;height:100%}
@@ -255,6 +255,36 @@ body.tonight #expectAsk{flex-shrink:0;width:100%;max-width:100%;box-sizing:borde
   body.tonight #fSl{font-size:16px!important}
   body.tonight main{gap:4px}
 }
+
+/* ldt10：短修 — 去玩 CTA 与 Cocos .go/再玩一次 同色同圆角同字重；末屏垫夜色消跳转海军蓝闪 */
+body.tonight #play{
+  background:linear-gradient(180deg,#78d484,#4ea85c)!important;
+  color:#fff!important;
+  border:0;
+  border-radius:999px;
+  font-weight:900;
+  font-size:15px;
+  padding:10px 18px;
+  min-height:40px;
+  box-shadow:0 2px 0 #2f6d3a;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  letter-spacing:0;
+}
+body.tonight #s3 #playCard,body.tonight #s3 .card:has(#play){
+  background:#0b1520ee;
+  border-color:#9ff0a855;
+  box-shadow:0 2px 10px #0006;
+}
+body.tonight #s3 #playCard #engineNote,body.tonight #s3 .card:has(#play) #engineNote{color:#9ff0a8}
+@media (min-width:900px) and (min-height:520px), (hover:hover) and (pointer:fine) and (min-width:800px){
+  body.tonight #play{font-size:14px;padding:8px 16px;min-height:34px;box-shadow:0 2px 0 #2f6d3a}
+}
+@media (orientation:portrait) and (max-width:900px){
+  body.tonight #play{font-size:14px;padding:8px 14px;min-height:36px}
+}
 </style><script src="ld-art.js?v=ld37"></script></head><body>
 <div class="bar"><figure class="pp"><img src="../avatars/xiaoyu.jpg" alt="小雨" style="object-position:32% 34%"><figcaption>小雨</figcaption></figure>
 <div class="st full-only" data-s="0">⓪ 上节课回顾</div><div class="st" data-s="1">① 看图学习</div><div class="st" data-s="2">② 关卡频率 <i class="sd" data-s="2">●</i><i class="sd" data-s="3">●</i></div><div class="st full-only" data-s="4">③ 关卡位置 <i class="sd" data-s="4">●</i><i class="sd" data-s="5">●</i></div><div class="st full-only" data-s="6">④ 关卡难度 <i class="sd" data-s="6">●</i><i class="sd" data-s="7">●</i></div><div class="st" data-s="8">⑤ 设计关卡</div><div class="st" data-s="9">⑥ 单机玩</div>
@@ -308,7 +338,7 @@ body.tonight #expectAsk{flex-shrink:0;width:100%;max-width:100%;box-sizing:borde
 <div id="mCt" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;font-size:15px;font-weight:800;min-height:34px"></div></section>
 <section class="stage" id="s3"><h2 id="s3t">🧪 玩完觉察</h2>
 <div class="row"><div class="card"><div class="msg" id="sumt"></div><div id="sumseg" style="display:flex;gap:4px;width:100%"></div><div class="msg" id="sumtot"></div></div>
-<div class="card"><a class="go" id="play" href="cocos/custom-play.html?v=c21">🎮 去玩这一关</a>
+<div class="card" id="playCard"><a class="go" id="play" href="cocos/custom-play.html?v=c23">🎮 去玩这一关</a>
 <a class="go sm" id="playXy" href="../../xy-go/?custom=1" style="margin-top:6px;display:inline-block;background:linear-gradient(180deg,#7ab0ff,#3b6fd4);font-size:12px;padding:8px 12px">旧版 xy-go（备用）</a>
 <div class="msg" id="engineNote" style="font-size:12px;color:#ffe7a0;font-weight:800">Cocos 可玩 · 同 JSON · xy-go 备用</div>
 <div class="msg" id="saved" style="color:#9ff0a8"></div></div></div>
@@ -331,7 +361,7 @@ body.tonight #expectAsk{flex-shrink:0;width:100%;max-width:100%;box-sizing:borde
 <div class="foot"><button class="back" id="back">上一步</button><div id="hp" style="align-self:center;font-weight:800;font-size:16px;text-align:center"></div><button id="next">下一步 ▶</button></div>
 <script>
 (function(){
-function fitZ(){const w=innerWidth,h=innerHeight;/* ldt9：宽屏只做轻缩放，避免手机大钮被 zoom 撑成稀疏巨钮 */let z=1;if(w>1000){z=Math.max(1,Math.min(w/1100,h/640,1.35));}document.body.style.zoom=z;document.body.style.height=(h/z)+'px';}fitZ();addEventListener('resize',fitZ);
+function fitZ(){const w=innerWidth,h=innerHeight;/* ldt10/ldt9：宽屏只做轻缩放，避免手机大钮被 zoom 撑成稀疏巨钮 */let z=1;if(w>1000){z=Math.max(1,Math.min(w/1100,h/640,1.35));}document.body.style.zoom=z;document.body.style.height=(h/z)+'px';}fitZ();addEventListener('resize',fitZ);
 let COLS=12;const SW=()=>COLS/6,SEG=x=>Math.min(5,Math.floor(x/SW()));const KEY='xygo-custom-level',ROWS=4,$=id=>document.getElementById(id);
 const CURVE=[1,2,1,3,2,4];
 const E={mud:'🟫',bubble:'🫧',sand:'🏜️',mist:'☠️',wave:'🌊',shark:'🦈',rock:'🪨',meteor:'☄️',fire:'🔥',lowg:'🌙',spring:'🌀',shield:'🛡️',coin:'⭐',flag:'🚩'};
@@ -420,7 +450,7 @@ function save(){const used=new Set(st.tiles.map(t=>t.type)),tr={};for(const k in
  $('sumt').textContent=TH[st.theme][0]+'关 · '+COLS+'格 · 预计掉血';
  $('sumseg').innerHTML=sh.map((v,i)=>`<div class="seg"><div style="font-size:12px;color:#c9c3ef">第${i+1}段</div><div style="font-size:18px;color:${v?'#ff6b6b':'#9ff0a8'}">${v?'-'+v+'❤':'✓'}</div></div>`).join('');
  $('sumtot').innerHTML='总难度 <b style="font-size:24px">'+Math.max(1,Math.min(5,1+Math.round(tot/2)))+'</b> / 5 · 共掉 '+tot+' ❤';$('saved').textContent='已保存 ✅';}
-$('play').onclick=()=>mSave(true);
+$('play').onclick=()=>{mSave(true);try{document.documentElement.style.background='#0b1520';document.body.style.background='#0b1520 url(../../xy-go/scenes/canopy-night.jpg) center/cover no-repeat';}catch(e){}};
 
 
 let anim=null;

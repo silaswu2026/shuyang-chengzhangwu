@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0b1520">
 <title>玩我的关 · Cocos · 第9关沼泽</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -19,7 +20,8 @@ h1{margin:0;font-size:13px;color:#ffe7a0;flex:1;text-align:center;font-weight:90
 #orientTip.on{display:block}
 .shell{position:fixed;inset:0;z-index:0;width:100%;height:100%;background:#0b1520 url(../../../xy-go/scenes/canopy-night.jpg) center/cover no-repeat;display:block}
 .cvwrap{position:absolute;inset:0;width:100%;height:100%;background:transparent;overflow:hidden;line-height:0}
-#gameCanvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block;background:#0b1520 url(../../../xy-go/scenes/canopy-night.jpg) center/cover no-repeat;touch-action:none;opacity:0;transition:opacity .05s linear}
+#stagePad{position:absolute;inset:0;z-index:0;background:#0b1520 url(../../../xy-go/scenes/canopy-night.jpg) center/cover no-repeat;pointer-events:none;opacity:1;transition:opacity .12s linear}
+#gameCanvas{position:absolute;inset:0;z-index:1;width:100%!important;height:100%!important;display:block;background:#0b1520;touch-action:none;opacity:0;transition:opacity .08s linear}
 /* HUD — xy-go style: level card + green bar + coins (no six hearts) */
 .hud{position:fixed;top:40px;left:8px;right:8px;z-index:28;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;gap:8px}
 .lvlcard{background:#102016ee;border-radius:10px;padding:7px 12px;min-width:132px;min-height:44px;border:1px solid #9ff0a855;box-shadow:0 2px 8px #0006}
@@ -54,9 +56,11 @@ h1{margin:0;font-size:13px;color:#ffe7a0;flex:1;text-align:center;font-weight:90
 .touch #btnJ{width:60px;background:linear-gradient(180deg,#ffb06bdd,#e2793bee);box-shadow:0 3px 0 #a35a20;font-size:14px}
 .touch #btnT{width:60px;background:linear-gradient(180deg,#7ab0ffdd,#3b6fd4ee);box-shadow:0 3px 0 #274a8a;font-size:14px}
 .dock{position:absolute;z-index:9;right:8px;top:44px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:46%}
-.go{border:0;border-radius:999px;padding:6px 11px;font-size:12px;font-weight:900;color:#fff;background:linear-gradient(180deg,#78d484,#4ea85c);box-shadow:0 2px 0 #2f6d3a;text-decoration:none;display:inline-flex;align-items:center;cursor:pointer}
+/* c23：.go 与设计台「去玩」同色同圆角同字号风格 */
+.go{border:0;border-radius:999px;padding:10px 18px;font-size:15px;font-weight:900;color:#fff;background:linear-gradient(180deg,#78d484,#4ea85c);box-shadow:0 2px 0 #2f6d3a;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;min-height:40px}
 .go.sec{background:linear-gradient(180deg,#7ab0ff,#3b6fd4);box-shadow:0 2px 0 #274a8a;font-size:11px}
 /* c22：死屏脱离 cvwrap line-height:0；fixed 盖过 HUD；标题/剩❤/回上一页各占一行 */
+/* c23：去玩同色 CTA + stagePad 夜色垫底消海军蓝→棕土闪 */
 #result{display:none;position:fixed;inset:0;z-index:35;align-items:center;justify-content:center;background:rgba(8,10,28,.75);line-height:normal}
 #result.show{display:flex}
 #result .card{background:linear-gradient(180deg,#2a3360,#1a2048);border:2px solid #ffe7a066;border-radius:18px;padding:16px 18px;text-align:center;max-width:92%;line-height:1.4}
@@ -75,6 +79,7 @@ h1{margin:0;font-size:13px;color:#ffe7a0;flex:1;text-align:center;font-weight:90
   .touch #btnJ,.touch #btnT{width:56px;font-size:13px}
   .hud{top:32px}.lvlcard{min-height:36px;padding:5px 8px;min-width:110px}#lvlChip{font-size:12px;margin:0 0 3px}#bossBar{top:84px}#msg{top:114px;font-size:11px}
   .dock{top:40px}
+  .go{padding:8px 14px;font-size:14px;min-height:36px}
 }
 @media (orientation:landscape),(max-height:480px){
   #orientTip{display:none!important}
@@ -90,6 +95,7 @@ h1{margin:0;font-size:13px;color:#ffe7a0;flex:1;text-align:center;font-weight:90
   .touch #btnJ,.touch #btnT{width:50px;font-size:12px}
   .bar a,.bar button.net{padding:3px 8px;font-size:11px}
   .dock{top:auto;bottom:66px;right:12px}
+  .go{padding:8px 14px;font-size:13px;min-height:32px}
   .cvwrap{border-radius:0}
   html,body{background:#0b1520 url(../../../xy-go/scenes/canopy-night.jpg) center/cover no-repeat}
 }
@@ -118,6 +124,7 @@ h1{margin:0;font-size:13px;color:#ffe7a0;flex:1;text-align:center;font-weight:90
     <div id="msg">←→移动 · 跳 · F/J投 · 打鳄王</div>
 <div class="shell" id="shell">
   <div class="cvwrap" id="cvwrap">
+    <div id="stagePad" aria-hidden="true"></div>
     <canvas id="gameCanvas" width="640" height="520"></canvas>
     <div id="boot"></div>
     <div class="dock">
@@ -155,6 +162,6 @@ h1{margin:0;font-size:13px;color:#ffe7a0;flex:1;text-align:center;font-weight:90
     </div>
   </div>
 </div>
-<script src="custom-play.js?v=c22"></script>
+<script src="custom-play.js?v=c23"></script>
 </body>
 </html>
