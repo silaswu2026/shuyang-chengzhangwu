@@ -2,7 +2,7 @@
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·沼泽
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
  * c21: layout/CSS chrome only (desktop denser keys, phone smaller pads); CHAR_FRAC/levels unchanged.
- * c25: short - canvas always visible (no opacity:0 blank gate); keep swamp pad/clear; renderMode auto via html.
+ * c26: short - canvas always visible (c25); renderMode stays 1=Canvas (lite has no rendererWebGL; mode 2 -> init TypeError).
  */
 (function () {
   var KEY = 'xygo-custom-level';
@@ -428,7 +428,7 @@
       this._build();
       this.reset();
       this.scheduleUpdate();
-      /* c25: canvas CSS opacity:1 from boot - do NOT hide stagePad (safety bed under GL) */
+      /* c26/c25: canvas CSS opacity:1 from boot - do NOT hide stagePad (safety bed under canvas) */
       try {
         var cvShow = $('gameCanvas');
         if (cvShow) cvShow.style.opacity = '1';
@@ -1179,7 +1179,7 @@
       try { cc.game.run('gameCanvas'); } catch (e) { bootErr('启动失败：' + e); }
     }
 
-    /* c25/c21: decode night forest BEFORE first GL clear; canvas visible; stagePad swamp bed stays */
+    /* c26/c21: decode night forest BEFORE first clear; canvas visible; stagePad swamp bed stays */
     var pre = new Image();
     pre.onload = function () {
       forestImg = pre;
