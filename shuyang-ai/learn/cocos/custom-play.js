@@ -2,7 +2,8 @@
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·沼泽
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
  * c21: layout/CSS chrome only (desktop denser keys, phone smaller pads); CHAR_FRAC/levels unchanged.
- * c26: short - canvas always visible (c25); renderMode stays 1=Canvas (lite has no rendererWebGL; mode 2 -> init TypeError).
+ * c27: short - load cocos in body (not head): mobile _initSys needs document.body or appendChild null aborts engine before Layer.
+ * c26: canvas always visible (c25); renderMode 1=Canvas (lite has no rendererWebGL).
  */
 (function () {
   var KEY = 'xygo-custom-level';
@@ -408,6 +409,10 @@
     });
   }
 
+  if (typeof cc === 'undefined' || !cc.Layer || typeof cc.Layer.extend !== 'function') {
+    bootErr('Cocos 引擎未就绪（Layer）');
+    return;
+  }
   var PlayLayer = cc.Layer.extend({
     ctor: function () {
       this._super();
@@ -428,7 +433,7 @@
       this._build();
       this.reset();
       this.scheduleUpdate();
-      /* c26/c25: canvas CSS opacity:1 from boot - do NOT hide stagePad (safety bed under canvas) */
+      /* c27/c25: canvas CSS opacity:1 from boot - do NOT hide stagePad (safety bed under canvas) */
       try {
         var cvShow = $('gameCanvas');
         if (cvShow) cvShow.style.opacity = '1';
@@ -1179,7 +1184,7 @@
       try { cc.game.run('gameCanvas'); } catch (e) { bootErr('启动失败：' + e); }
     }
 
-    /* c26/c21: decode night forest BEFORE first clear; canvas visible; stagePad swamp bed stays */
+    /* c27/c21: decode night forest BEFORE first clear; canvas visible; stagePad swamp bed stays */
     var pre = new Image();
     pre.onload = function () {
       forestImg = pre;

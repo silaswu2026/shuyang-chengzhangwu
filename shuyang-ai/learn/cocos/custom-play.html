@@ -101,8 +101,6 @@ h1{margin:0;font-size:13px;color:#ffe7a0;flex:1;text-align:center;font-weight:90
 }
 </style>
 <script>document.ccConfig={debugMode:0,frameRate:60,id:"gameCanvas",renderMode:1,showFPS:false};</script>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
 </head>
 <body>
 <div class="bar">
@@ -162,6 +160,9 @@ h1{margin:0;font-size:13px;color:#ffe7a0;flex:1;text-align:center;font-weight:90
     </div>
   </div>
 </div>
-<script src="custom-play.js?v=c26"></script>
+<!-- c27: load cocos AFTER body exists — lite _initSys mobile path does document.body.appendChild; head sync load → null → engine abort → Layer.extend crash -->
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
+<script src="custom-play.js?v=c27"></script>
 </body>
 </html>
