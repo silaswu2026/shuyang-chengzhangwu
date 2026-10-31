@@ -2,7 +2,7 @@
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·沼泽
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
  * c21: layout/CSS chrome only (desktop denser keys, phone smaller pads); CHAR_FRAC/levels unchanged.
- * c24: short — pad/clear swamp dirt #5a3a24 (90,58,36) so portrait empty frame ≠ navy; keep CTA+rAF.
+ * c25: short - canvas always visible (no opacity:0 blank gate); keep swamp pad/clear; renderMode auto via html.
  */
 (function () {
   var KEY = 'xygo-custom-level';
@@ -428,16 +428,10 @@
       this._build();
       this.reset();
       this.scheduleUpdate();
-      /* c24: after night+ground, single rAF reveal; pad/clear already swamp brown #5a3a24 */
+      /* c25: canvas CSS opacity:1 from boot - do NOT hide stagePad (safety bed under GL) */
       try {
         var cvShow = $('gameCanvas');
-        if (cvShow) {
-          requestAnimationFrame(function () {
-            cvShow.style.opacity = '1';
-            var pad = $('stagePad');
-            if (pad) pad.style.opacity = '0';
-          });
-        }
+        if (cvShow) cvShow.style.opacity = '1';
       } catch (eShow) {}
       return true;
     },
@@ -1185,7 +1179,7 @@
       try { cc.game.run('gameCanvas'); } catch (e) { bootErr('启动失败：' + e); }
     }
 
-    /* c24/c21: decode night forest BEFORE first GL clear; stagePad CSS is swamp dirt under opacity:0 canvas */
+    /* c25/c21: decode night forest BEFORE first GL clear; canvas visible; stagePad swamp bed stays */
     var pre = new Image();
     pre.onload = function () {
       forestImg = pre;
