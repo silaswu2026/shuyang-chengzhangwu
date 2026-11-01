@@ -450,3 +450,8 @@ HUD 显示「积分」。规则：
 - 键盘武器仅 `L`（`c34`）：电脑端攻击/投掷只认 KeyL；F/J 不再攻击；无 R 武器键。触控 ◀▶（btnL/btnR）仍是左右走，投靠「投」钮。
 - 弹簧弹得更高（`c32`）：试玩踩弹簧用 `traps.spring.power`（默认 1300，封顶 1600）；旧档 820 会抬到 1300。验收：踩弹簧明显高于普通跳。
 - 弹簧保底可见（`c42`）：`loadLevel` 增加 `ensureSprings`（与 `ensureSwampFires` / `ensureSwampMists` 同型）。缺弹簧时在实地格补满 **2** 处（优先设计列 5、再 8…）；设计列已满则在跑道后、鳄王前再补。贴图加粗红顶+更大缩放。验收：出生后往右走可见红顶线圈，踩上去明显高于普通跳。
+
+## 课件日纲 · 2026-11-02
+- 明天课：**关卡编辑器入门**（伍澍暘自选课题 C）
+- 大纲与十步动作：[docs/COURSE-2026-11-02-LEVEL-EDITOR.md](./docs/COURSE-2026-11-02-LEVEL-EDITOR.md)
+- `classroom/course-today.json` 已切到 `2026-11-02-level-editor` / version le1

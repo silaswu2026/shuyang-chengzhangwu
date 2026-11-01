@@ -1,43 +1,36 @@
 {
-  "id": "tonight-level-design",
-  "date": "2026-11-01",
-  "version": "hub1-vw1",
-  "theme": "关卡设计：看图 · 频率 · 摆关 · 觉察",
-  "overview": "今天是第 3 课。一起做关卡：看清上钩、调陷阱频率、摆一小关、玩完说感觉。还有武器商店和先听后选的音效方向。",
-  "speakOverview": "芃芃你好！今天是第 3 课，关卡设计。我们看图、调频率、摆关、玩完再说一句感觉。准备好了吗？我们开始！",
-  "phoneBrief": "今日课题：课程3可视化关卡工坊。主入口 visual-workbench.html。旧基础台 workbench.html；对照 level-design.html?path=tonight。两维：关卡升级 + 音乐音效先听后选。",
-  "adventureMonthNote": "对应 kid.js 第三课「道具和关卡是怎么设计的」；首页课程卡第 3 点。不以 course.js DAYS[n] 自动换日。",
+  "id": "2026-11-02-level-editor",
+  "date": "2026-11-02",
+  "version": "le1",
+  "theme": "关卡编辑器入门：回顾四段 · 三课题 · 摆存一关",
+  "overview": "明天第 4 课主线：关卡编辑器。先串角色背景、序列帧、道具陷阱奖励、入迷四段旧知；认三个新课题（一系列关卡 / 联网 / 编辑器）；伍澍暘已选编辑器。课内完成：认三块面板 → 摆一小关 → 保存再玩。",
+  "speakOverview": "伍澍暘你好！今天我们专攻你选的关卡编辑器。先很快回顾四段旧知识，再认三个新课题，然后自己摆一关、存下来、再玩一次。",
+  "phoneBrief": "2026-11-02 课件：关卡编辑器入门。大纲见 learn/cocos/docs/COURSE-2026-11-02-LEVEL-EDITOR.md。十步：开场→四段回顾→三课题→编辑器概念→三面板→实操摆存→收束。横屏约844×390。",
+  "adventureMonthNote": "Silas 口述课题；正式名伍澍暘；助手小宇。课题 C 为主课；A/B 仅认门预告。",
   "iframe": "../learn/cocos/visual-workbench.html",
+  "doc": "../learn/cocos/docs/COURSE-2026-11-02-LEVEL-EDITOR.md",
   "essence": [
-    "上钩与自己决定停",
-    "频率旋钮",
-    "摆关+武器经济",
-    "觉察"
+    "四段旧知串讲",
+    "三课题认门",
+    "编辑器=造关工作台",
+    "摆→玩→存"
+  ],
+  "chosenTopic": "level-editor",
+  "topics": [
+    { "id": "A", "title": "一系列关卡", "status": "preview" },
+    { "id": "B", "title": "联网怎么连", "status": "preview" },
+    { "id": "C", "title": "关卡编辑器", "status": "main" }
   ],
   "steps": [
-    {
-      "n": 1,
-      "title": "看图",
-      "speak": "第一步：看图。上钩是什么意思？自己决定什么时候停。",
-      "skelStep": null
-    },
-    {
-      "n": 2,
-      "title": "频率",
-      "speak": "第二步：调频率。地刺每几秒冒一次，跑一次，看看哪一点在钓你。",
-      "skelStep": null
-    },
-    {
-      "n": 3,
-      "title": "摆关",
-      "speak": "第三步：摆一小关。放陷阱、调数字、跑一次；商店也在这里。",
-      "skelStep": null
-    },
-    {
-      "n": 4,
-      "title": "觉察",
-      "speak": "第四步：玩完问一句，和预计一样吗？再去玩这一关。",
-      "skelStep": null
-    }
+    { "n": 1, "title": "开场", "speak": "第一步：今天主学关卡编辑器。", "skelStep": null },
+    { "n": 2, "title": "角色背景", "speak": "第二步：回顾角色和背景设计。", "skelStep": null },
+    { "n": 3, "title": "序列帧", "speak": "第三步：回顾序列帧动画。", "skelStep": null },
+    { "n": 4, "title": "道具陷阱奖励", "speak": "第四步：回顾道具、陷阱、奖励。", "skelStep": null },
+    { "n": 5, "title": "入迷", "speak": "第五步：回顾让玩家入迷，和自己决定停。", "skelStep": null },
+    { "n": 6, "title": "三课题", "speak": "第六步：三个课题。你选了关卡编辑器。", "skelStep": null },
+    { "n": 7, "title": "什么是编辑器", "speak": "第七步：编辑器是造关的工作台。", "skelStep": null },
+    { "n": 8, "title": "三块面板", "speak": "第八步：零件架、画布、试玩保存。", "skelStep": null },
+    { "n": 9, "title": "摆存一关", "speak": "第九步：摆一小关，跑一遍，存下来。", "skelStep": null },
+    { "n": 10, "title": "收束预告", "speak": "第十步：下次加深编辑器；一系列关卡和联网以后开。", "skelStep": null }
   ]
 }
