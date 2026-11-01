@@ -54,12 +54,13 @@
   function buildSky() {
     var w = 480, h = 256;
     var c = canvas(w, h), g = c.getContext('2d');
+    /* Match old tonight canvas #6ec8ff mid, with soft depth */
     shadeRect(g, w, h, [
-      [0, '#c5e6fb'],
-      [0.18, '#8ec4f2'],
-      [0.46, '#5e9ed4'],
-      [0.74, '#4d86bc'],
-      [1, '#7ea6c8']
+      [0, '#b7e4ff'],
+      [0.22, '#6ec8ff'],
+      [0.55, '#5bb6f0'],
+      [0.78, '#4a9ad4'],
+      [1, '#7eb8d8']
     ]);
     g.fillStyle = 'rgba(255,255,255,0.14)';
     g.beginPath();
