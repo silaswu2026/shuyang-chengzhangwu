@@ -817,6 +817,49 @@
     return texFromCanvas(c);
   }
 
+  function buildElectric() {
+    var c = canvas(64, 64), g = c.getContext('2d');
+    g.fillStyle = 'rgba(80,120,255,0.25)';
+    g.beginPath(); g.ellipse(32, 52, 18, 6, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#ffe07a'; g.lineWidth = 3; g.lineJoin = 'round';
+    g.beginPath(); g.moveTo(28, 12); g.lineTo(18, 32); g.lineTo(30, 32); g.lineTo(22, 52); g.lineTo(44, 28); g.lineTo(32, 28); g.lineTo(40, 12); g.closePath();
+    g.fillStyle = '#7ec8ff'; g.fill(); g.stroke();
+    g.fillStyle = '#ffffff'; g.fillRect(30, 22, 4, 10);
+    return texFromCanvas(c);
+  }
+  function buildGroove() {
+    var c = canvas(64, 64), g = c.getContext('2d');
+    g.fillStyle = '#5a3a22';
+    g.beginPath(); g.moveTo(6, 20); g.lineTo(58, 20); g.lineTo(50, 56); g.lineTo(14, 56); g.closePath(); g.fill();
+    g.fillStyle = '#2a1a10';
+    g.beginPath(); g.moveTo(16, 28); g.lineTo(48, 28); g.lineTo(42, 50); g.lineTo(22, 50); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(40,80,60,0.55)';
+    g.beginPath(); g.ellipse(32, 44, 10, 4, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#8a6a4a'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(6, 20); g.lineTo(58, 20); g.stroke();
+    return texFromCanvas(c);
+  }
+  function buildCoinBig() {
+    var c = canvas(64, 64), g = c.getContext('2d');
+    g.fillStyle = 'rgba(0,0,0,0.25)'; g.beginPath(); g.ellipse(32, 54, 20, 5, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#e6c200'; g.beginPath(); g.arc(32, 30, 22, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#ffe07a'; g.beginPath(); g.arc(32, 30, 16, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#b8860b'; g.lineWidth = 2; g.beginPath(); g.arc(32, 30, 22, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = '#7a4e00'; g.font = 'bold 18px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('$', 32, 31);
+    return texFromCanvas(c);
+  }
+  function buildChest() {
+    var c = canvas(64, 64), g = c.getContext('2d');
+    g.fillStyle = 'rgba(0,0,0,0.25)'; g.beginPath(); g.ellipse(32, 56, 22, 5, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#8b5a2b'; roundPath(g, 10, 28, 44, 26, 4); g.fill();
+    g.fillStyle = '#a86a32'; roundPath(g, 10, 18, 44, 16, 4); g.fill();
+    g.fillStyle = '#ffe07a'; g.fillRect(28, 30, 8, 14);
+    g.fillStyle = '#d4a017'; g.fillRect(12, 24, 40, 4);
+    g.strokeStyle = '#5a3a1a'; g.lineWidth = 2; roundPath(g, 10, 18, 44, 36, 4); g.stroke();
+    return texFromCanvas(c);
+  }
+
   function build() {
     tex.sky = buildSky();
     tex.night = buildNight();
@@ -830,6 +873,7 @@
     tex.blob = buildBlob();
     tex.bubble = buildBubble();
     tex.pixel = buildPixel();
+
     tex.spike = buildSpike();
     tex.fire = buildFire();
     tex.coin = buildCoin();
@@ -842,6 +886,10 @@
     tex.spring = buildSpring();
     tex.mist = buildMist();
     tex.rock = buildRock();
+    tex.electric = buildElectric();
+    tex.groove = buildGroove();
+    tex.coinBig = buildCoinBig();
+    tex.chest = buildChest();
     tex.dart = buildDartIcon();
     tex.blade = buildBladeIcon();
     tex.gun = buildGunIcon();

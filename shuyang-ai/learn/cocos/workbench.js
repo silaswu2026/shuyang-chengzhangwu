@@ -1,7 +1,7 @@
 /**
- * ldt29: ③调色板灰显占位 电/凹/大/箱（即将开放）· was ldt28 / ldt27→c41 沼泽 · was ldt26→c40 · was wb85/wb84/wb83/wb82。
+ * ldt31: §8 电/凹/大/箱真可摆 + 落石预兆/金币三档/练习金110/弹簧前两格可/中点切设置/宝箱动画 · was ldt30/ldt29。
  * 学习工作台 · 四芯片；关卡设计二级摆关|设置|关联；切片4 音乐绑九关+走路/砍击。
- * 存档 localStorage xygo-custom-level v1.2（wallet + audio）。试玩 custom-play.html?v=c46。
+ * 存档 localStorage xygo-custom-level v1.2（wallet + audio）。试玩 custom-play.html?v=c47。
  * wb80: 关卡设计合并 · wb79 觉察闸 · wb78 看图三阶段。
  */
 (function () {
@@ -898,13 +898,13 @@
       var self = this;
       words(this, '每', 118, 436, 18, '#ffe7a0', 8);
       button(this, '－', 168, 436, 44, 34, NAVY, WHITE, function () {
-        STORE.setIntervalValue(WB.data, WB.data.interval - 1);
+        STORE.setIntervalValue(WB.data, WB.data.interval - 1); STORE.save(localStorage, WB.data);
       });
       this.num = words(this, String(WB.data.interval), 230, 438, 32, '#ffe07a', 8);
       button(this, '＋', 292, 436, 44, 34, NAVY, WHITE, function () {
-        STORE.setIntervalValue(WB.data, WB.data.interval + 1);
+        STORE.setIntervalValue(WB.data, WB.data.interval + 1); STORE.save(localStorage, WB.data);
       });
-      words(this, '秒冒一次刺', 400, 436, 15, '#ffe7a0', 8);
+      words(this, '秒冒一次刺（本关）', 400, 436, 15, '#ffe7a0', 8);
       /* Real drag slider (旧今晚页) — 1..5 秒 */
       this._slider = { x0: 500, x1: 860, y: 436, w: 360 };
       ART.panel(this, (500 + 860) / 2, 436, 360, 10, ccColor(30, 40, 80), 220, 6, 6);
@@ -1098,7 +1098,7 @@
       words(this, '摆关 · 前两格安全 · 点格子摆东西', W / 2, isPhoneShell() ? 430 : 448, 16, '#ffe07a', 8);
       var self = this;
       /* Short trap chips · horizontal scroll on phone shell */
-      var tools = [['spike', '刺'], ['fire', '火'], ['spring', '弹'], ['mist', '沼'], ['rock', '石'], ['electric', '电', 'soon'], ['groove', '凹', 'soon'], ['coin', '小'], ['coinBig', '大', 'soon'], ['chest', '箱', 'soon'], ['del', '擦']];
+      var tools = [['spike', '刺'], ['fire', '火'], ['spring', '弹'], ['mist', '沼'], ['rock', '石'], ['electric', '电'], ['groove', '凹'], ['coin', '小'], ['coinBig', '大'], ['chest', '箱'], ['del', '擦']];
       addTrapChipStrip(self, tools, isPhoneShell() ? 412 : 416);
       button(this, '去设置', isPhoneShell() ? 700 : 760, isPhoneShell() ? 412 : 416, 90, isPhoneShell() ? 26 : 30, GREEN, WHITE, function () {
         later(function () { show(1); });
@@ -1162,7 +1162,7 @@
       this.flashLab = words(this, WB.ui.flash || '点格子摆东西', 386, 96, 15, '#7a4e00', 11);
       addFootTrio(this,
         '回看图', function () { later(function () { show(0); }); },
-        '跑一次', function () { WB.ui.running = true; WB.ui.runT0 = Date.now() / 1000; },
+        '跑一次', function () { WB.ui.running = true; WB.ui.runT0 = Date.now() / 1000; WB.ui.midSwitchArmed = false; WB.ui.midSwitchAt = 0; },
         '去觉察', function () { later(function () { show(4); }); }
       );
       WB.layout.editCell = function (i) {
@@ -1201,9 +1201,14 @@
       var sel = WB.data.sel;
       var self = this;
       var hint = {
-        spring: '弹簧：踩上去会弹起来',
+        spring: '弹簧：踩上去会弹起来（前两格可摆）',
         mist: '沼泽：踩上去变慢，泥水芦苇',
-        rock: '岩石：撞上去会轻伤'
+        rock: '落石：先晃预兆再落下',
+        electric: '电：碰到短暂麻痹掉血',
+        groove: '凹槽：踩进变慢/下陷',
+        coin: '小金币：+5 钱包币',
+        coinBig: '大金币：+15 钱包币',
+        chest: '宝箱：打开 +30 钱包币'
       };
       if (hint[sel]) {
         words(this.paramRow, hint[sel], 220, 352, 14, '#ffe7a0', 1);
@@ -1249,11 +1254,13 @@
           sp.setAnchorPoint(0.5, 0);
           sp.setScale(0.82);
           mk.addChild(sp, 1);
-        } else if (k === 'coin' || k === 'spring' || k === 'mist' || k === 'rock') {
-          sp = new cc.Sprite(ART.tex[k]);
+        } else if (k === 'coin' || k === 'coinBig' || k === 'chest' || k === 'spring' || k === 'mist' || k === 'rock' || k === 'electric' || k === 'groove') {
+          var texKey = (k === 'coinBig') ? 'coinBig' : (k === 'chest' ? 'chest' : (k === 'electric' ? 'electric' : (k === 'groove' ? 'groove' : k)));
+          var tex = ART.tex[texKey] || ART.tex.coin || ART.tex.rock;
+          sp = new cc.Sprite(tex);
           sp.setAnchorPoint(0.5, 0);
-          sp.setScale(k === 'mist' ? 0.7 : 0.62);
-          sp.setPosition(0, k === 'coin' ? 10 : 0);
+          sp.setScale(k === 'mist' || k === 'groove' ? 0.7 : (k === 'coinBig' || k === 'chest' ? 0.72 : 0.62));
+          sp.setPosition(0, (k === 'coin' || k === 'coinBig' || k === 'chest') ? 10 : 0);
           mk.addChild(sp, 1);
         }
       }
@@ -1285,6 +1292,19 @@
       var x = EDIT.L + 28 + Math.min(rt, P) / P * (STORE.MC * EDIT.cw - 36);
       this.ninja.setPosition(x, EDIT.gy);
       stepNinja(this.ninja, dt, false, rt >= P);
+      /* §8: 跑道中点自动切到「设置」段 + 短过渡 */
+      if (rt >= P * 0.5 && !WB.ui.midSwitchArmed) {
+        WB.ui.midSwitchArmed = true;
+        WB.ui.midSwitchAt = Date.now() / 1000 + 0.45;
+        WB.ui.flash = '中点切换 · 进入单关设置…';
+      }
+      if (WB.ui.midSwitchAt && Date.now() / 1000 >= WB.ui.midSwitchAt) {
+        WB.ui.midSwitchAt = 0;
+        WB.ui.running = false;
+        WB.ui.previewDone = true;
+        later(function () { show(1); });
+        return;
+      }
       if (rt >= P) {
         WB.ui.running = false;
         WB.ui.previewDone = true;
@@ -1335,11 +1355,12 @@
           sp.setPosition(px, gy);
           this.addChild(sp, 8);
           placed++;
-        } else if (k === 'coin' || k === 'spring' || k === 'mist' || k === 'rock') {
-          sp = new cc.Sprite(ART.tex[k]);
+        } else if (k === 'coin' || k === 'coinBig' || k === 'chest' || k === 'spring' || k === 'mist' || k === 'rock' || k === 'electric' || k === 'groove') {
+          var texR = ART.tex[k === 'coinBig' ? 'coinBig' : k] || ART.tex.coin || ART.tex.rock;
+          sp = new cc.Sprite(texR);
           sp.setAnchorPoint(0.5, 0);
           sp.setScale(0.42);
-          sp.setPosition(px, gy + (k === 'coin' ? 8 : 0));
+          sp.setPosition(px, gy + ((k === 'coin' || k === 'coinBig' || k === 'chest') ? 8 : 0));
           this.addChild(sp, 8);
           placed++;
         }
@@ -1378,14 +1399,14 @@
       button(this, '回关卡', isPhoneShell() ? 90 : 110, 30, isPhoneShell() ? 100 : 130, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show((WB.ui.ldStep | 0) || 2); }); });
       button(this, '联机游玩', isPhoneShell() ? 300 : 360, 32, isPhoneShell() ? 140 : 160, isPhoneShell() ? 48 : 48, GOLD, INK, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c46&net=1';
+        location.href = 'custom-play.html?v=c47&net=1';
       });
       button(this, '去听选', isPhoneShell() ? 520 : 560, 32, isPhoneShell() ? 120 : 140, isPhoneShell() ? 48 : 46, NAVY, WHITE, function () {
         later(function () { show(5); });
       });
       button(this, '去玩这一关', isPhoneShell() ? 760 : 800, 32, isPhoneShell() ? 200 : 200, isPhoneShell() ? 50 : 48, GREEN, WHITE, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c46';
+        location.href = 'custom-play.html?v=c47';
       });
       this._t = 0;
       this.scheduleUpdate();
@@ -1520,7 +1541,7 @@
         '去⑥听选', function () { later(function () { show(5); }); },
         '去玩第9关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c46';
+          location.href = 'custom-play.html?v=c47';
         }
       );
       return true;
@@ -1603,7 +1624,7 @@
         },
         '去玩这一关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c46';
+          location.href = 'custom-play.html?v=c47';
         }
       );
       return true;

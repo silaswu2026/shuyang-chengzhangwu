@@ -131,7 +131,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   <div class="chip"><span>🏡 伍澍暘 · 课程3</span>
     <a href="../../../index.html">回小屋</a>
     <a href="level-select.html?v=ls1">选关</a>
-    <a href="custom-play.html?v=c46&amp;net=1">联机</a>
+    <a href="custom-play.html?v=c47&amp;net=1">联机</a>
     <a href="../../../xy-go/?custom=1">xy-go联网</a>
   </div>
   <div class="shell-toggle" id="shellToggle">
@@ -201,7 +201,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   </div>
 </aside>
 
-<!-- ldt29: ③调色板灰显 电/凹/大/箱 · was ldt19 / vw54 二级 band · vw53/vw52/vw51 -->
+<!-- ldt31: §8 电凹大箱真可摆 · was ldt29 灰显 · was ldt19 / vw54 二级 band · vw53/vw52/vw51 -->
 <script>
 (function(){
   var cleared=false;
@@ -243,11 +243,11 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
 })();
 </script>
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
-<script src="wb-store.js?v=ldt19"></script>
-<script src="wb-art.js?v=ldt27"></script>
+<script src="wb-store.js?v=ldt31"></script>
+<script src="wb-art.js?v=ldt31"></script>
 <script src="wb-ninja-walk.js?v=walk1"></script>
 <script src="wb-audio.js?v=ldt19"></script>
-<script src="visual-workbench.js?v=ldt30"></script>
+<script src="visual-workbench.js?v=ldt31"></script>
 <script>
 (function () {
   var shell = document.getElementById('shell');
@@ -327,7 +327,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   }
   document.getElementById('btnNet').onclick = function () {
     try { if (window.WB && window.WB.data && window.WBStore) window.WBStore.save(localStorage, window.WB.data); } catch (e0) {}
-    location.href = 'custom-play.html?v=c46&net=1';
+    location.href = 'custom-play.html?v=c47&net=1';
   };
   document.getElementById('btnShop').onclick = function () { openDrawer('shop'); };
   document.getElementById('btnMusic').onclick = function () { openDrawer('music'); };

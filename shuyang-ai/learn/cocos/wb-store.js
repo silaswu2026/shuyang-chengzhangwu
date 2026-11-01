@@ -4,6 +4,8 @@
  * Audio (bgmId + sfx toggles) lives beside wallet without breaking it.
  * Slice4: levelAudio {"1"…"9":{bgmId}} optional per-level BGM; missing → audio.bgmId.
  * Default runway: tonight-waves-v1 (safe start, four waves, all traps).
+ * ldt31 / §8: placeable 电凹大箱; coin 5/15/30; practice 110; spring OK in SAFE0;
+ *   setIntervalValue syncs mp.spike (per-level overrides global).
  * No Cocos calls, so a node check can load this file.
  */
 (function (root) {
@@ -32,8 +34,10 @@
     gun: { id: 'gun', name: '枪', price: 60 }
   };
 
-  /** Practice purse for tonight ④ shop: enough to buy gun (60) with spare. */
-  var STARTER_COINS = 100;
+  /** Practice purse for tonight ④ shop: gun 60 + spare (LEVEL-STEPS §8 → 110). */
+  var STARTER_COINS = 110;
+  /** Wallet coin tiers: small / big / chest (backward compat: old `coin` = small). */
+  var COIN_VALUES = { coin: 5, coinBig: 15, chest: 30 };
 
   function blankWallet() {
     return { coins: STARTER_COINS, weapons: [], equipped: null };
@@ -114,9 +118,11 @@
     return {
       spike: { interval: 3, up: 1, damage: 1 },
       fire: { damage: 1, dur: 3, burn: 3 },
-      rock: { damage: 1 },
+      rock: { damage: 1, foreshadow: 0.7 },
       mist: { slow: 1.6 },
-      spring: { power: 1300 }
+      spring: { power: 1300 },
+      electric: { damage: 1, stun: 0.45 },
+      groove: { slow: 0.55, fallIn: 1 }
     };
   }
 
@@ -183,11 +189,21 @@
     };
   }
 
-  function isTrap(k) { return k === 'spike' || k === 'fire' || k === 'rock' || k === 'mist' || k === 'spring'; }
-  function isReward(k) { return k === 'coin' || k === 'shield'; }
-  function isPlaceable(k) {
-    return k === 'spike' || k === 'fire' || k === 'coin' || k === 'spring' || k === 'mist' || k === 'rock';
+  function isTrap(k) {
+    return k === 'spike' || k === 'fire' || k === 'rock' || k === 'mist' || k === 'spring'
+      || k === 'electric' || k === 'groove';
   }
+  /** True hazards banned in first SAFE0 cols — spring is NOT included (§8). */
+  function isStartHazard(k) {
+    return k === 'spike' || k === 'fire' || k === 'rock' || k === 'mist'
+      || k === 'electric' || k === 'groove';
+  }
+  function isReward(k) { return k === 'coin' || k === 'coinBig' || k === 'chest' || k === 'shield'; }
+  function isPlaceable(k) {
+    return k === 'spike' || k === 'fire' || k === 'coin' || k === 'coinBig' || k === 'chest'
+      || k === 'spring' || k === 'mist' || k === 'rock' || k === 'electric' || k === 'groove';
+  }
+  function coinValue(k) { return COIN_VALUES[k] || 0; }
 
   function fCnt(I) { return Math.floor(12 / I); }
   function fHit(I) { return 5 - I; }
@@ -203,7 +219,8 @@
     var sh = 0;
     return map.map(function (k, x) {
       if (k === 'shield' || k === 'spring' || k === 'mist') { if (k === 'shield') sh++; return 0; }
-      if (k === 'rock') return 1;
+      if (k === 'rock' || k === 'electric') return 1;
+      if (k === 'groove') return 0;
       if (!isTrap(k)) return 0;
       var p = mp[k] || {};
       var n;
@@ -224,7 +241,7 @@
     map.forEach(function (k, i) { if (isTrap(k)) traps.push(i); });
     var types = {};
     traps.forEach(function (i) { types[map[i]] = 1; });
-    var safeStart = !traps.some(function (i) { return i < SAFE0; });
+    var safeStart = !traps.some(function (i) { return i < SAFE0 && isStartHazard(map[i]); });
     var easy = traps.length ? traps[0] <= 3 : true;
     var breath = true;
     for (var i = 1; i < traps.length; i++) {
@@ -270,6 +287,8 @@
     var tr = raw.traps || {};
     if (mp.spike) copyFields(s.mp.spike, mp.spike);
     else if (tr.spike) copyFields(s.mp.spike, tr.spike);
+    /* 单关刺频：存档 mp/traps 覆盖全局 interval 默认 */
+    if (s.mp.spike && typeof s.mp.spike.interval === 'number') s.interval = s.mp.spike.interval;
     if (mp.fire) copyFields(s.mp.fire, mp.fire);
     else if (tr.fire) {
       if (tr.fire.damage) s.mp.fire.damage = tr.fire.damage;
@@ -337,9 +356,11 @@
         burn: state.mp.fire.dur
       };
     }
-    if (used.rock) tr.rock = { damage: 1 };
+    if (used.rock) tr.rock = { damage: 1, foreshadow: 0.7 };
     if (used.mist) tr.mist = { slow: 1.6 };
     if (used.spring) tr.spring = { power: 1300 };
+    if (used.electric) tr.electric = { damage: 1, stun: 0.45 };
+    if (used.groove) tr.groove = { slow: 0.55, fallIn: 1 };
     var d = {};
     Object.keys(prev).forEach(function (k) { d[k] = prev[k]; });
     d.version = '1.2';
@@ -391,6 +412,10 @@
     if (n < 1) n = 1;
     if (n > 5) n = 5;
     state.interval = n;
+    /* §8: 单关刺频覆盖全局 — ②滑条写入本关 mp.spike.interval，试玩/freq 读此字段 */
+    if (!state.mp) state.mp = defaultMp();
+    if (!state.mp.spike) state.mp.spike = { interval: n, up: 1, damage: 1 };
+    state.mp.spike.interval = n;
     return n;
   }
 
@@ -409,7 +434,7 @@
       if (isTrap(cur)) state.tool = cur;
       return { ok: true, flash: '', selected: true };
     }
-    if (isTrap(tool) && x < SAFE0) {
+    if (isStartHazard(tool) && x < SAFE0) {
       return { ok: false, flash: '开头要空着（像马里奥出生点）' };
     }
     if (!isPlaceable(tool)) {
@@ -501,7 +526,11 @@
     fHit: fHit,
     zone: zone,
     isTrap: isTrap,
+    isStartHazard: isStartHazard,
+    isReward: isReward,
     isPlaceable: isPlaceable,
+    coinValue: coinValue,
+    COIN_VALUES: COIN_VALUES,
     WEAPONS: WEAPONS,
     grantCoins: grantCoins,
     buy: buy,

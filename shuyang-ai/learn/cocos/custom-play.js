@@ -297,7 +297,7 @@
 
   var sceneRef = null, spikeTex = null, fireTex = null, coinTex = null, flagTex = null;
   var starTex = null, shurikenTex = null, crocTex = null;
-  var slimeTex = null, springTex = null, mistTex = null, rockTex = null;
+  var slimeTex = null, springTex = null, mistTex = null, rockTex = null, electricTex = null, grooveTex = null, coinBigTex = null, chestTex = null, chestOpenTex = null;
   var dartTex = null, gunTex = null, bladeTex = null, bowTex = null, hammerTex = null;
   var sessionDeaths = 0; /* 本页会话死亡次数，重来不清零 */
   var forestImg = null;
@@ -426,9 +426,11 @@
       traps: {
         spike: { interval: 3, up: 1, damage: 1 },
         fire: { damage: 1, dur: 3, burn: 3 },
-        rock: { damage: 1 },
+        rock: { damage: 1, foreshadow: 0.7 },
         mist: { slow: 1.6 },
-        spring: { power: 1300 }
+        spring: { power: 1300 },
+        electric: { damage: 1, stun: 0.45 },
+        groove: { slow: 0.55, fallIn: 1 }
       },
       mine: null,
       wallet: { coins: 0, weapons: ['dart', 'bow', 'hammer'], equipped: 'dart' },
@@ -475,7 +477,7 @@
       groundCols.push(hasG);
     }
     var items = [];
-    var HAZARD = { spike: 1, fire: 1, rock: 1, mist: 1, spring: 1 };
+    var HAZARD = { spike: 1, fire: 1, rock: 1, mist: 1, spring: 1, electric: 1, groove: 1 };
     tiles.forEach(function (tt) {
       if (!tt || tt.type === 'g' || tt.type === 'p') return;
       if ((tt.y | 0) >= DR - 1) return;
@@ -496,10 +498,17 @@
     });
     if (!traps.fire) traps.fire = { damage: 1, dur: 3, burn: 3 };
     if (!traps.spike) traps.spike = { interval: 3, up: 1, damage: 1 };
-    if (!traps.rock) traps.rock = { damage: 1 };
+    if (!traps.rock) traps.rock = { damage: 1, foreshadow: 0.7 };
     if (!traps.mist) traps.mist = { slow: 1.6 };
     if (!traps.spring) traps.spring = { power: 1300 };
     else if (+traps.spring.power === 820) traps.spring.power = 1300; /* legacy default → higher bounce */
+    if (!traps.electric) traps.electric = { damage: 1, stun: 0.45 };
+    if (!traps.groove) traps.groove = { slow: 0.55, fallIn: 1 };
+    /* §8: 单关刺频 — mine.mp.spike.interval 覆盖 traps 默认 */
+    if (d.mine && d.mine.mp && d.mine.mp.spike && typeof d.mine.mp.spike.interval === 'number') {
+      traps.spike = traps.spike || {};
+      traps.spike.interval = d.mine.mp.spike.interval;
+    }
 
     /* c29: 沼泽关保底可踩火源（设计台未摆火/被水面过滤光时补 2 处实地点火） */
     (function ensureSwampFires() {
@@ -784,6 +793,29 @@
       [[11, 26], [15, 24], [35, 25], [39, 27]].forEach(function (l) {
         g.beginPath(); g.ellipse(l[0], l[1], 2.2, 1.1, 0.5, 0, 7); g.fill();
       });
+    } else if (kind === 'electric') {
+      g.fillStyle = 'rgba(80,120,255,0.3)';
+      g.beginPath(); g.ellipse(24, 40, 14, 5, 0, 0, 7); g.fill();
+      g.fillStyle = '#7ec8ff'; g.strokeStyle = '#ffe07a'; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(22, 8); g.lineTo(14, 24); g.lineTo(22, 24); g.lineTo(16, 40); g.lineTo(34, 20); g.lineTo(26, 20); g.lineTo(32, 8); g.closePath();
+      g.fill(); g.stroke();
+    } else if (kind === 'groove') {
+      g.fillStyle = '#5a3a22';
+      g.beginPath(); g.moveTo(4, 14); g.lineTo(44, 14); g.lineTo(38, 44); g.lineTo(10, 44); g.closePath(); g.fill();
+      g.fillStyle = '#2a1a10';
+      g.beginPath(); g.moveTo(12, 20); g.lineTo(36, 20); g.lineTo(32, 40); g.lineTo(16, 40); g.closePath(); g.fill();
+    } else if (kind === 'chest' || kind === 'chestOpen') {
+      g.fillStyle = '#8b5a2b'; g.fillRect(6, 22, 36, 20);
+      if (kind === 'chestOpen') {
+        g.fillStyle = '#c4893a'; g.fillRect(6, 4, 36, 14);
+        g.fillStyle = '#ffe07a'; g.beginPath(); g.arc(24, 18, 6, 0, 7); g.fill();
+      } else {
+        g.fillStyle = '#a86a32'; g.fillRect(6, 12, 36, 12);
+        g.fillStyle = '#ffe07a'; g.fillRect(20, 22, 8, 12);
+      }
+    } else if (kind === 'coinBig') {
+      g.fillStyle = '#e6c200'; g.beginPath(); g.arc(24, 24, 18, 0, 7); g.fill();
+      g.fillStyle = '#ffe07a'; g.beginPath(); g.arc(24, 24, 12, 0, 7); g.fill();
     } else {
       g.fillStyle = '#6d6358';
       g.beginPath(); g.moveTo(8, 40); g.lineTo(14, 18); g.lineTo(24, 10); g.lineTo(38, 20); g.lineTo(42, 40); g.closePath(); g.fill();
@@ -856,7 +888,8 @@
     } catch (eS) {}
   }
   /** Run score is separate from wallet coins. */
-  var SCORE = { coin: 10, slime: 50, boss: 200, hp: 100, clear: 150 };
+  var SCORE = { coin: 5, coinBig: 15, chest: 30, slime: 50, boss: 200, hp: 100, clear: 150 };
+  var WALLET_COIN = { coin: 5, coinBig: 15, chest: 30 };
   /** Auto-revive: score cost ≈ one slime; else 3 free chances per level run. */
   var REVIVE_COST = 50;
   var FREE_REVIVES_MAX = 3;
@@ -1313,7 +1346,7 @@
         it = items[i];
         px = it.c * T + T * 0.5;
         /* c28 水面无陷阱兜底 */
-        if (it.type === 'spike' || it.type === 'fire' || it.type === 'rock' || it.type === 'mist' || it.type === 'spring') {
+        if (it.type === 'spike' || it.type === 'fire' || it.type === 'rock' || it.type === 'mist' || it.type === 'spring' || it.type === 'electric' || it.type === 'groove') {
           var dxTrap = (typeof it.designX === 'number' && it.designX >= 0)
             ? it.designX
             : Math.floor((it.c - PAD) / EXP);
@@ -1330,18 +1363,40 @@
           sp.setVisible(it.type === 'fire');
           this.world.addChild(sp, 6);
           this.traps.push({ kind: it.type, x: px, sp: sp, w: T * 0.7 });
-        } else if (it.type === 'spring' || it.type === 'mist' || it.type === 'rock') {
-          var prop = new cc.Sprite(it.type === 'spring' ? springTex : it.type === 'mist' ? mistTex : rockTex);
+        } else if (it.type === 'spring' || it.type === 'mist' || it.type === 'rock' || it.type === 'electric' || it.type === 'groove') {
+          var propTex = it.type === 'spring' ? springTex
+            : it.type === 'mist' ? mistTex
+            : it.type === 'electric' ? electricTex
+            : it.type === 'groove' ? grooveTex
+            : rockTex;
+          var prop = new cc.Sprite(propTex);
           prop.setAnchorPoint(0.5, 0);
-          prop.setPosition(px, this.gy - 2);
-          prop.setScale(it.type === 'rock' ? 1.1 : (it.type === 'mist' ? 1.85 : 1.7)); /* c42: spring pad larger */
+          var baseY = this.gy - 2;
+          var sc = it.type === 'rock' ? 1.1 : (it.type === 'mist' || it.type === 'groove' ? 1.85 : (it.type === 'electric' ? 1.4 : 1.7));
+          prop.setPosition(px, baseY);
+          prop.setScale(sc);
           this.world.addChild(prop, 6);
-          this.traps.push({ kind: it.type, x: px, sp: prop, w: T * 0.55 });
-        } else if (it.type === 'coin') {
-          var cn = new cc.Sprite(coinTex);
+          var entry = { kind: it.type, x: px, sp: prop, w: T * 0.55, baseY: baseY };
+          if (it.type === 'rock') {
+            /* §8 落石：阴影预兆 → 下落 */
+            var shadow = mkColor(Math.round(T * 0.7), 8, 20, 20, 28, 110);
+            shadow.setPosition(px - T * 0.35, this.gy - 6);
+            this.world.addChild(shadow, 5);
+            entry.shadow = shadow;
+            entry.phase = 'idle';
+            entry.warnT = 0;
+            entry.fallY = this.gy + DRAW_H * 2.2;
+            prop.setPosition(px, entry.fallY);
+            prop.setOpacity(0);
+          }
+          this.traps.push(entry);
+        } else if (it.type === 'coin' || it.type === 'coinBig' || it.type === 'chest') {
+          var ctex = it.type === 'chest' ? chestTex : (it.type === 'coinBig' ? coinBigTex : coinTex);
+          var cn = new cc.Sprite(ctex || coinTex);
           cn.setPosition(px, this.gy + T * 0.9);
+          cn.setScale(it.type === 'coin' ? 1 : (it.type === 'coinBig' ? 1.25 : 1.35));
           this.world.addChild(cn, 5);
-          this.coinNodes.push({ x: px, sp: cn, got: false });
+          this.coinNodes.push({ x: px, sp: cn, got: false, kind: it.type });
         } else if (it.type === 'shield') {
           var st = new cc.Sprite(starTex);
           st.setPosition(px, this.gy + T * 0.95);
@@ -1872,11 +1927,16 @@
         var speed = this.slowT > 0 ? MOVE_S : MOVE_N;
         this._moveNormal = MOVE_N;
         this._moveSlow = MOVE_S;
-        if (inp.left && !inp.right) { this.vx = -speed; this.face = -1; }
+        if ((this.stunT || 0) > 0) {
+          this.stunT -= dt;
+          if (this.stunT < 0) this.stunT = 0;
+          speed = 0;
+          this.vx = 0;
+        } else if (inp.left && !inp.right) { this.vx = -speed; this.face = -1; }
         else if (inp.right && !inp.left) { this.vx = speed; this.face = 1; }
         else this.vx *= Math.max(0, 1 - dt * 12);
 
-        if (this.grounded && inp.jumpPressed) {
+        if (this.grounded && inp.jumpPressed && (this.stunT || 0) <= 0) {
           this.vy = 680; /* ≈ xy-go JUMP_V — 3-tile pit jumpable */
           this.grounded = false;
           applyNinjaFrame(this.ninja, this.palette, 'jump_0');
@@ -1968,7 +2028,7 @@
         for (i = 0; i < this.traps.length; i++) {
           var tr = this.traps[i];
           var kind = tr.kind;
-          if (kind === 'spring' || kind === 'mist' || kind === 'rock') {
+          if (kind === 'spring' || kind === 'mist' || kind === 'rock' || kind === 'electric' || kind === 'groove') {
             var touch = Math.abs(this.px - tr.x) < tr.w && this.py < this.gy + DRAW_H * 0.85;
             if (kind === 'spring' && touch && this.grounded) {
               var springCfg = (level.traps && level.traps.spring) || {};
@@ -1987,15 +2047,77 @@
                 var tipM = $('msg');
                 if (tipM && (this.burnT || 0) <= 0) tipM.textContent = '你走得慢了';
               }
-            } else if (kind === 'rock' && touch && this.py < this.gy + 28) {
-              this.px = tr.x + (this.px < tr.x ? -1 : 1) * (tr.w + 6);
-              if (this.invuln <= 0) {
-                this.hp -= 1;
-                this.invuln = 0.8;
-                applyNinjaFrame(this.ninja, this.palette, 'knock_0');
-                playSfx('hurt');
-                updHUD(this.hp, this.coins);
-                if (this.hp <= 0) this._killPlayer('撞岩石了');
+            } else if (kind === 'groove' && touch) {
+              var gCfg = (level.traps && level.traps.groove) || {};
+              var gSlow = +gCfg.slow || 0.55;
+              this.slowT = Math.max(this.slowT || 0, gSlow);
+              if (this.grounded && this.py > this.gy - 2) {
+                this.py = Math.max(this.gy - 14, this.py - 40 * dt);
+              }
+              var tipG = $('msg');
+              if (tipG && !(tr._gTip)) { tipG.textContent = '踩进凹槽了'; tr._gTip = 1; }
+            } else if (kind === 'electric' && touch && this.invuln <= 0) {
+              var eCfg = (level.traps && level.traps.electric) || {};
+              var eDmg = Math.max(1, +eCfg.damage || 1);
+              var eStun = +eCfg.stun || 0.45;
+              this.hp -= eDmg;
+              this.invuln = Math.max(0.9, eStun + 0.4);
+              this.stunT = eStun;
+              this.vx = 0;
+              applyNinjaFrame(this.ninja, this.palette, 'knock_0');
+              playSfx('hurt');
+              updHUD(this.hp, this.coins);
+              var tipE = $('msg');
+              if (tipE) tipE.textContent = '触电麻痹！';
+              if (this.hp <= 0) this._killPlayer('触电了');
+            } else if (kind === 'rock') {
+              /* §8 落石：靠近先晃预兆，再从上方落下 */
+              var nearR = Math.abs(this.px - tr.x) < T * 1.6;
+              var rockCfg = (level.traps && level.traps.rock) || {};
+              var warnNeed = +rockCfg.foreshadow || 0.7;
+              if (!tr.phase || tr.phase === 'idle') {
+                if (nearR) { tr.phase = 'warn'; tr.warnT = 0; }
+              }
+              if (tr.phase === 'warn') {
+                tr.warnT = (tr.warnT || 0) + dt;
+                if (tr.shadow) {
+                  tr.shadow.setOpacity(90 + Math.floor(Math.sin(tr.warnT * 18) * 80 + 80));
+                  tr.shadow.setScaleX(1 + Math.sin(tr.warnT * 14) * 0.12);
+                }
+                tr.sp.setOpacity(180);
+                tr.sp.setPosition(tr.x + Math.sin(tr.warnT * 22) * 5, tr.fallY || (this.gy + DRAW_H * 2.2));
+                if (tr.warnT >= warnNeed) {
+                  tr.phase = 'fall';
+                  tr.fallVy = 0;
+                  tr.sp.setOpacity(255);
+                }
+              } else if (tr.phase === 'fall') {
+                tr.fallVy = (tr.fallVy || 0) + 2200 * dt;
+                var ny = tr.sp.getPositionY() - tr.fallVy * dt;
+                if (ny <= (tr.baseY || this.gy - 2)) {
+                  ny = tr.baseY || this.gy - 2;
+                  tr.phase = 'landed';
+                  tr.landT = 0;
+                  playSfx('hurt');
+                  if (tr.shadow) tr.shadow.setOpacity(60);
+                  if (Math.abs(this.px - tr.x) < tr.w + 8 && this.py < this.gy + 40 && this.invuln <= 0) {
+                    this.hp -= Math.max(1, +rockCfg.damage || 1);
+                    this.invuln = 0.9;
+                    applyNinjaFrame(this.ninja, this.palette, 'knock_0');
+                    updHUD(this.hp, this.coins);
+                    if (this.hp <= 0) this._killPlayer('被落石砸中');
+                  }
+                }
+                tr.sp.setPosition(tr.x, ny);
+              } else if (tr.phase === 'landed') {
+                tr.landT = (tr.landT || 0) + dt;
+                tr.sp.setPosition(tr.x, tr.baseY || this.gy - 2);
+                if (tr.landT > 2.4) {
+                  tr.phase = 'idle';
+                  tr.sp.setOpacity(0);
+                  tr.sp.setPosition(tr.x, tr.fallY || (this.gy + DRAW_H * 2.2));
+                  if (tr.shadow) { tr.shadow.setOpacity(110); tr.shadow.setScaleX(1); }
+                }
               }
             }
             continue;
@@ -2026,13 +2148,37 @@
 
         for (i = 0; i < this.coinNodes.length; i++) {
           var cn = this.coinNodes[i];
-          if (cn.got) continue;
+          if (cn.got && !cn.opening) continue;
+          if (cn.opening) {
+            cn.openT = (cn.openT || 0) + dt;
+            var ot = cn.openT;
+            cn.sp.setScale(1.35 + Math.min(0.5, ot * 2));
+            cn.sp.setOpacity(Math.max(0, 255 - ot * 420));
+            cn.sp.setPosition(cn.x, this.gy + T * 0.9 + ot * 40);
+            if (ot > 0.55) {
+              cn.opening = false;
+              cn.sp.setVisible(false);
+            }
+            continue;
+          }
           cn.sp.setPosition(cn.x, this.gy + T * 0.85 + Math.sin(now * 5 + i) * 4);
           if (Math.abs(this.px - cn.x) < T * 0.7 && this.py < this.gy + DRAW_H) {
-            cn.got = true; cn.sp.setVisible(false);
+            var ck = cn.kind || 'coin';
+            if (ck === 'chest') {
+              cn.got = true;
+              cn.opening = true;
+              cn.openT = 0;
+              if (chestOpenTex) cn.sp.setTexture(chestOpenTex);
+              var tipC = $('msg');
+              if (tipC) tipC.textContent = '宝箱打开！+30';
+            } else {
+              cn.got = true; cn.sp.setVisible(false);
+            }
             if (!cn.star) {
-              this._earn(1);
-              this.score = (this.score | 0) + SCORE.coin;
+              var addW = (WALLET_COIN[ck] != null) ? WALLET_COIN[ck] : 5;
+              var addS = (SCORE[ck] != null) ? SCORE[ck] : SCORE.coin;
+              this._earn(addW);
+              this.score = (this.score | 0) + addS;
             }
             if (cn.star) this.invuln = Math.max(this.invuln, 3);
             playSfx('coin');
@@ -2599,6 +2745,11 @@
           springTex = buildPropTex('spring');
           mistTex = buildPropTex('mist');
           rockTex = buildPropTex('rock');
+          electricTex = buildPropTex('electric');
+          grooveTex = buildPropTex('groove');
+          coinBigTex = buildPropTex('coinBig');
+          chestTex = buildPropTex('chest');
+          chestOpenTex = buildPropTex('chestOpen');
           dartTex = buildShotTex('#d5dde6', 14, 6);
           gunTex = buildShotTex('#ffd166', 10, 10);
           bladeTex = buildShotTex('#f4f7fb', 36, 14);

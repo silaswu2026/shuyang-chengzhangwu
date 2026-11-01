@@ -107,20 +107,20 @@
     <header class="bar">
       <h1>🗺️ 选关 · 伍澍暘 · 小宇</h1>
       <a href="../../../index.html">回小屋</a>
-      <a href="visual-workbench.html?v=ldt30">工坊</a>
+      <a href="visual-workbench.html?v=ldt31">工坊</a>
     </header>
     <p class="lead">正式关 <b>1–8</b> 来自 Boss 名册；第 <b>9</b> 关是「我的关卡」（今晚 <b>custom-play</b>）。名册未进 Cocos 试玩的关诚实标「即将开放」。</p>
     <div class="grid" id="grid" aria-label="关卡 1 到 9"></div>
     <div class="foot">
-      <a class="primary" id="play9" href="custom-play.html?v=c46">玩第9关 · 我的关卡</a>
-      <a href="custom-play.html?v=c46&amp;net=1">第9关联机</a>
-      <a href="visual-workbench.html?v=ldt30">去工坊摆关</a>
+      <a class="primary" id="play9" href="custom-play.html?v=c47">玩第9关 · 我的关卡</a>
+      <a href="custom-play.html?v=c47&amp;net=1">第9关联机</a>
+      <a href="visual-workbench.html?v=ldt31">去工坊摆关</a>
     </div>
     <p class="note" id="note">加载名册…</p>
   </div>
   <script>
   (function () {
-    var PLAY = 'custom-play.html?v=c46';
+    var PLAY = 'custom-play.html?v=c47';
     var FALLBACK = [
       { n: 1, name: '林间晨跑', bossName: '熊大王' },
       { n: 2, name: '苔岩小径', bossName: '野猪' },
@@ -172,7 +172,7 @@
           if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); flash(); }
         });
       });
-      note.textContent = '可玩：第9关 → custom-play（c46）。1–8 可见 Boss 名，Cocos 路径尚未接通，点按提示「即将开放」。不改 PeerJS / 不重做联网。';
+      note.textContent = '可玩：第9关 → custom-play（c47）。1–8 可见 Boss 名，Cocos 路径尚未接通，点按提示「即将开放」。不改 PeerJS / 不重做联网。';
     }
 
     render(FALLBACK);
@@ -181,7 +181,7 @@
       .then(function (data) {
         if (!data || !Array.isArray(data.levels) || !data.levels.length) return;
         render(data.levels.slice(0, 8));
-        note.textContent = '名册已载入 · 可玩：第9关 → custom-play（c46）。1–8 诚实「即将开放」。正式名伍澍暘 / 助手小宇。';
+        note.textContent = '名册已载入 · 可玩：第9关 → custom-play（c47）。1–8 诚实「即将开放」。正式名伍澍暘 / 助手小宇。';
       })
       .catch(function () { /* fallback already rendered */ });
   })();
