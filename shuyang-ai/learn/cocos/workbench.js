@@ -246,11 +246,12 @@
       words(this, '上钩＝鱼被钓上钩', W / 2, 458, 30, '#ffe07a', 8);
       words(this, '饵在钩上。鱼咬住，就被拉上去。', W / 2, 414, 18, '#ffffff', 8);
       this.line = ART.place(this, ART.tex.pixel, 710, 402, {
-        anchor: [0.5, 1], z: 13, color: cc.color(236, 242, 248)
+        anchor: [0.5, 1], z: 13, color: cc.color(236, 244, 255)
       });
-      this.hookSp = ART.place(this, ART.tex.hook, 710, 340, { anchor: [0.5, 1], h: 72, z: 14 });
+      this.hookSp = ART.place(this, ART.tex.hook, 710, 340, { anchor: [0.5, 1], h: 78, z: 14 });
       this.worm = ART.place(this, ART.tex.worm, 692, 250, { h: 34, z: 15 });
-      this.fish = ART.place(this, ART.tex.fish, 160, 210, { h: 118, z: 12 });
+      this.fishShade = ART.place(this, ART.tex.blob, 200, 200, { h: 16, z: 11, opacity: 120 });
+      this.fish = ART.place(this, ART.tex.fish, 160, 210, { h: 124, z: 12 });
       this.bubbles = [];
       var i, b;
       for (i = 0; i < 6; i++) {
@@ -283,17 +284,21 @@
     },
     _stop: function () {
       ART.fill(this, ART.tex.night, 0);
-      ART.panel(this, 236, 286, 420, 300, ccColor(255, 255, 255), 22, 2, 18);
-      ART.frame(this, 236, 286, 420, 300, cc.color(255, 138, 138), 200, 3, 18);
-      ART.panel(this, 724, 286, 420, 300, ccColor(255, 255, 255), 22, 2, 18);
-      ART.frame(this, 724, 286, 420, 300, cc.color(159, 240, 168), 200, 3, 18);
-      ART.place(this, ART.tex.fish, 108, 372, { h: 52, z: 5 });
-      ART.place(this, ART.tex.hook, 168, 408, { anchor: [0.5, 1], h: 46, z: 6 });
-      words(this, '被钓住了', 292, 400, 26, '#ff8a8a', 6);
+      ART.panel(this, 236, 282, 420, 300, ccColor(0, 0, 0), 80, 1, 18);
+      ART.panel(this, 236, 286, 420, 300, ccColor(18, 26, 52), 235, 2, 18);
+      ART.panel(this, 236, 390, 380, 70, ccColor(255, 255, 255), 22, 3, 16);
+      ART.frame(this, 236, 286, 420, 300, cc.color(255, 150, 150), 210, 4, 18);
+      ART.panel(this, 724, 282, 420, 300, ccColor(0, 0, 0), 80, 1, 18);
+      ART.panel(this, 724, 286, 420, 300, ccColor(18, 26, 52), 235, 2, 18);
+      ART.panel(this, 724, 390, 380, 70, ccColor(255, 255, 255), 22, 3, 16);
+      ART.frame(this, 724, 286, 420, 300, cc.color(159, 240, 168), 210, 4, 18);
+      ART.place(this, ART.tex.fish, 108, 368, { h: 56, z: 5 });
+      ART.place(this, ART.tex.hookMark, 176, 392, { h: 36, z: 6 });
+      words(this, '被钓住了', 300, 400, 26, '#ff8a8a', 6);
       var left = ['一直玩不停', '忘了别的事', '花时间、还想再开一局'];
       left.forEach(function (line, i) {
-        ART.place(this, ART.tex.hook, 78, 352 - i * 52, { anchor: [0.5, 1], h: 32, z: 5 });
-        words(this, line, 210, 332 - i * 52, 20, '#ffb4b4', 6);
+        ART.place(this, ART.tex.hookMark, 86, 332 - i * 52, { h: 26, z: 5 });
+        words(this, line, 220, 332 - i * 52, 20, '#ffb4b4', 6);
       }, this);
       ART.place(this, ART.tex.shield, 620, 392, { h: 64, z: 5 });
       words(this, '看懂上钩', 760, 400, 26, '#9ff0a8', 6);
@@ -302,6 +307,7 @@
         ART.place(this, ART.tex.shield, 560, 348 - i * 52, { h: 32, z: 5 });
         words(this, line, 740, 332 - i * 52, 20, '#c8ffd0', 6);
       }, this);
+      ART.place(this, ART.tex.blob, 480, 162, { h: 18, z: 16, opacity: 140 });
       this.hero = addNinja(this, 480, 168, 150, 17);
       ART.panel(this, W / 2, 100, 520, 40, ccColor(0, 0, 0), 140, 7, 14);
       words(this, '什么时候停，我自己决定', W / 2, 100, 22, '#ffe07a', 8);
@@ -320,15 +326,16 @@
         fishX = 150 + (t / 2.2) * 480;
         fishY = 214 + Math.sin(this._t * 3) * 6;
       } else {
-        fishX = mouthX - 46;
-        fishY = mouthY - 4;
+        fishX = mouthX - 84;
+        fishY = mouthY + 14;
       }
       this.fish.setPosition(fishX, fishY);
-      this.fish.setRotation(ph === 2 ? Math.sin(this._t * 10) * 5 : 0);
-      var hookTop = mouthY + 60;
+      this.fish.setRotation(ph === 2 ? Math.sin(this._t * 10) * 4 : 0);
+      if (this.fishShade) this.fishShade.setPosition(fishX + 10, fishY - 36);
+      var hookTop = mouthY + 58;
       this.hookSp.setPosition(mouthX, hookTop);
       this.line.setPosition(mouthX, 402);
-      this.line.setScale(1.6, Math.max(12, 402 - hookTop) / 4);
+      this.line.setScale(1.15, Math.max(12, 402 - hookTop) / 4);
       this.worm.setVisible(ph === 0);
       this.worm.setPosition(mouthX - 16, mouthY + 6);
       if (this.meta) this.meta.setVisible(!!this._hooked);
@@ -336,7 +343,14 @@
       if (this._water) {
         for (i = 0; i < this._water.waves.length; i++) {
           var wv = this._water.waves[i];
-          wv.setPosition(wv._x0, 262 + Math.sin(this._t * 2 + i) * 5);
+          wv.setPosition(wv._x0 + Math.sin(this._t * 0.8 + i) * 10, wv._y0 + Math.sin(this._t * 1.6 + i) * 3);
+        }
+        if (this._water.glints) {
+          for (i = 0; i < this._water.glints.length; i++) {
+            var gl = this._water.glints[i];
+            gl.setPosition(gl._x0 + Math.sin(this._t * 1.4 + i) * 18, 256 + Math.sin(this._t * 2 + i) * 2);
+            gl.setOpacity(90 + Math.floor(70 + Math.sin(this._t * 3 + i) * 70));
+          }
         }
       }
       for (i = 0; i < this.bubbles.length; i++) {
@@ -527,7 +541,7 @@
         this.marks.push(mk);
         this.idxLabs.push(words(this, String(x + 1), EDIT.L + (x + 0.5) * EDIT.cw, gy - 16, 12, '#ffe7a0', 7));
       }
-      ART.place(this, ART.tex.flag, EDIT.L + STORE.MC * EDIT.cw - 30, gy, { anchor: [0, 0], h: 62, z: 8 });
+      ART.place(this, ART.tex.flag, EDIT.L + STORE.MC * EDIT.cw - 46, gy + 6, { anchor: [0, 0], h: 70, z: 11 });
       var grid = new cc.Node();
       grid.setAnchorPoint(0, 0);
       grid.setContentSize(STORE.MC * EDIT.cw, 130);
@@ -679,6 +693,7 @@
 
       words(this, '我摆的一小关', 250, 400, 20, '#ffe7a0', 6);
       var L = 46, cw = 34, gy = 250;
+      ART.panel(this, L + STORE.MC * cw / 2, gy + 18, STORE.MC * cw + 18, 108, ccColor(0, 0, 0), 55, 3, 10);
       var bands = [[0, 3, ccColor(78, 168, 92, 80)], [3, 7, ccColor(230, 194, 0, 80)], [7, 10, ccColor(226, 121, 59, 80)], [10, 12, ccColor(226, 59, 59, 80)]];
       bands.forEach(function (b) {
         plate(this, L + b[0] * cw, gy + 4, (b[1] - b[0]) * cw, 70, b[1] ? b[2] : b[2], 4);
@@ -808,9 +823,11 @@
           ART.SC + 'dirt-tile.png', ART.SC + 'grass-cap.png'
         ].concat(AV);
         var left = res.length;
+        var dirtImg = null, grassImg = null;
         function tick() {
           left--;
           if (left > 0) return;
+          try { ART.bakeGround(dirtImg, grassImg); } catch (eG) {}
           if (lesson !== 'tonight') {
             var layer = new cc.Layer();
             var scene = new cc.Scene();
@@ -834,6 +851,8 @@
           img.onload = function () {
             try { cc.textureCache.addImage(src); } catch (e1) {}
             if (AV.indexOf(src) >= 0) ART.rememberAvatar(src, img);
+            if (src.indexOf('dirt-tile.png') >= 0) dirtImg = img;
+            if (src.indexOf('grass-cap.png') >= 0) grassImg = img;
             tick();
           };
           img.onerror = function () { tick(); };
