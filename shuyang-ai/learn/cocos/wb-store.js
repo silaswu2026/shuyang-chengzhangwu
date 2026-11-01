@@ -116,7 +116,7 @@
       fire: { damage: 1, dur: 3, burn: 3 },
       rock: { damage: 1 },
       mist: { slow: 1.6 },
-      spring: { power: 820 }
+      spring: { power: 1300 }
     };
   }
 
@@ -339,7 +339,7 @@
     }
     if (used.rock) tr.rock = { damage: 1 };
     if (used.mist) tr.mist = { slow: 1.6 };
-    if (used.spring) tr.spring = { power: 820 };
+    if (used.spring) tr.spring = { power: 1300 };
     var d = {};
     Object.keys(prev).forEach(function (k) { d[k] = prev[k]; });
     d.version = '1.2';

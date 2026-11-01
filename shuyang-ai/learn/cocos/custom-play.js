@@ -363,7 +363,7 @@
         fire: { damage: 1, dur: 3, burn: 3 },
         rock: { damage: 1 },
         mist: { slow: 1.6 },
-        spring: { power: 820 }
+        spring: { power: 1300 }
       },
       mine: null,
       wallet: { coins: 0, weapons: ['dart', 'bow', 'hammer'], equipped: 'dart' },
@@ -433,7 +433,8 @@
     if (!traps.spike) traps.spike = { interval: 3, up: 1, damage: 1 };
     if (!traps.rock) traps.rock = { damage: 1 };
     if (!traps.mist) traps.mist = { slow: 1.6 };
-    if (!traps.spring) traps.spring = { power: 820 };
+    if (!traps.spring) traps.spring = { power: 1300 };
+    else if (+traps.spring.power === 820) traps.spring.power = 1300; /* legacy default → higher bounce */
 
     /* c29: 沼泽关保底可踩火源（设计台未摆火/被水面过滤光时补 2 处实地点火） */
     (function ensureSwampFires() {
@@ -1497,7 +1498,11 @@
           if (kind === 'spring' || kind === 'mist' || kind === 'rock') {
             var touch = Math.abs(this.px - tr.x) < tr.w && this.py < this.gy + DRAW_H * 0.85;
             if (kind === 'spring' && touch && this.grounded) {
-              this.vy = 860;
+              var springCfg = (level.traps && level.traps.spring) || {};
+              var springPower = +springCfg.power || 1300;
+              if (springPower < 200) springPower = 200;
+              if (springPower > 1600) springPower = 1600; /* keep inside level feel vs jump 680 */
+              this.vy = springPower;
               this.grounded = false;
               applyNinjaFrame(this.ninja, this.palette, 'jump_0');
               playSfx('spring');
