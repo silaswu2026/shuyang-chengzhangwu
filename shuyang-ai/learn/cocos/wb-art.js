@@ -918,9 +918,12 @@
     return sp;
   }
   function fill(layer, texture, z) {
-    var sp = place(layer, texture, 0, 0, { anchor: [0, 0], z: z || 0 });
+    return blit(layer, texture, 0, 0, W, H, z || 0);
+  }
+  function blit(layer, texture, x, y, w, h, z) {
+    var sp = place(layer, texture, x, y, { anchor: [0, 0], z: z || 0 });
     var s = sp.getContentSize();
-    if (s.width > 1 && s.height > 1) sp.setScale(W / s.width, H / s.height);
+    if (s.width > 1 && s.height > 1) sp.setScale(w / s.width, h / s.height);
     return sp;
   }
   function bakeGround(dirtImg, grassImg) {
@@ -970,43 +973,53 @@
     gg.fillRect(0, 12, 80, 2);
     tex.groundGrass = texFromCanvas(cg);
   }
-  function dressSky(layer, gy) {
-    fill(layer, tex.sky, 0);
-    var far = place(layer, tex.hillsFar, 0, gy + 18, { anchor: [0, 0], z: 1 });
+  function dressSky(layer, gy, box) {
+    box = box || { x: 0, y: 0, w: W, h: H };
+    blit(layer, tex.sky, box.x, box.y, box.w, box.h, 0);
+    var far = place(layer, tex.hillsFar, box.x, gy + 4, { anchor: [0, 0], z: 1 });
     var fs = far.getContentSize();
-    if (fs.width > 2) far.setScaleX(W / fs.width);
-    var hill = place(layer, tex.hills, 0, gy - 36, { anchor: [0, 0], z: 1 });
+    if (fs.width > 2) far.setScaleX(box.w / fs.width);
+    var hill = place(layer, tex.hills, box.x, gy - 22, { anchor: [0, 0], z: 1 });
     var hs = hill.getContentSize();
-    if (hs.width > 2) hill.setScaleX(W / hs.width);
-    var sun = place(layer, tex.sun, 92, H - 78, { h: 108, z: 1 });
-    var spots = [[200, H - 148, 36], [500, H - 118, 28], [760, H - 156, 32]];
+    if (hs.width > 2) hill.setScaleX(box.w / hs.width);
+    var room = box.y + box.h - gy - 6;
+    if (hs.height > 8 && room > 8 && hs.height > room) hill.setScale(box.w / hs.width, room / hs.height);
+    var sun = place(layer, tex.sun, box.x + 48, box.y + box.h - 28, { h: 64, z: 1 });
+    var spots = [
+      [box.x + box.w * 0.3, box.y + box.h - 36, 26],
+      [box.x + box.w * 0.58, box.y + box.h - 22, 20],
+      [box.x + box.w * 0.8, box.y + box.h - 40, 24]
+    ];
     var clouds = [];
     var i, cld;
     for (i = 0; i < spots.length; i++) {
-      cld = place(layer, tex.cloud, spots[i][0], spots[i][1], { h: spots[i][2], z: 1, opacity: 235 });
+      cld = place(layer, tex.cloud, spots[i][0], spots[i][1], { h: spots[i][2], z: 1, opacity: 230 });
       cld._x0 = spots[i][0];
       cld._y0 = spots[i][1];
       clouds.push(cld);
     }
-    return { clouds: clouds, sun: sun, hill: hill };
+    return { clouds: clouds, sun: sun, hill: hill, box: box };
   }
-  function dressWater(layer) {
-    fill(layer, tex.water, 0);
+  function dressWater(layer, box) {
+    box = box || { x: 0, y: 0, w: W, h: H };
+    blit(layer, tex.water, box.x, box.y, box.w, box.h, 0);
+    var surface = box.y + Math.round(box.h * 0.42);
     var waves = [];
     var glints = [];
-    var i, w, s;
-    for (i = 0; i < 11; i++) {
-      w = place(layer, tex.wave, -30 + i * 100, i % 2 ? 274 : 250, { h: i % 2 ? 16 : 11, z: 2, opacity: i % 2 ? 210 : 150 });
-      w._x0 = -30 + i * 100;
-      w._y0 = i % 2 ? 274 : 250;
+    var i, w, s, n = Math.ceil(box.w / 96) + 1;
+    for (i = 0; i < n; i++) {
+      w = place(layer, tex.wave, box.x - 16 + i * 96, surface + (i % 2 ? 8 : -4), { h: i % 2 ? 14 : 10, z: 2, opacity: i % 2 ? 200 : 140 });
+      w._x0 = box.x - 16 + i * 96;
+      w._y0 = surface + (i % 2 ? 8 : -4);
       waves.push(w);
     }
-    for (i = 0; i < 8; i++) {
-      s = place(layer, tex.glint, 20 + i * 120, 258, { h: 5, z: 3, opacity: 170 });
-      s._x0 = 20 + i * 120;
+    for (i = 0; i < Math.ceil(box.w / 120); i++) {
+      s = place(layer, tex.glint, box.x + 16 + i * 120, surface + 2, { h: 4, z: 3, opacity: 170 });
+      s._x0 = box.x + 16 + i * 120;
+      s._y0 = surface + 2;
       glints.push(s);
     }
-    return { waves: waves, glints: glints };
+    return { waves: waves, glints: glints, box: box, surface: surface };
   }
   function addGround(layer, x, y, width, z, rows) {
     var tw = 40;
@@ -1063,6 +1076,7 @@
     panel: panel,
     frame: frame,
     fill: fill,
+    blit: blit,
     dressSky: dressSky,
     dressWater: dressWater,
     addGround: addGround
