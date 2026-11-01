@@ -2535,7 +2535,7 @@
       ? (1.2 + Math.random() * 2.4)
       : (0.35 + Math.random() * 0.7);
   }
-  // 小雨 (red AI) — deliberately "dumb" helper: trails GREEN, never leads, hesitates,
+  // 小宇 (red AI) — deliberately "dumb" helper: trails GREEN, never leads, hesitates,
   // sometimes flubs a jump, throws at nearby monsters only now and then.
   const aiDumb = { pauseT: 0, nextPause: 3 + Math.random() * 4, missT: 0, gap: 70 };
   function aiCompanionInput(dt) {
@@ -5317,7 +5317,7 @@
     }, 150000);
     if (netRole || netRoomOverride === NET_LOBBY) return;
     wantCoop = true;
-    wantCompanion = true; // 小雨 (红 AI) joins once both humans are in
+    wantCompanion = true; // 小宇 (红 AI) joins once both humans are in
     syncCompanionUi();
     netRoomOverride = NET_LOBBY;
     netShowView('net');
@@ -5423,7 +5423,7 @@
     const done = () => toast('邀请链接已复制！发给好友吧');
     try {
       if (navigator.share && /Mobi|Android|iPhone/i.test(navigator.userAgent)) {
-        navigator.share({ title: '小雨闯关 · 来我房间', text: '房间号 ' + netRoomShortCode(), url }).catch(() => {});
+        navigator.share({ title: '小宇闯关 · 来我房间', text: '房间号 ' + netRoomShortCode(), url }).catch(() => {});
         return;
       }
       navigator.clipboard.writeText(url).then(done, () => toast(url));

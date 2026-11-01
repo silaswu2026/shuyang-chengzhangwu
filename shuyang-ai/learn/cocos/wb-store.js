@@ -136,7 +136,7 @@
       best_fun: '',
       hardest: '',
       add_one: '',
-      who: '小雨',
+      who: '小宇',
       tool: 'spike',
       sel: 'spike',
       selX: 3,
@@ -329,7 +329,7 @@
     d.best_fun = state.best_fun || '';
     d.hardest = state.hardest || '';
     d.add_one = state.add_one || '';
-    d.who = state.who || '小雨';
+    d.who = state.who || '小宇';
     d.wallet = {
       coins: state.wallet.coins | 0,
       weapons: state.wallet.weapons.slice(),
