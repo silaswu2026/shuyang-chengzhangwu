@@ -203,3 +203,7 @@ HUD 显示「积分」。规则：
 
 ### 音效素材来源
 有授权素材已入库，详见 [`audio/SOURCES.md`](audio/SOURCES.md)（Kevin MacLeod CC BY 3.0 + Kenney CC0）。喇叭抽屉展示同一署名。
+
+## 玩家测试用例
+
+对照表见同目录 [PLAYER-TEST-CASES.md](./PLAYER-TEST-CASES.md)（首页 / 工坊四步 / 试玩 / 联机 / 其它课 / 回归）。
