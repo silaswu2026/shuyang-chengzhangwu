@@ -1,3 +1,10 @@
+## 2026-11-01 · 手机微糊（c50）
+
+**现象**：伍澍暘反馈 `custom-play?v=c49` 电脑清晰、手机略软糊（非旧「滑沙颗粒」）。
+**根因**：页 `devicePixelRatio≈3`，但 Cocos lite `_setupContainer` / 本页 `ensureRetinaBuffer` 仍 `Math.min(2,dpr)`，画布仅 2×CSS，浏览器再放大约 1.5× → 软边。
+**做法**：`playDprCap=min(3,dpr)`；补丁 `_setupContainer` 并同步 `cc.view._devicePixelRatio`；桌面 dpr≤2 行为不变。不改玩法/联机。
+**验收**：PLAYER-TEST **C23**（含清晰度）；硬刷 `custom-play.html?v=c50`。正式名 **伍澍暘** / **小宇**。
+
 ## 2026-11-01 · 真机颗粒滑屏再修（c49）
 
 **现象**：伍澍暘反馈 `custom-play?v=c48` 开 Retina 后手机仍见很多小颗粒+滑屏感。
