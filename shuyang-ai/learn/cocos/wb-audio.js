@@ -2,6 +2,7 @@
  * 先听后选 · BGM / SFX for tonight workbench + custom-play.
  * Prefers cc.audioEngine; falls back to HTMLAudioElement.
  * Catalog ids must stay in sync with WBStore.blankAudio fallback.
+ * Slice4: levelAudio 1–9 bind + slash(=hit) character SFX.
  */
 (function (root) {
   var BASE = 'audio/';
@@ -20,14 +21,15 @@
     { id: 'spring', name: '弹簧', file: 'sfx/spring.wav' },
     { id: 'coin', name: '金币', file: 'sfx/coin.wav' },
     { id: 'hurt', name: '受伤', file: 'sfx/hurt.wav' },
-    { id: 'hit', name: '击中', file: 'sfx/hit.wav' }
+    { id: 'hit', name: '击中', file: 'sfx/hit.wav' },
+    { id: 'slash', name: '砍击', file: 'sfx/hit.wav' } /* 角色近战砍击 = Kenney hit */
   ];
 
   var state = {
     bgmId: 'explore',
     sfx: {
       walk: true, jump: true, land: true, spike: true, fire: true,
-      spring: true, coin: true, hurt: true, hit: true
+      spring: true, coin: true, hurt: true, hit: true, slash: true
     }
   };
   var unlocked = false;
@@ -41,7 +43,7 @@
       bgmId: 'explore',
       sfx: {
         walk: true, jump: true, land: true, spike: true, fire: true,
-        spring: true, coin: true, hurt: true, hit: true
+        spring: true, coin: true, hurt: true, hit: true, slash: true
       }
     };
   }
@@ -150,7 +152,12 @@
   function playSfx(id, preview) {
     var s = findSfx(id);
     if (!s) return;
-    if (!preview && state.sfx[id] === false) return;
+    /* slash shares Kenney hit; honor either toggle off */
+    if (!preview) {
+      if (state.sfx[id] === false) return;
+      if (id === 'slash' && state.sfx.hit === false) return;
+      if (id === 'hit' && state.sfx.slash === false) return;
+    }
     unlocked = true;
     if (engineOk() && cc.audioEngine.playEffect) {
       try {
@@ -177,6 +184,78 @@
     }
   }
 
+
+  var BGM_SHORT = { explore: '探', tense: '紧', win: '过', fail: '败' };
+
+  function blankLevelAudio() { return {}; }
+
+  function normalizeLevelAudio(raw) {
+    var out = {};
+    if (!raw || typeof raw !== 'object') return out;
+    var i, k, e, id, j, known;
+    for (i = 1; i <= 9; i++) {
+      k = String(i);
+      e = raw[k] != null ? raw[k] : raw[i];
+      if (!e || typeof e !== 'object') continue;
+      id = typeof e.bgmId === 'string' ? e.bgmId : '';
+      if (!id) continue;
+      known = false;
+      for (j = 0; j < BGM.length; j++) if (BGM[j].id === id) { known = true; break; }
+      if (!known) continue;
+      out[k] = { bgmId: id, sfxPreset: e.sfxPreset == null ? null : e.sfxPreset };
+    }
+    return out;
+  }
+
+  function shortBgm(id) {
+    return BGM_SHORT[id] || (id ? String(id).slice(0, 1) : '');
+  }
+
+  function bgmForLevel(levelId, audioCfg, levelAudioMap) {
+    var k = String(levelId == null ? '' : levelId);
+    var la = normalizeLevelAudio(levelAudioMap);
+    if (k && la[k] && la[k].bgmId) return la[k].bgmId;
+    if (audioCfg && typeof audioCfg.bgmId === 'string' && audioCfg.bgmId) return findBgm(audioCfg.bgmId).id;
+    return 'explore';
+  }
+
+  function setLevelBgm(levelAudioMap, levelId, bgmId) {
+    var map = normalizeLevelAudio(levelAudioMap);
+    var k = String(levelId);
+    if (!k || +k < 1 || +k > 9) return map;
+    if (!bgmId) {
+      delete map[k];
+      return map;
+    }
+    var b = findBgm(bgmId);
+    map[k] = { bgmId: b.id, sfxPreset: null };
+    return map;
+  }
+
+  function clearAllLevelBgm() { return {}; }
+
+  function bindTrackToLevels(levelAudioMap, bgmId, levelIds) {
+    var map = normalizeLevelAudio(levelAudioMap);
+    var b = findBgm(bgmId);
+    (levelIds || []).forEach(function (n) {
+      var k = String(n);
+      if (+k < 1 || +k > 9) return;
+      map[k] = { bgmId: b.id, sfxPreset: null };
+    });
+    return map;
+  }
+
+  function levelsForTrack(levelAudioMap, bgmId) {
+    var map = normalizeLevelAudio(levelAudioMap);
+    var out = [];
+    var i, k;
+    for (i = 1; i <= 9; i++) {
+      k = String(i);
+      if (map[k] && map[k].bgmId === bgmId) out.push(i);
+    }
+    return out;
+  }
+
   var CREDITS = {
     short: 'Music: Kevin MacLeod (incompetech.com) · CC BY 3.0 · SFX: Kenney.nl · CC0',
     bgm: 'BGM: Kevin MacLeod (incompetech.com) · CC BY 3.0',
@@ -198,6 +277,14 @@
     setBgm: setBgm,
     playSfx: playSfx,
     toggleSfx: toggleSfx,
-    footstep: footstep
+    footstep: footstep,
+    blankLevelAudio: blankLevelAudio,
+    normalizeLevelAudio: normalizeLevelAudio,
+    shortBgm: shortBgm,
+    bgmForLevel: bgmForLevel,
+    setLevelBgm: setLevelBgm,
+    clearAllLevelBgm: clearAllLevelBgm,
+    bindTrackToLevels: bindTrackToLevels,
+    levelsForTrack: levelsForTrack
   };
 })(typeof window !== 'undefined' ? window : this);

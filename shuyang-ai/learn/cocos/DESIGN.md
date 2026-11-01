@@ -250,7 +250,7 @@ HUD 显示「积分」。规则：
 ## 音乐
 
 方向是听和选（先听后选）。
-- **音乐×九关结合（方案待拍板）**：见 [`docs/MUSIC-LEVEL-BIND-UI.md`](docs/MUSIC-LEVEL-BIND-UI.md)；⑥仍先听后选；BGM↔关卡可选关联；不删四心情；未改代码。
+- **音乐×九关结合（切片4 已上）**：见 [`docs/MUSIC-LEVEL-BIND-UI.md`](docs/MUSIC-LEVEL-BIND-UI.md)；⑥仍先听后选；BGM↔关卡可选关联（`levelAudio`）；不删四心情；试玩回退全局曲；走路/砍击 Kenney。
 可视化工坊抽屉与基础台喇叭共用 `wb-audio.js` 四心情 BGM（explore / tense / win / fail）与 `audio/` 素材；署名 Kevin MacLeod CC BY + Kenney CC0。写入存档 `audio.bgmId`（`music` 字段仍可并存作别名）。
 
 ## 社交和点赞
@@ -301,4 +301,5 @@ HUD 显示「积分」。规则：
 
 ## 实现进度（2026-11-01）
 
-- 切片3：关卡设计合并（四芯片 + 二级摆关|设置|关联）`vw49`/`wb80`；关联骨架待切片4细挂曲。
+- 切片3：关卡设计合并（四芯片 + 二级摆关|设置|关联）`vw49`/`wb80`。
+- 切片4：音乐绑九关 `levelAudio` + 走路/砍击 SFX；未挂回退全局曲 `vw50`/`wb81`/`c40`。

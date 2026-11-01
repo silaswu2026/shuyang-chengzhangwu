@@ -5,7 +5,7 @@
 <meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0f1230">
-<meta name="wb-build" content="vw48">
+<meta name="wb-build" content="vw50">
 <title>AI办学小屋 · 课程3 · 可视化关卡工坊</title>
 <style>
 :root{
@@ -130,7 +130,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
 <div id="topbar">
   <div class="chip"><span>🏡 伍澍暘 · 课程3</span>
     <a href="../../../index.html">回小屋</a>
-    <a href="custom-play.html?v=c38&amp;net=1">联机</a>
+    <a href="custom-play.html?v=c40&amp;net=1">联机</a>
     <a href="../../../xy-go/?custom=1">xy-go联网</a>
   </div>
   <div class="shell-toggle" id="shellToggle">
@@ -173,10 +173,12 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
 
 <aside class="drawer" id="drawerMusic" aria-label="音乐">
   <button class="close" data-close type="button">×</button>
-  <h3>音乐 · 先听后选</h3>
-  <p class="hint">听一小段，再配到关上。完整喇叭（BGM+SFX）在今晚基础台右上角。</p>
-  <p class="hint" style="margin-top:-8px">BGM: Kevin MacLeod (CC BY) · SFX: Kenney (CC0)</p>
+  <h3>音乐 · 先听后选 · 挂九关</h3>
+  <p class="hint">听一小段，再选用全局曲；下方可挂到 1–8 + 第9我的关卡。未挂则试玩回退全局曲。</p>
+  <p class="hint" style="margin-top:-8px">BGM: Kevin MacLeod (CC BY) · SFX: Kenney (CC0) · 禁 Mixkit</p>
   <div class="row" id="musicList"></div>
+  <div id="musicLevels" style="margin-top:10px"></div>
+  <div class="row" id="musicSfx" style="margin-top:8px"></div>
   <p class="hint" id="musicPick">还没选曲</p>
   <p class="hint" id="musicCredit" style="margin-top:12px;font-size:11px;opacity:.85">音乐 Kevin MacLeod · CC BY 3.0｜音效 Kenney · CC0<br>详见 audio/SOURCES.md · 不用 Mixkit</p>
 </aside>
@@ -198,7 +200,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   </div>
 </aside>
 
-<!-- vw48: 觉察前置闸 · vw47: look 三阶段 · vw46: phone-bezel ~1.2× (504/912) + landscape chrome · vw45: practice coins for ④ · vw44: formal six steps · vw43: narrow→手机壳 · caption clear · vw42: landscape phone shell + honest boot if canvas never lands in the phone frame -->
+<!-- vw50: 关联挂九关+SFX · vw49: 关卡设计合并 · vw48: 觉察前置闸 · vw47: look 三阶段 · vw46: phone-bezel ~1.2× (504/912) + landscape chrome · vw45: practice coins for ④ · vw44: formal six steps · vw43: narrow→手机壳 · caption clear · vw42: landscape phone shell + honest boot if canvas never lands in the phone frame -->
 <script>
 (function(){
   var cleared=false;
@@ -240,10 +242,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
 })();
 </script>
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
-<script src="wb-store.js?v=vw49"></script>
-<script src="wb-art.js?v=vw49"></script>
-<script src="wb-audio.js?v=wb71"></script>
-<script src="visual-workbench.js?v=vw49"></script>
+<script src="wb-store.js?v=vw50"></script>
+<script src="wb-art.js?v=vw50"></script>
+<script src="wb-audio.js?v=vw50"></script>
+<script src="visual-workbench.js?v=vw50"></script>
 <script>
 (function () {
   var shell = document.getElementById('shell');
@@ -323,7 +325,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   }
   document.getElementById('btnNet').onclick = function () {
     try { if (window.WB && window.WB.data && window.WBStore) window.WBStore.save(localStorage, window.WB.data); } catch (e0) {}
-    location.href = 'custom-play.html?v=c38&net=1';
+    location.href = 'custom-play.html?v=c40&net=1';
   };
   document.getElementById('btnShop').onclick = function () { openDrawer('shop'); };
   document.getElementById('btnMusic').onclick = function () { openDrawer('music'); };

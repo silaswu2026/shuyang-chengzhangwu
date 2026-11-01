@@ -29,6 +29,7 @@ From **Kenney.nl** Impact Sounds + RPG Audio packs (CC0), via community mirrors:
 | `coin.wav` | handle_coins | RPG Audio | CC0 | https://kenney.nl/assets/rpg-audio |
 | `hurt.wav` | impact_punch_medium_002 | Impact Sounds | CC0 | https://kenney.nl/assets/impact-sounds |
 | `hit.wav` | impact_mining_000 | Impact Sounds | CC0 | https://kenney.nl/assets/impact-sounds |
+| （别名 `slash`） | 同 `hit.wav` | 角色砍击 SFX id | CC0 | 同上 |
 
 Mirrors used for download:  
 https://github.com/Boyquotes/kenney-impact-sounds-for-godot · https://github.com/Boyquotes/kenney-rpg-audio-for-godot
@@ -36,7 +37,7 @@ https://github.com/Boyquotes/kenney-impact-sounds-for-godot · https://github.co
 ## Mapping to Silas’s list
 
 1. 场景 BGM：explore / tense / win / fail  
-2. 走路：walk  
+2. 走路：walk · 砍击：slash（=hit）  
 3. 道具获取：coin  
 4. 受伤：hurt  
 5. 怪物被打倒：hit  

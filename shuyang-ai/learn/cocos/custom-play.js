@@ -1,6 +1,7 @@
 /**
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·沼泽
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
+ * c40: levelAudio 第9关 BGM 回退全局；走路/砍击 SFX 钩子。
  * c28: 明天玩关三件可测 — ①武器弓/锤/飞镖（默飞镖可切换）②水面无陷阱 ③着火踩水灭火（保留左右晃）；结算屏三数。
  * c27: short - load cocos in body (not head): mobile _initSys needs document.body or appendChild null aborts engine before Layer.
  * c39: first interactive frame fast — critical idle+dirt+grass then runScene; night BG deferred; 2.5s hard cap; PeerJS local.
@@ -180,8 +181,12 @@
   var MAX_HP = 6;
   var AUDIO = window.WBAudio || null;
   var audioCfg = null;
+  var levelAudioMap = {};
+  var PLAY_LEVEL_ID = 9; /* custom-play = 第9关「我的关卡」 */
+  var resolvedBgmId = 'explore';
   function loadAudioCfg() {
     audioCfg = { bgmId: 'explore', sfx: {} };
+    levelAudioMap = {};
     if (AUDIO) audioCfg = AUDIO.blankAudio();
     try {
       var raw = JSON.parse(localStorage.getItem(KEY) || 'null');
@@ -189,8 +194,19 @@
         if (AUDIO) audioCfg = AUDIO.normalize(raw.audio);
         else audioCfg = raw.audio;
       }
+      if (raw && raw.levelAudio) {
+        if (AUDIO && AUDIO.normalizeLevelAudio) levelAudioMap = AUDIO.normalizeLevelAudio(raw.levelAudio);
+        else levelAudioMap = raw.levelAudio || {};
+      }
     } catch (e) {}
-    if (AUDIO) AUDIO.apply(audioCfg);
+    if (AUDIO) {
+      AUDIO.apply(audioCfg);
+      resolvedBgmId = AUDIO.bgmForLevel
+        ? AUDIO.bgmForLevel(PLAY_LEVEL_ID, audioCfg, levelAudioMap)
+        : ((levelAudioMap[String(PLAY_LEVEL_ID)] && levelAudioMap[String(PLAY_LEVEL_ID)].bgmId) || (audioCfg && audioCfg.bgmId) || 'explore');
+    } else {
+      resolvedBgmId = (levelAudioMap[String(PLAY_LEVEL_ID)] && levelAudioMap[String(PLAY_LEVEL_ID)].bgmId) || (audioCfg && audioCfg.bgmId) || 'explore';
+    }
     return audioCfg;
   }
   function playSfx(id) {
@@ -199,7 +215,7 @@
   }
   function startBgm(mood) {
     if (!AUDIO) return;
-    var id = mood || (audioCfg && audioCfg.bgmId) || 'explore';
+    var id = mood || resolvedBgmId || (audioCfg && audioCfg.bgmId) || 'explore';
     AUDIO.playBgm(id, true);
   }
   function stopBgm() {
@@ -1137,7 +1153,7 @@
       if (this.boss && this.boss.alive && this.boss.hurtT <= 0 && Math.abs(x - this.bossSp.getPositionX()) < reach && Math.abs(y - (this.boss.y + 28)) < reach) {
         this.boss.hp -= dmg;
         this.boss.hurtT = 0.35;
-        playSfx('hit');
+        playSfx('slash');
         if (this.boss.hp <= 0) {
           this.boss.alive = false;
           this.bossSp.setVisible(false);
@@ -1157,7 +1173,7 @@
           if (Math.abs(x - cr.x) < reach && Math.abs(y - (this.gy + 16)) < reach) {
             cr.hp -= dmg;
             cr.hurtT = 0.25;
-            playSfx('hit');
+            playSfx('slash');
             if (cr.hp <= 0) {
               cr.alive = false;
               cr.sp.setVisible(false);

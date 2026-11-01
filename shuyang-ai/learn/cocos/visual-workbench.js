@@ -1,7 +1,7 @@
 /** AI办学小屋 · 课程3 · 可视化关卡工坊 (deep editor). Same save key as tonight. */
 /**
  * 可视化工坊 · 与今晚工作台共用 xygo-custom-level v1.2。
- * vw49: 关卡设计合并（四芯片+二级摆关|设置|关联）· vw48 觉察闸 · vw47 看图三阶段。
+ * vw50: 关联挂九关+走路/砍击 · vw49 关卡设计合并 · vw48 觉察闸 · vw47 看图。
  */
 (function () {
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
@@ -1183,14 +1183,14 @@
       button(this, '回关卡', isPhoneShell() ? 90 : 110, 30, isPhoneShell() ? 100 : 130, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show((WB.ui.ldStep | 0) || 2); }); });
       button(this, '联机游玩', isPhoneShell() ? 300 : 360, 32, isPhoneShell() ? 140 : 160, isPhoneShell() ? 48 : 48, GOLD, INK, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c38&net=1';
+        location.href = 'custom-play.html?v=c40&net=1';
       });
       button(this, '去听选', isPhoneShell() ? 520 : 560, 32, isPhoneShell() ? 120 : 140, isPhoneShell() ? 48 : 46, NAVY, WHITE, function () {
         later(function () { show(5); });
       });
       button(this, '去玩这一关', isPhoneShell() ? 760 : 800, 32, isPhoneShell() ? 200 : 200, isPhoneShell() ? 50 : 48, GREEN, WHITE, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c38';
+        location.href = 'custom-play.html?v=c40';
       });
       this._t = 0;
       this.scheduleUpdate();
@@ -1206,41 +1206,118 @@
   });
 
 
-  /* ---------- 关联 · BGM↔九关（骨架；细挂曲切片4） ---------- */
+  /* ---------- 关联 · BGM↔九关（切片4：可挂可清可听） ---------- */
   var LinkLayer = cc.Layer.extend({
     ctor: function () {
       this._super();
       WB.sceneName = 'link';
       addChrome(this, 3);
       ART.fill(this, ART.tex.night, 0);
-      words(this, '关联 · BGM ↔ 九关', W / 2, 448, 22, '#ffe7a0', 8);
-      words(this, '本页是挂载面骨架 · 完整选曲挂关见切片4 · 可先去⑥深听选', W / 2, 418, 13, '#c9c3ef', 8);
-      ART.panel(this, W / 2, 270, 880, 260, ccColor(18, 26, 58), 235, 2, 18);
-      ART.frame(this, W / 2, 270, 880, 260, cc.color(255, 224, 122), 120, 3, 18);
-      var cur = '';
-      if (WB.data && WB.data.audio && WB.data.audio.bgmId) cur = WB.data.audio.bgmId;
-      else if (WB.data && WB.data.music) cur = WB.data.music;
-      var curName = cur || '未选（试玩回退全局曲）';
-      words(this, '当前全局曲：' + curName, W / 2, 370, 16, '#9ff0a8', 8);
-      words(this, '九关槽（1–8 + 第9我的关卡）· 未挂则用全局曲', W / 2, 340, 13, '#a8a0c8', 8);
+      var AUDIO = window.WBAudio || null;
+      if (!WB.data.levelAudio) WB.data.levelAudio = AUDIO && AUDIO.blankLevelAudio ? AUDIO.blankLevelAudio() : {};
+      if (!WB.ui.linkTrack) {
+        WB.ui.linkTrack = (WB.data.audio && WB.data.audio.bgmId) || WB.data.music || 'explore';
+      }
+      var track = WB.ui.linkTrack;
+      var la = AUDIO && AUDIO.normalizeLevelAudio
+        ? AUDIO.normalizeLevelAudio(WB.data.levelAudio)
+        : (WB.data.levelAudio || {});
+      WB.data.levelAudio = la;
+
+      words(this, '关联 · BGM ↔ 九关', W / 2, 468, 20, '#ffe7a0', 8);
+      words(this, '先点心情曲（可听），再点关卡挂上/清掉 · 未挂试玩回退全局曲 · 禁 Mixkit', W / 2, 442, 12, '#c9c3ef', 8);
+      ART.panel(this, W / 2, 255, 900, 300, ccColor(18, 26, 58), 235, 2, 18);
+      ART.frame(this, W / 2, 255, 900, 300, cc.color(255, 224, 122), 120, 3, 18);
+
+      var tracks = AUDIO && AUDIO.BGM ? AUDIO.BGM : [
+        { id: 'explore', name: '探险' }, { id: 'tense', name: '紧张' },
+        { id: 'win', name: '过关' }, { id: 'fail', name: '失败' }
+      ];
       var self = this;
+      function shortOf(id) {
+        return AUDIO && AUDIO.shortBgm ? AUDIO.shortBgm(id) : ({ explore: '探', tense: '紧', win: '过', fail: '败' }[id] || '');
+      }
+      function persist(msg) {
+        STORE.save(localStorage, WB.data);
+        if (msg) WB.ui.flash = msg;
+        later(function () { show(3); });
+      }
+      tracks.forEach(function (t, i) {
+        var on = track === t.id;
+        var cx = 130 + i * 200;
+        button(self, (on ? '● ' : '') + t.name, cx, 380, 170, 36, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+          WB.ui.linkTrack = t.id;
+          if (AUDIO) {
+            try { AUDIO.unlock(); AUDIO.playBgm(t.id, true); } catch (eA) {}
+          }
+          WB.ui.flash = '试听/选中：' + t.name + ' · 再点下方关卡挂上';
+          later(function () { show(3); });
+        });
+      });
+
+      var globalCur = (WB.data.audio && WB.data.audio.bgmId) || WB.data.music || 'explore';
+      words(this, '选中曲：' + track + '　全局回退：' + globalCur, W / 2, 340, 13, '#9ff0a8', 8);
+
       var i;
       for (i = 1; i <= 9; i++) {
         (function (n) {
-          var label = n === 9 ? '第9·我的' : ('第' + n + '关');
-          var cx = 80 + ((n - 1) % 5) * 170;
-          var cy = n <= 5 ? 290 : 230;
-          button(self, label + '·未挂', cx, cy, 150, 36, NAVY, WHITE, function () {
-            WB.ui.flash = '小宇：挂曲细功能在下一刀；先去⑥听选或回设置。';
-            later(function () { show(3); });
+          var bound = la[String(n)] && la[String(n)].bgmId;
+          var label = (n === 9 ? '第9·我的' : ('第' + n + '关'));
+          if (bound) label += '·' + shortOf(bound);
+          else label += '·未挂';
+          var cx = 90 + ((n - 1) % 5) * 170;
+          var cy = n <= 5 ? 290 : 232;
+          var onSame = bound === track;
+          button(self, label, cx, cy, 155, 40, onSame ? GREEN : (bound ? GOLD : NAVY), onSame || bound ? INK : WHITE, function () {
+            if (!WB.data.levelAudio) WB.data.levelAudio = {};
+            if (bound === track) {
+              if (AUDIO && AUDIO.setLevelBgm) WB.data.levelAudio = AUDIO.setLevelBgm(WB.data.levelAudio, n, null);
+              else delete WB.data.levelAudio[String(n)];
+              persist('已清除第' + n + '关挂曲（试玩回退全局）');
+            } else {
+              if (AUDIO && AUDIO.setLevelBgm) WB.data.levelAudio = AUDIO.setLevelBgm(WB.data.levelAudio, n, track);
+              else {
+                WB.data.levelAudio[String(n)] = { bgmId: track, sfxPreset: null };
+              }
+              persist('第' + n + '关 → ' + track);
+            }
           });
         })(i);
       }
-      words(this, WB.ui.flash || '点关卡槽占位 · 或跳⑥听完整曲库', W / 2, 175, 14, '#ffe7a0', 8);
+
+      button(self, '全挂当前', 200, 175, 140, 34, NAVY, WHITE, function () {
+        if (AUDIO && AUDIO.bindTrackToLevels) {
+          WB.data.levelAudio = AUDIO.bindTrackToLevels({}, track, [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        } else {
+          var m = {};
+          for (var n = 1; n <= 9; n++) m[String(n)] = { bgmId: track, sfxPreset: null };
+          WB.data.levelAudio = m;
+        }
+        persist('九关均挂：' + track);
+      });
+      button(self, '清空挂载', 360, 175, 140, 34, ccColor(120, 48, 48), WHITE, function () {
+        WB.data.levelAudio = AUDIO && AUDIO.clearAllLevelBgm ? AUDIO.clearAllLevelBgm() : {};
+        persist('已清空全部关卡挂曲');
+      });
+      button(self, '试听走路', 520, 175, 140, 34, NAVY, WHITE, function () {
+        if (AUDIO) { try { AUDIO.unlock(); AUDIO.playSfx('walk', true); } catch (eW) {} }
+        WB.ui.flash = '走路声（Kenney）';
+        later(function () { show(3); });
+      });
+      button(self, '试听砍击', 680, 175, 140, 34, NAVY, WHITE, function () {
+        if (AUDIO) { try { AUDIO.unlock(); AUDIO.playSfx('slash', true); } catch (eS) {} }
+        WB.ui.flash = '砍击声（Kenney hit）';
+        later(function () { show(3); });
+      });
+
+      words(this, WB.ui.flash || '点关卡：挂选中曲 / 再点同曲清除 · 署名 Kevin MacLeod / Kenney', W / 2, 135, 12, '#ffe7a0', 8);
       addFootTrio(this,
         '回摆关', function () { later(function () { show(2); }); },
         '去⑥听选', function () { later(function () { show(5); }); },
-        '去觉察', function () { later(function () { show(4); }); }
+        '去玩第9关', function () {
+          STORE.save(localStorage, WB.data);
+          location.href = 'custom-play.html?v=c40';
+        }
       );
       return true;
     }
@@ -1254,8 +1331,8 @@
       WB.sceneName = 'audio';
       addChrome(this, 5);
       ART.fill(this, ART.tex.night, 0);
-      words(this, '⑥ 听选音频 · 先听后选', W / 2, 470, 24, '#ffe7a0', 8);
-      words(this, '点心情试听，再点选用 · 署名 Kevin MacLeod / Kenney · 不用 Mixkit', W / 2, 436, 13, '#c9c3ef', 8);
+      words(this, '⑥ 听选音频 · 先听后选', W / 2, 470, 22, '#ffe7a0', 8);
+      words(this, '点心情先听后选全局曲 · 挂九关请去「关联」· Kevin MacLeod / Kenney · 禁 Mixkit', W / 2, 438, 12, '#c9c3ef', 8);
       ART.panel(this, W / 2, 290, 860, 280, ccColor(18, 26, 58), 235, 2, 18);
       ART.frame(this, W / 2, 290, 860, 280, cc.color(255, 255, 255), 70, 3, 18);
       var AUDIO = window.WBAudio || null;
@@ -1289,16 +1366,40 @@
           later(function () { show(5); });
         });
       });
-      var pick = cur ? ('已选：' + cur) : '还没选曲';
+      if (!WB.data.levelAudio) WB.data.levelAudio = AUDIO && AUDIO.blankLevelAudio ? AUDIO.blankLevelAudio() : {};
+      var la9 = WB.data.levelAudio['9'] && WB.data.levelAudio['9'].bgmId;
+      button(self, la9 ? ('第9关·' + la9 + '·点清') : '挂到第9关', 220, 220, 200, 36, la9 ? GREEN : NAVY, WHITE, function () {
+        if (!cur) { WB.ui.flash = '先选一首心情曲'; later(function () { show(5); }); return; }
+        if (!WB.data.levelAudio) WB.data.levelAudio = {};
+        if (la9 === cur) {
+          if (AUDIO && AUDIO.setLevelBgm) WB.data.levelAudio = AUDIO.setLevelBgm(WB.data.levelAudio, 9, null);
+          else delete WB.data.levelAudio['9'];
+          WB.ui.flash = '已清第9关挂曲';
+        } else {
+          if (AUDIO && AUDIO.setLevelBgm) WB.data.levelAudio = AUDIO.setLevelBgm(WB.data.levelAudio, 9, cur);
+          else WB.data.levelAudio['9'] = { bgmId: cur, sfxPreset: null };
+          WB.ui.flash = '第9关 → ' + cur;
+        }
+        STORE.save(localStorage, WB.data);
+        later(function () { show(5); });
+      });
+      button(self, '去关联九关', 440, 220, 160, 36, GOLD, INK, function () { later(function () { show(3); }); });
+      button(self, '试听走路', 620, 220, 120, 36, NAVY, WHITE, function () {
+        if (AUDIO) try { AUDIO.unlock(); AUDIO.playSfx('walk', true); } catch (eW) {}
+      });
+      button(self, '试听砍击', 760, 220, 120, 36, NAVY, WHITE, function () {
+        if (AUDIO) try { AUDIO.unlock(); AUDIO.playSfx('slash', true); } catch (eS) {}
+      });
+      var pick = cur ? ('已选全局：' + cur) : '还没选曲';
       if (WB.ui.flash) pick = WB.ui.flash;
-      words(this, pick, W / 2, 200, 16, '#9ff0a8', 8);
-      words(this, '音乐 Kevin MacLeod · CC BY 3.0｜音效 Kenney · CC0｜详见 audio/SOURCES.md', W / 2, 168, 12, '#8f88b8', 8);
+      words(this, pick, W / 2, 175, 15, '#9ff0a8', 8);
+      words(this, '音乐 Kevin MacLeod · CC BY 3.0｜音效 Kenney · CC0｜详见 audio/SOURCES.md', W / 2, 148, 12, '#8f88b8', 8);
       addFootTrio(this,
         '回觉察', function () { later(function () { show(4); }); },
         '打开喇叭', function () { try { if (window.VW && VW.openMusic) VW.openMusic(); } catch (e) {} },
         '去玩这一关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c38';
+          location.href = 'custom-play.html?v=c40';
         }
       );
       return true;
@@ -1429,6 +1530,8 @@
     var el = document.getElementById('musicList');
     var pick = document.getElementById('musicPick');
     var credit = document.getElementById('musicCredit');
+    var levelsEl = document.getElementById('musicLevels');
+    var sfxEl = document.getElementById('musicSfx');
     if (!el) return;
     var AUDIO = window.WBAudio || null;
     var tracks = AUDIO && AUDIO.BGM ? AUDIO.BGM.map(function (b) {
@@ -1442,25 +1545,77 @@
     var cur = '';
     if (WB.data && WB.data.audio && WB.data.audio.bgmId) cur = WB.data.audio.bgmId;
     else if (WB.data && WB.data.music) cur = WB.data.music;
+    if (!WB.data.levelAudio) WB.data.levelAudio = AUDIO && AUDIO.blankLevelAudio ? AUDIO.blankLevelAudio() : {};
+    var la = AUDIO && AUDIO.normalizeLevelAudio ? AUDIO.normalizeLevelAudio(WB.data.levelAudio) : (WB.data.levelAudio || {});
+    WB.data.levelAudio = la;
     el.innerHTML = '';
     tracks.forEach(function (t) {
       var b = document.createElement('button');
       b.type = 'button';
       b.className = 'item' + (cur === t.id ? ' on' : '');
-      b.innerHTML = t.name + '<span class="price">' + (t.stub ? '占位' : '试听 / 选用') + '</span>';
+      var nHang = AUDIO && AUDIO.levelsForTrack ? AUDIO.levelsForTrack(la, t.id).length : 0;
+      b.innerHTML = t.name + '<span class="price">' + (t.stub ? '占位' : ('试听/选用' + (nHang ? (' · 已挂' + nHang) : ''))) + '</span>';
       b.onclick = function () {
         WB.data.music = t.id;
         if (!WB.data.audio) WB.data.audio = AUDIO && AUDIO.blankAudio ? AUDIO.blankAudio() : { bgmId: t.id, sfx: {} };
         WB.data.audio.bgmId = t.id;
+        WB.ui.linkTrack = t.id;
         STORE.save(localStorage, WB.data);
         if (AUDIO) {
           try { AUDIO.unlock(); AUDIO.setBgm(t.id); } catch (e) {}
         }
-        if (pick) pick.textContent = '已选：' + t.name;
+        if (pick) pick.textContent = '已选：' + t.name + ' · 下方可挂九关';
         VW.refreshMusic();
       };
       el.appendChild(b);
     });
+    if (levelsEl) {
+      levelsEl.innerHTML = '';
+      var hint = document.createElement('p');
+      hint.className = 'hint';
+      hint.textContent = '挂到哪几关（当前曲 ' + (cur || '未选') + '；未挂则试玩回退全局曲）';
+      levelsEl.appendChild(hint);
+      var row = document.createElement('div');
+      row.className = 'row';
+      var n;
+      for (n = 1; n <= 9; n++) {
+        (function (lv) {
+          var bound = la[String(lv)] && la[String(lv)].bgmId;
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'item' + (bound === cur ? ' on' : '');
+          btn.style.minWidth = '72px';
+          btn.textContent = (lv === 9 ? '第9·我的' : ('第' + lv)) + (bound ? ('·' + (AUDIO && AUDIO.shortBgm ? AUDIO.shortBgm(bound) : bound)) : '·未挂');
+          btn.onclick = function () {
+            if (!cur) { if (pick) pick.textContent = '先选一首心情曲'; return; }
+            if (bound === cur) {
+              if (AUDIO && AUDIO.setLevelBgm) WB.data.levelAudio = AUDIO.setLevelBgm(WB.data.levelAudio, lv, null);
+              else delete WB.data.levelAudio[String(lv)];
+            } else {
+              if (AUDIO && AUDIO.setLevelBgm) WB.data.levelAudio = AUDIO.setLevelBgm(WB.data.levelAudio, lv, cur);
+              else WB.data.levelAudio[String(lv)] = { bgmId: cur, sfxPreset: null };
+            }
+            STORE.save(localStorage, WB.data);
+            VW.refreshMusic();
+          };
+          row.appendChild(btn);
+        })(n);
+      }
+      levelsEl.appendChild(row);
+    }
+    if (sfxEl) {
+      sfxEl.innerHTML = '';
+      [['walk', '试听走路'], ['slash', '试听砍击']].forEach(function (pair) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'item';
+        b.textContent = pair[1];
+        b.onclick = function () {
+          if (AUDIO) try { AUDIO.unlock(); AUDIO.playSfx(pair[0], true); } catch (eS) {}
+        };
+        sfxEl.appendChild(b);
+      });
+    }
     if (pick) {
       var found = tracks.filter(function (tr) { return tr.id === cur; })[0];
       pick.textContent = found ? ('已选：' + found.name) : '还没选曲';

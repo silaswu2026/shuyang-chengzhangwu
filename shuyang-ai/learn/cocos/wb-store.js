@@ -2,6 +2,7 @@
  * Tonight workbench save. v1.2 adds wallet (coins, weapons, equipped)
  * and still writes the v1.1 tiles / traps / mine fields.
  * Audio (bgmId + sfx toggles) lives beside wallet without breaking it.
+ * Slice4: levelAudio {"1"…"9":{bgmId}} optional per-level BGM; missing → audio.bgmId.
  * Default runway: tonight-waves-v1 (safe start, four waves, all traps).
  * No Cocos calls, so a node check can load this file.
  */
@@ -61,9 +62,19 @@
       bgmId: 'explore',
       sfx: {
         walk: true, jump: true, land: true, spike: true, fire: true,
-        spring: true, coin: true, hurt: true, hit: true
+        spring: true, coin: true, hurt: true, hit: true, slash: true
       }
     };
+  }
+
+  function blankLevelAudio() {
+    if (root.WBAudio && root.WBAudio.blankLevelAudio) return root.WBAudio.blankLevelAudio();
+    return {};
+  }
+
+  function normalizeLevelAudio(raw) {
+    if (root.WBAudio && root.WBAudio.normalizeLevelAudio) return root.WBAudio.normalizeLevelAudio(raw);
+    return blankLevelAudio();
   }
 
   function normalizeAudio(raw) {
@@ -137,6 +148,7 @@
       music: '',
       likes: 0,
       audio: blankAudio(),
+      levelAudio: blankLevelAudio(),
       lastScore: 0,
       by: '',
       presetId: 'tonight-waves-v1'
@@ -166,6 +178,7 @@
       music: '',
       likes: 0,
       audio: blankAudio(),
+      levelAudio: blankLevelAudio(),
       lastScore: 0
     };
   }
@@ -278,6 +291,7 @@
     if (typeof raw.music === 'string') s.music = raw.music;
     if (typeof raw.likes === 'number' && raw.likes >= 0) s.likes = raw.likes | 0;
     s.audio = normalizeAudio(raw.audio);
+    s.levelAudio = normalizeLevelAudio(raw.levelAudio);
     if (typeof raw.lastScore === 'number' && raw.lastScore >= 0) s.lastScore = raw.lastScore | 0;
     for (var i = 0; i < MC; i++) {
       if (s.map[i] === 'spike' || s.map[i] === 'fire' || s.map[i] === 'spring' || s.map[i] === 'mist' || s.map[i] === 'rock') {
@@ -361,6 +375,9 @@
     d.music = state.music || '';
     d.likes = state.likes | 0;
     d.audio = normalizeAudio(state.audio || (prev && prev.audio));
+    d.levelAudio = normalizeLevelAudio(
+      state.levelAudio != null ? state.levelAudio : (prev && prev.levelAudio)
+    );
     d.lastScore = (state.lastScore | 0);
     d.presetId = prev.presetId || 'tonight-waves-v1';
     d.savedAt = new Date().toISOString();
@@ -458,9 +475,11 @@
       state.selX = 3;
       if (state.lastScore == null) state.lastScore = 0;
       if (!state.audio) state.audio = blankAudio();
+      if (!state.levelAudio) state.levelAudio = blankLevelAudio();
       if (state.music == null) state.music = '';
       if (state.likes == null) state.likes = 0;
     }
+    if (!state.levelAudio) state.levelAudio = blankLevelAudio();
     ensurePracticeWallet(state);
     return state;
   }
@@ -492,6 +511,8 @@
     defaultTraps: defaultTraps,
     buildDefaultSave: buildDefaultSave,
     blankWallet: blankWallet,
+    blankLevelAudio: blankLevelAudio,
+    normalizeLevelAudio: normalizeLevelAudio,
     STARTER_COINS: STARTER_COINS,
     ensurePracticeWallet: ensurePracticeWallet
   };
