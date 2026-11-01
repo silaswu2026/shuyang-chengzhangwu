@@ -1425,6 +1425,15 @@
     window.addEventListener('error', function (e) { bootErr(e.message || String(e)); });
     bindControls();
     netBindUI(); /* c16: was defined but never called — 联机按钮无 handler */
+    try {
+      var q = new URLSearchParams(location.search || '');
+      if (q.get('net') === '1') {
+        setTimeout(function () {
+          var b = $('btnNet');
+          if (b) b.click();
+        }, 600);
+      }
+    } catch (eNet) {}
     updateOrientTip();
     fitStage();
     window.addEventListener('resize', fitStage);
