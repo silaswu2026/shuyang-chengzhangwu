@@ -1,123 +1,94 @@
 <!DOCTYPE html>
-<html lang="zh-CN"><head>
+<html lang="zh-CN">
+<head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#fff4e0">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="icon" href="data:,">
-<title>螺丝拆拆乐 3D</title>
-<link rel="stylesheet" href="style.css">
-<script type="importmap">{"imports":{
-  "three":"./vendor/three.module.js",
-  "three/addons/":"./vendor/addons/"
-}}</script>
-</head><body>
-<div id="bg"><div id="bgDeco"></div></div>
-
-<!-- MAP -->
-<div id="map" class="screen">
-  <div class="hdr">
-    <div class="coins">💖 <span class="cv">0</span></div>
-    <div class="title">螺丝拆拆乐 3D</div>
-    <button class="btn small" id="openAdProps" title="看广告得道具">📺</button>
-    <button class="btn small" id="openCol">🏆</button>
-    <button class="btn small" id="openSettings">⚙️</button>
-  </div>
-  <a class="demoLink" href="rocket-demo/">🚀 火箭品质样例</a>
-  <a class="demoLink ninja" href="xiao-yu/">🥷 小宇</a>
-  <a class="demoLink" href="ninja-run/">旧版跑酷</a>
-  <div id="path"></div>
-</div>
-
-<!-- GAME HUD -->
-<div id="hud" class="screen hidden">
-  <div id="top">
-    <div class="bar">
-      <button class="btn small" id="toMap">🗺️</button>
-      <div id="lvl">第1关</div>
-      <div class="coins">💖 <span class="cv">0</span></div>
-      <button class="btn small" id="restart">↻</button>
-    </div>
-    <div id="boxes"></div>
-    <div id="buf"></div>
-  </div>
-  <div id="hand">👆</div>
-  <div id="tip"></div>
-  <div id="holdHint" class="hidden">长按查看被挡住的螺丝</div>
-  <div id="combo"></div>
-  <div id="reveal" class="hidden">
-    <div id="rvSpark"></div>
-    <div id="rvFig">🐱</div>
-    <div class="rvT">获得手办 · <b id="rvName"></b></div>
-    <div class="rvHint">点点它！</div>
-  </div>
-  <div id="items"></div>
-</div>
-
-<!-- AD PROPS (ads-only monetization) -->
-<div id="adProps" class="modal hidden">
-  <div class="card">
-    <h2>📺 看广告得道具</h2>
-    <p class="sub">本原型无真实扣费 · 观看模拟广告即可获得 1 次道具</p>
-    <div id="adList"></div>
-    <button class="btn" id="closeAdProps">关闭</button>
-  </div>
-</div>
-
-<!-- Simulated interstitial ad -->
-<div id="adView" class="modal hidden">
-  <div class="adCard">
-    <div class="adBadge">广告</div>
-    <div id="adArt">🎬</div>
-    <div id="adTitle">精彩内容加载中…</div>
-    <div id="adCount">3</div>
-    <p class="adNote">模拟插屏广告 · 倒计时结束后发放奖励</p>
-    <button class="btn gray hidden" id="adSkip">跳过广告</button>
-    <button class="btn hidden" id="adClaim">领取奖励 ✓</button>
-  </div>
-</div>
-
-<!-- RESULT -->
-<div id="ov" class="modal hidden">
-  <div class="card">
-    <h2 id="ovt"></h2>
-    <div id="ovStars"></div>
-    <div id="ovs"></div>
-    <div id="ovBtns"></div>
-  </div>
-</div>
-
-<div id="themePick" class="modal hidden">
-  <div class="card wide">
-    <h2 id="themeTitle">选择你喜欢的主题</h2>
-    <div id="themeSub" class="sub"></div>
-    <div id="themeList"></div>
-    <button class="btn gray" id="themeClose">取消</button>
-  </div>
-</div>
-
-<div id="settings" class="modal hidden">
-  <div class="card">
-    <h2>⚙️ 设置</h2>
-    <div id="setBtns">
-      <button class="btn" id="setTheme">🎨 切换主题</button>
-      <button class="btn alt" id="tgSound"></button>
-      <button class="btn alt" id="tgVibe"></button>
-      <button class="btn gray" id="setReset">🗑️ 清除进度</button>
-      <button class="btn alt" id="closeSettings">关闭</button>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1230">
+<title>AI办学，吴叔杨的AI办学小屋</title>
+<style>
+:root{
+  --navy:#0f1230; --navy2:#1a2744; --gold:#ffe07a; --gold2:#e6b422;
+  --green:#3ecf6a; --green2:#2aa85a; --ink:#f4f0ff; --muted:#a8a0c8;
+  --card:#161b3d; --stroke:rgba(255,224,122,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:radial-gradient(1200px 600px at 20% -10%,#24306a 0%,var(--navy) 55%,#080a1c 100%);
+  color:var(--ink);font-family:"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:980px;margin:0 auto;padding:28px 18px 48px}
+.brand{display:flex;align-items:flex-start;gap:16px;margin-bottom:10px;flex-wrap:wrap}
+.logo{width:56px;height:56px;border-radius:18px;background:linear-gradient(145deg,var(--gold),var(--green));
+  display:grid;place-items:center;font-size:30px;box-shadow:0 8px 24px rgba(0,0,0,.35);flex:none}
+h1{margin:0;font-size:clamp(22px,4.2vw,34px);letter-spacing:.03em;line-height:1.25}
+.sub{color:var(--muted);margin:8px 0 0;font-size:15px;line-height:1.55;max-width:42em}
+.family{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 22px}
+.family figure{margin:0;text-align:center;width:72px}
+.family img{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);
+  box-shadow:0 6px 16px rgba(0,0,0,.35);background:#24306a;display:block;margin:0 auto}
+.family figcaption{font-size:11px;color:var(--muted);margin-top:6px;font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.card{background:linear-gradient(180deg,var(--card),#12162e);border:1px solid var(--stroke);
+  border-radius:18px;padding:18px 16px 16px;min-height:168px;display:flex;flex-direction:column;
+  box-shadow:0 12px 28px rgba(0,0,0,.28);transition:transform .15s ease,border-color .15s}
+.card:hover{transform:translateY(-3px);border-color:var(--gold)}
+.card .tag{font-size:12px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:8px}
+.card h2{margin:0 0 8px;font-size:20px}
+.card p{margin:0;flex:1;color:var(--muted);font-size:14px;line-height:1.5}
+.card .go{margin-top:14px;align-self:flex-start;background:var(--navy2);border:1px solid var(--gold2);
+  color:var(--gold);font-weight:800;padding:8px 14px;border-radius:999px;font-size:13px}
+.card.course3 .go{background:linear-gradient(90deg,var(--green2),var(--green));border:none;color:#062014}
+.card.course3{border-color:rgba(62,207,106,.45);box-shadow:0 12px 32px rgba(62,207,106,.18)}
+.card.soon{opacity:.88}
+.foot{margin-top:28px;color:var(--muted);font-size:13px;line-height:1.6}
+.foot a{color:var(--gold);text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="logo" aria-hidden="true">🏡</div>
+    <div>
+      <h1>AI办学，吴叔杨的AI办学小屋</h1>
+      <p class="sub">海军蓝 · 金 · 绿一家风。四门课一起长大；今晚主课是课程 3 可视化关卡工坊。</p>
     </div>
   </div>
-</div>
-
-<div id="collection" class="modal hidden">
-  <div class="card wide">
-    <h2>🏆 收藏架</h2>
-    <div id="colSum" class="sub"></div>
-    <div id="colList"></div>
-    <button class="btn" id="closeCol">关闭</button>
+  <div class="family" aria-label="一家人">
+    <figure><img src="shuyang-ai/avatars/dad-wuxin.jpg" alt="爸爸"><figcaption>爸爸</figcaption></figure>
+    <figure><img src="shuyang-ai/avatars/mom-chunyan.jpg" alt="妈妈"><figcaption>妈妈</figcaption></figure>
+    <figure><img src="shuyang-ai/avatars/xiaoyu.jpg" alt="小宇"><figcaption>小宇</figcaption></figure>
+    <figure><img src="shuyang-ai/avatars/pengpeng.jpg" alt="澍暘"><figcaption>澍暘</figcaption></figure>
   </div>
+  <div class="grid">
+    <a class="card" href="shuyang-ai/learn/frame-anim.html">
+      <div class="tag">课程 1</div>
+      <h2>逐帧动画</h2>
+      <p>一张张画动起来。认识 2D 帧动画，再去摸 3D 骨头。</p>
+      <span class="go">打开 →</span>
+    </a>
+    <a class="card" href="shuyang-ai/learn/skeleton.html">
+      <div class="tag">课程 2</div>
+      <h2>3D 骨头人</h2>
+      <p>拖一拖立体骨头架：骨头 → 方块 → 贴皮。</p>
+      <span class="go">打开 →</span>
+    </a>
+    <a class="card course3" href="shuyang-ai/learn/cocos/visual-workbench.html">
+      <div class="tag">课程 3 · 今晚主课</div>
+      <h2>可视化关卡工坊</h2>
+      <p>看图 · 频率 · 摆关 · 觉察。紧凑陷阱条、武器抽屉、音乐先听后选、更大忍者。</p>
+      <span class="go">进入工坊 →</span>
+    </a>
+    <a class="card soon" href="xiao-yu/">
+      <div class="tag">课程 4 · 预告</div>
+      <h2>小宇跑酷 / 以后的 3D 课</h2>
+      <p>去玩正式关。螺丝拆拆乐等 3D 课往后排，不当首页。</p>
+      <span class="go">去玩 →</span>
+    </a>
+  </div>
+  <p class="foot">
+    旁路：<a href="shuyang-ai/learn/cocos/workbench.html">今晚基础台</a> ·
+    <a href="shuyang-ai/learn/cocos/custom-play.html">试玩自定义关</a> ·
+    <a href="index-screw.html">螺丝拆拆乐（以后）</a>
+  </p>
 </div>
-
-<div id="toast"></div>
-<script type="module" src="js/game.js"></script>
-</body></html>
+</body>
+</html>
