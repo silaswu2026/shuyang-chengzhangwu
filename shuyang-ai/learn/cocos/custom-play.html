@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0f1230">
-<meta name="play-build" content="c47">
+<meta name="play-build" content="c48">
 <title>玩我的关 · 伍澍暘成长屋</title>
 <link rel="stylesheet" href="../../../brand-tokens.css"/>
 <link rel="preload" as="image" href="../../../xy-go/sprites/green/idle.png" fetchpriority="high"/>
@@ -84,7 +84,7 @@ body{
 .shell{position:absolute;inset:0;z-index:0;width:100%;height:100%;background:#0f1230;display:block} /* c43: navy safety bed */
 .cvwrap{position:absolute;inset:0;width:100%;height:100%;background:transparent;overflow:hidden;line-height:0}
 #stagePad{position:absolute;inset:0;z-index:0;background:#0f1230;pointer-events:none;opacity:1} /* c43 */
-#gameCanvas{position:absolute;inset:0;z-index:1;width:100%!important;height:100%!important;display:block;background:transparent;touch-action:none;opacity:1}
+#gameCanvas{position:absolute;inset:0;z-index:1;width:100%!important;height:100%!important;display:block;background:transparent;touch-action:none;opacity:1;image-rendering:auto;-ms-interpolation-mode:bicubic}
 
 /* HUD — schoolhouse navy/gold（舞台仍 canopy-night） */
 .hud{position:absolute;top:8px;left:8px;right:8px;z-index:28;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;gap:8px}
@@ -216,8 +216,8 @@ body{
 <div class="bar">
   <div class="chip">
     <h1>🎮 伍澍暘 · 玩我的关 · 小宇</h1>
-    <a href="visual-workbench.html?v=ldt31">← 回工坊</a>
-    <a href="visual-workbench.html?v=ldt31">回摆关</a>
+    <a href="visual-workbench.html?v=ldt32">← 回工坊</a>
+    <a href="visual-workbench.html?v=ldt32">回摆关</a>
     <button class="net" id="btnNet" type="button">🤝 联机游玩</button>
   </div>
   <span class="badge">Cocos</span>
@@ -259,7 +259,7 @@ body{
               <p class="sub" id="resultSub"></p>
               <div class="ctl">
                 <button type="button" class="go" id="again">再玩一次</button>
-                <a class="go sec" href="visual-workbench.html?v=ldt31">去答「和预计一样吗」</a>
+                <a class="go sec" href="visual-workbench.html?v=ldt32">去答「和预计一样吗」</a>
               </div>
             </div>
           </div>
@@ -293,11 +293,11 @@ body{
     </div>
   </div>
 </div>
-<!-- c47: §8八条落地 · was c46: 同机BC脉冲+bc-want·正在连接仍A绿 · was c45: 正在连接仍A绿·conn.open才B蓝 · was c44: 夜景fallback海军+床不越草+匹配中A绿 · was c43 -->
+<!-- c48: 手机 retina/DPR 消颗粒滑屏 · was c47: §8八条落地 · was c46: 同机BC脉冲+bc-want·正在连接仍A绿 · was c45: 正在连接仍A绿·conn.open才B蓝 · was c44: 夜景fallback海军+床不越草+匹配中A绿 · was c43 -->
 <script src="../../../vendor/peerjs/peerjs.min.js"></script>
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
-<script src="wb-store.js?v=ldt31"></script>
-<script src="wb-audio.js?v=c47"></script>
-<script src="custom-play.js?v=c47"></script>
+<script src="wb-store.js?v=ldt32"></script>
+<script src="wb-audio.js?v=c48"></script>
+<script src="custom-play.js?v=c48"></script>
 </body>
 </html>

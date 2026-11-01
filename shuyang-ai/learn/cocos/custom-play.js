@@ -11,6 +11,7 @@
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
  * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。
  * c42: 默认关保底可见线圈弹簧垫（ensureSprings）+ 贴图更醒目；保留 c32 power=1300；P2 HUD 去「沼泽」壳话。
+ * c48: 手机横屏颗粒滑屏 — enableRetina(true)（Cocos 上限 min(2,dpr)）+ fitStage 引擎就绪后不再手写 canvas.width/height（交给 _setupContainer 写 DPR 缓冲）；根因是 c47 及更早 enableRetina(false)+手机 WebGL antialias:false 导致 1× 缓冲被 CSS 放大成颗粒，叠 canopy 视差/萤火虫漂移像「滑屏沙粒」。不改玩法/联机。
  * c46: D7-3 — 同窗两标签真连：乐观 Host 不再挡 BroadcastChannel；host 脉冲重发 bc-offer；guest 发 bc-want；PeerJS ICE 同机常挂时走同机兜底。保留 c45「正在连接」仍 A绿、仅真连上才 B蓝。
  * c45: D7 — 「发现房间，正在连接…」期间仍 A绿；guest peer 自身 open 不算客人确立；仅 conn.open（已连上房主）或 BC 同机 guest 确立后才 B蓝。保留 c44 海军冷开。
  * c44: 冷开真凶 — `_addNightBg` 整屏棕 LayerColor(90,58,36) 在 canopy 未到前当稳态；改海军 fallback；地面 bed 高度压到草线（不再 gy+2T 盖树）；匹配中 id 占用改 Guest 时延后 B蓝 chip 到 guest peer open（「匹配中」仍 A绿）。
@@ -353,8 +354,14 @@
     if (cv) {
       cv.style.width = '100%';
       cv.style.height = '100%';
-      cv.width = nextW;
-      cv.height = nextH;
+      /* c48: only size backing store before Cocos owns the canvas.
+       * After boot, enableRetina + setDesignResolutionSize → _setupContainer
+       * sets width/height to frame*dpr. Writing 1× design size here fought that
+       * and left phones grainy (CSS stretch of a 1× WebGL buffer). */
+      if (!(typeof cc !== 'undefined' && cc.view)) {
+        cv.width = nextW;
+        cv.height = nextH;
+      }
     }
     var fitKey = nextW + 'x' + nextH + '@' + zoom.toFixed(2);
     var changed = nextW !== W || nextH !== H;
@@ -2727,7 +2734,9 @@
     function startEngine() {
       cc.game.onStart = function () {
         try {
-          cc.view.enableRetina(false);
+          /* c48: match Cocos iOS default + xy-go dpr cap — sharp on phone landscape.
+           * false forced 1× buffer; mobile WebGL also ships antialias:false → grainy upscale. */
+          cc.view.enableRetina(true);
           cc.view.adjustViewPort(true);
           fitStage();
           cc.view.setDesignResolutionSize(W, H, cc.ResolutionPolicy.EXACT_FIT);

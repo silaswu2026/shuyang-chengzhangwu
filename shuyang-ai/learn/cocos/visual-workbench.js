@@ -1258,14 +1258,14 @@
       button(this, '回关卡', isPhoneShell() ? 90 : 110, 30, isPhoneShell() ? 100 : 130, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show((WB.ui.ldStep | 0) || 2); }); });
       button(this, '联机游玩', isPhoneShell() ? 300 : 360, 32, isPhoneShell() ? 140 : 160, isPhoneShell() ? 48 : 48, GOLD, INK, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c47&net=1';
+        location.href = 'custom-play.html?v=c48&net=1';
       });
       button(this, '去听选', isPhoneShell() ? 520 : 560, 32, isPhoneShell() ? 120 : 140, isPhoneShell() ? 48 : 46, NAVY, WHITE, function () {
         later(function () { show(5); });
       });
       button(this, '去玩这一关', isPhoneShell() ? 760 : 800, 32, isPhoneShell() ? 200 : 200, isPhoneShell() ? 50 : 48, GREEN, WHITE, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c47';
+        location.href = 'custom-play.html?v=c48';
       });
       this._t = 0;
       this.scheduleUpdate();
@@ -1400,7 +1400,7 @@
         '去⑥听选', function () { later(function () { show(5); }); },
         '去玩第9关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c47';
+          location.href = 'custom-play.html?v=c48';
         }
       );
       return true;
@@ -1483,7 +1483,7 @@
         '打开喇叭', function () { try { if (window.VW && VW.openMusic) VW.openMusic(); } catch (e) {} },
         '去玩这一关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c47';
+          location.href = 'custom-play.html?v=c48';
         }
       );
       return true;

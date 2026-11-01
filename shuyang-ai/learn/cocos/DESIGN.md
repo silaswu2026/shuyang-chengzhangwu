@@ -1,3 +1,12 @@
+## 2026-11-01 · 手机横屏消颗粒滑屏（c48 / ldt32）
+
+**现象**：伍澍暘手机打开 `custom-play?v=c47` 横屏时，整屏像小沙粒/颗粒组成的滑屏。
+**根因**：`custom-play.js` 长期 `cc.view.enableRetina(false)`，Cocos `_setupContainer` 把 WebGL 缓冲钉在 1× CSS 像素；手机 WebGL 默认 `antialias:false`，再被 CSS `width/height:100%` 放大到 DPR≈2–3 → 锯齿颗粒。`fitStage` 引擎就绪后还手写 `canvas.width/height=设计分辨率`，与 DPR 缓冲打架。叠加 `canopy-night.jpg` 视差与萤火虫横向漂移，读感像「沙粒在滑」。
+**做法**：`enableRetina(true)`（引擎上限 `min(2, devicePixelRatio)`，与 xy-go / Cocos iOS 默认同族）；`fitStage` 仅在 `cc.view` 未就绪时写 backing store，就绪后交给 `setDesignResolutionSize`→`_setupContainer`。玩法/联机/§8 不动。
+**验收**：PLAYER-TEST **C23**；硬刷 `custom-play.html?v=c48`。正式名 **伍澍暘** / **小宇**。
+
+---
+
 ## 2026-11-01 · LEVEL-STEPS §8 八条落地（c47 / ldt31）
 
 Silas 语音拍板：八条开放问题全部真代码（非仅文档）。正式名 **伍澍暘** / 助手 **小宇**。
@@ -21,7 +30,7 @@ PRODUCT.md §8.1–8.4 硬标准（风格/三忍者/PeerJS）与后置 LOOK（�
 ## 2026-11-01 · L1 选关薄壳（ls1）
 
 **目标（产品官优先序5）**：孩子可见关卡 **1–8 + 第9「我的关卡」**；薄壳优先于纯文档。
-**做法**：新页 `level-select.html?v=ls1`（海军·金·绿 HTML 壳，非 Cocos 封面场景）。名册读 `data/roster.json`（失败用内嵌 Boss 名）。**第9关**绿卡进现网 `custom-play.html?v=c47`（可单机/联机）；**1–8** 诚实灰显「即将开放」（Cocos 正式关尚未进试玩，点按 flash，不猜接通、不重做联网、不换 PeerJS）。入口：根 `index.html`「选关」行；工坊/基础台顶栏「选关」；旁路 links。
+**做法**：新页 `level-select.html?v=ls1`（海军·金·绿 HTML 壳，非 Cocos 封面场景）。名册读 `data/roster.json`（失败用内嵌 Boss 名）。**第9关**绿卡进现网 `custom-play.html?v=c48`（可单机/联机）；**1–8** 诚实灰显「即将开放」（Cocos 正式关尚未进试玩，点按 flash，不猜接通、不重做联网、不换 PeerJS）。入口：根 `index.html`「选关」行；工坊/基础台顶栏「选关」；旁路 links。
 **未做**：1–8 真进 custom-play；Cocos 封面场景；xy-go 改写。
 **验收**：PLAYER-TEST L1-SEL-*；正式名 **伍澍暘** / **小宇**。
 
