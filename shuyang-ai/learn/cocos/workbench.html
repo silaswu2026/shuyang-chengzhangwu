@@ -5,7 +5,7 @@
 <meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0f1230">
-<meta name="wb-build" content="wb6">
+<meta name="wb-build" content="wb7">
 <title>学习工作台 · 今晚四步 · 五树杨</title>
 <style>
 :root{
@@ -17,47 +17,56 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   font-family:"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;color:var(--ink)}
 #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
   background:radial-gradient(900px 480px at 50% 0%,#24306a 0%,var(--navy) 60%,#080a1c 100%);
-  padding-top:48px}
-#shell{position:relative;width:min(100vw,1100px);height:min(100vh - 48px,720px);display:flex;
-  align-items:center;justify-content:center;gap:10px;padding:8px}
+  padding:56px 8px 8px}
+#shell{position:relative;width:min(100vw,1100px);height:min(100%,720px);max-height:calc(100vh - 64px);display:flex;
+  align-items:stretch;justify-content:center;gap:10px;padding:0}
 #shell.phone .phone-bezel{display:flex}
 #shell.desktop .phone-bezel{display:none}
-.phone-bezel{display:none;width:min(96vw,420px);height:min(86vh,760px);border-radius:36px;
-  padding:14px 10px 18px;background:linear-gradient(160deg,#1c2348,#0a0d22);
+.phone-bezel{display:none;width:min(96vw,420px);height:min(calc(100vh - 72px),760px);max-height:100%;border-radius:36px;
+  padding:12px 10px 16px;background:linear-gradient(160deg,#1c2348,#0a0d22);
   border:2px solid var(--stroke);box-shadow:0 18px 40px rgba(0,0,0,.45);flex-direction:column}
-.phone-notch{height:18px;margin:0 auto 6px;width:38%;border-radius:0 0 12px 12px;background:#05070fcc}
-.canvas-slot{position:relative;flex:1;min-height:0;border-radius:16px;overflow:hidden;
+.phone-notch{flex:0 0 auto;height:14px;margin:0 auto 6px;width:38%;border-radius:0 0 12px 12px;background:#05070fcc}
+.canvas-slot{position:relative;flex:1;min-height:0;min-width:0;border-radius:16px;overflow:hidden;
   background:#0f1230;border:1px solid rgba(255,224,122,.2)}
-#shell.desktop .canvas-slot{width:min(96vw,960px);height:min(82vh,540px);border-radius:18px;
+#shell.desktop #desktopSlot{display:block;width:min(96vw,960px);height:min(82vh,540px);border-radius:18px;
   box-shadow:0 16px 40px rgba(0,0,0,.4);border:1px solid var(--stroke)}
-#gameCanvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block;
-  background:#0f1230;touch-action:none}
+#shell.phone #desktopSlot{display:none!important}
+/* Keep Cocos host inside the slot — never viewport-fixed */
+#Cocos2dGameContainer{position:absolute!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;
+  margin:0!important;transform:none!important;-webkit-transform:none!important;box-sizing:border-box;overflow:hidden}
+#gameCanvas{position:absolute!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;
+  margin:0!important;display:block;background:#0f1230;touch-action:none}
 #boot{display:none;position:absolute;inset:0;z-index:5;align-items:center;justify-content:center;
   text-align:center;font-size:17px;font-weight:800;color:#ffe7a0;background:#05070fcc;padding:16px}
 #boot.show{display:flex}#boot.err{display:flex;color:#ffb4b4}
-#topbar{position:fixed;left:0;right:0;top:0;z-index:15;display:flex;align-items:center;
-  justify-content:space-between;gap:8px;padding:8px 12px;pointer-events:none}
+#topbar{position:fixed;left:0;right:0;top:0;z-index:15;display:flex;align-items:flex-start;
+  justify-content:space-between;gap:8px;padding:6px 10px;pointer-events:none}
 #topbar > *{pointer-events:auto}
-.chip{background:rgba(15,18,48,.88);border:1px solid var(--stroke);border-radius:999px;
-  padding:6px 12px;font-size:12px;font-weight:800;color:var(--gold);backdrop-filter:blur(6px)}
-.chip a{color:var(--green);margin-left:8px;text-decoration:none}
-.shell-toggle{display:flex;gap:6px}
+.chip{background:rgba(15,18,48,.88);border:1px solid var(--stroke);border-radius:16px;
+  padding:6px 10px;font-size:12px;font-weight:800;color:var(--gold);backdrop-filter:blur(6px);
+  max-width:min(70vw,420px);line-height:1.35;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.chip a{color:var(--green);text-decoration:none;white-space:nowrap}
+.shell-toggle{display:flex;gap:6px;flex-shrink:0}
 .shell-toggle button{border:1px solid var(--stroke);background:var(--navy2);color:var(--ink);
-  border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer}
+  border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 .shell-toggle button.on{background:var(--green);color:#062014;border-color:transparent}
 @media (max-width:720px){
-  #stage{padding-top:44px}
-  #shell.desktop .canvas-slot{width:100vw;height:auto;aspect-ratio:16/9;max-height:70vh}
-  .chip{font-size:11px;padding:5px 10px}
+  #stage{padding:52px 4px 4px}
+  #shell{max-height:calc(100vh - 56px);height:calc(100vh - 56px)}
+  .phone-bezel{width:min(100vw - 8px,420px);height:100%;max-height:calc(100vh - 56px);border-radius:28px;padding:10px 8px 12px}
+  #shell.desktop #desktopSlot{width:100%;height:auto;aspect-ratio:16/9;max-height:min(70vh,calc(100vh - 120px))}
+  .chip{font-size:11px;padding:5px 8px;max-width:calc(100vw - 130px);border-radius:14px}
+  .shell-toggle button{padding:5px 8px;font-size:11px}
 }
 </style>
 <script>document.ccConfig={debugMode:0,frameRate:60,id:"gameCanvas",renderMode:1,showFPS:false};</script>
 </head>
 <body>
 <div id="topbar">
-  <div class="chip">🏡 五树杨 · 今晚工作台
+  <div class="chip"><span>🏡 五树杨 · 今晚</span>
     <a href="../../../index.html">回小屋</a>
-    <a href="visual-workbench.html">可视化工坊</a>
+    <a href="visual-workbench.html">工坊</a>
+    <a href="custom-play.html?v=c31&amp;net=1">联机</a>
   </div>
   <div class="shell-toggle" id="shellToggle">
     <button type="button" data-shell="desktop" class="on">电脑壳</button>
@@ -80,7 +89,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   </div>
 </div>
 
-<!-- wb6: failsafe clears sticky boot if asset tick never finishes -->
+<!-- wb7: boot failsafe stays honest if canvas never paints -->
 <script>
 (function(){
   var cleared=false;
@@ -88,24 +97,44 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
     if(cleared&&!err)return;
     var b=document.getElementById('boot');
     if(!b)return;
-    if(err){b.textContent=msg||'打开失败，请刷新';b.className='err';return;}
-    if(!msg){cleared=true;b.textContent='';b.className='';}
+    if(err){cleared=false;b.textContent=msg||'打开失败，请刷新';b.className='err';return;}
+    if(msg){b.textContent=msg;b.className='show';return;}
+    cleared=true;b.textContent='';b.className='';
   }
   window.__wbClearBoot=clearBoot;
+  function canvasLooksEmpty(){
+    var c=document.getElementById('gameCanvas');
+    if(!c)return true;
+    var r=c.getBoundingClientRect();
+    if(r.width<40||r.height<40)return true;
+    if(r.bottom<=0||r.top>=(window.innerHeight||0))return true;
+    return false;
+  }
   setTimeout(function(){
     var b=document.getElementById('boot');
-    if(b&&(b.className.indexOf('show')>=0||b.className.indexOf('err')>=0)&&b.textContent.indexOf('正在打开')>=0){
-      clearBoot();
+    if(!b)return;
+    var sticky=b.className.indexOf('show')>=0&&(b.textContent.indexOf('正在打开')>=0);
+    if(sticky||canvasLooksEmpty()){
+      if(window.__wbFitCanvas){try{window.__wbFitCanvas(true);}catch(e){}}
+      try{window.dispatchEvent(new Event('resize'));}catch(e2){}
+      setTimeout(function(){
+        var b2=document.getElementById('boot');
+        if(!b2)return;
+        if(canvasLooksEmpty()){
+          clearBoot('课件还没画进画框，点刷新或切换电脑壳/手机壳再试',true);
+        }else if(b2.textContent.indexOf('正在打开')>=0){
+          clearBoot();
+        }
+      },500);
     }
   },9000);
 })();
 </script>
-<!-- cocos after canvas exists; Lite _initSys on phones appends to body -->
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
-<script src="wb-store.js?v=wb6"></script>
-<script src="wb-art.js?v=wb6"></script>
-<script src="wb-audio.js?v=wb6"></script>
-<script src="workbench.js?v=wb6"></script>
+<script src="wb-store.js?v=wb7"></script>
+<script src="wb-art.js?v=wb7"></script>
+<script src="wb-audio.js?v=wb7"></script>
+<script src="workbench.js?v=wb7"></script>
 <script>
 (function () {
   var shell = document.getElementById('shell');
@@ -114,14 +143,18 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   var phoneSlot = shell.querySelector('.phone-bezel .canvas-slot');
   var deskSlot = document.getElementById('desktopSlot');
 
+  function activeHost() {
+    return document.getElementById('Cocos2dGameContainer') || canvas;
+  }
+
   function placeCanvas(mode) {
     shell.className = mode;
     var slot = mode === 'phone' ? phoneSlot : deskSlot;
-    if (canvas.parentNode !== slot) {
-      slot.appendChild(canvas);
-      slot.appendChild(boot);
-    }
-    deskSlot.style.display = mode === 'desktop' ? 'block' : 'none';
+    var host = activeHost();
+    if (host && host.parentNode !== slot) slot.appendChild(host);
+    var cont = document.getElementById('Cocos2dGameContainer');
+    if (cont && canvas.parentNode !== cont) cont.appendChild(canvas);
+    if (boot.parentNode !== slot) slot.appendChild(boot);
     try { localStorage.setItem('wb-shell', mode); } catch (e) {}
     window.__wbShell = mode;
     document.querySelectorAll('#shellToggle button').forEach(function (b) {
@@ -130,8 +163,12 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
     if (window.WB && typeof WB.setShell === 'function') {
       try { WB.setShell(mode); } catch (e3) {}
     }
+    if (window.__wbFitCanvas) {
+      try { window.__wbFitCanvas(true); } catch (e4) {}
+    }
     try { window.dispatchEvent(new Event('resize')); } catch (e2) {}
   }
+  window.__wbPlaceCanvas = placeCanvas;
   var saved = 'desktop';
   try {
     saved = localStorage.getItem('wb-shell') ||

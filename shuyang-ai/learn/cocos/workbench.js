@@ -3,7 +3,7 @@
  * 画面按旧课件今晚路径的插画来拼：天空、远山、草皮、水面、钩子、鱼，
  * 道具用 wb-art 小图。全是 Cocos 节点，不是整页截图。
  * 存档 localStorage xygo-custom-level v1.2（wallet + audio）。试玩 custom-play.html。
- * wb6: 手机/电脑双壳 · 陷阱横滑短筹码 · 底栏拇指优先 · 更大忍者 · 喇叭署名。
+ * wb7: 画布留在壳内（禁 viewport fixed）· 喇叭不挡④ · 手机顶栏不缠字 · ④步/顶栏露出联机。
  */
 (function () {
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
@@ -196,7 +196,10 @@
     if (!AUDIO) return;
     ensureAudio();
     var selfStep = step;
-    button(layer, '喇叭', 800, H - 26, 64, 34, WB.ui.audioOpen ? GOLD : NAVY, WB.ui.audioOpen ? INK : WHITE, function () {
+    var phoneChrome = isPhoneShell();
+    var spkX = phoneChrome ? 700 : 820;
+    var spkW = phoneChrome ? 56 : 58;
+    button(layer, '喇叭', spkX, H - 26, spkW, phoneChrome ? 36 : 34, WB.ui.audioOpen ? GOLD : NAVY, WB.ui.audioOpen ? INK : WHITE, function () {
       AUDIO.unlock();
       WB.ui.audioOpen = !WB.ui.audioOpen;
       later(function () { show(selfStep); });
@@ -347,7 +350,7 @@
     plate(layer, 0, 0, W, FOOT, ccColor(15, 18, 48, 242), 18);
     plate(layer, 0, FOOT - 3, W, 3, ccColor(255, 224, 122, 180), 19);
     plate(layer, 0, H - CHROME, W, CHROME, ccColor(15, 18, 48, 242), 20);
-    var slots = [36, 868, 918];
+    var slots = isPhoneShell() ? [28, 860, 920] : [36, 880, 930];
     AV.forEach(function (src, i) {
       var face = ART.avatars[src];
       var sp = face ? new cc.Sprite(face) : new cc.Sprite(src);
@@ -374,11 +377,12 @@
     });
     var phone = isPhoneShell();
     var labels = phone ? STEPS_PHONE : STEPS;
-    var centers = phone ? [140, 300, 480, 660] : [168, 352, 560, 748];
-    var bw = phone ? 88 : 156;
+    /* leave room for 喇叭 + dad/mom avatars on the right */
+    var centers = phone ? [120, 250, 400, 550] : [150, 330, 520, 700];
+    var bw = phone ? 78 : 150;
     labels.forEach(function (name, i) {
       var on = i === step;
-      var wBtn = phone ? bw : (i === 2 ? 176 : 156);
+      var wBtn = phone ? bw : (i === 2 ? 168 : 150);
       button(layer, name, centers[i], H - 26, wBtn, phone ? 40 : 34, on ? GREEN : NAVY, WHITE, function () {
         later(function () { show(i); });
       });
@@ -1056,10 +1060,14 @@
       var note = WB.data.expect ? ('记下了：' + WB.data.expect) : '点一个就行';
       words(this, note, 724, 120, 16, '#9ff0a8', 8);
 
-      button(this, '回摆关', isPhoneShell() ? 120 : 160, 30, isPhoneShell() ? 120 : 170, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show(2); }); });
-      button(this, '去玩这一关', isPhoneShell() ? 720 : 740, 32, isPhoneShell() ? 280 : 250, isPhoneShell() ? 50 : 48, GREEN, WHITE, function () {
+      button(this, '回摆关', isPhoneShell() ? 100 : 120, 30, isPhoneShell() ? 100 : 140, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show(2); }); });
+      button(this, '联机游玩', isPhoneShell() ? 360 : 420, 32, isPhoneShell() ? 160 : 180, isPhoneShell() ? 48 : 48, GOLD, INK, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c28';
+        location.href = 'custom-play.html?v=c31&net=1';
+      });
+      button(this, '去玩这一关', isPhoneShell() ? 720 : 760, 32, isPhoneShell() ? 240 : 220, isPhoneShell() ? 50 : 48, GREEN, WHITE, function () {
+        STORE.save(localStorage, WB.data);
+        location.href = 'custom-play.html?v=c31';
       });
       this._t = 0;
       this.scheduleUpdate();
@@ -1095,23 +1103,75 @@
     if (q.get('look') === '1') WB.ui.look = 1;
     cc.game.onStart = function () {
       try {
+
+        function makeSlotPolicy() {
+          try {
+            return new cc.ResolutionPolicy(cc.ContainerStrategy.EQUAL_TO_FRAME, cc.ContentStrategy.SHOW_ALL);
+          } catch (e) {
+            return cc.ResolutionPolicy.SHOW_ALL;
+          }
+        }
+        var slotPolicy = makeSlotPolicy();
         cc.view.enableRetina(false);
         cc.view.adjustViewPort(true);
-        cc.view.setDesignResolutionSize(W, H, cc.ResolutionPolicy.SHOW_ALL);
+        cc.view.setDesignResolutionSize(W, H, slotPolicy);
         cc.view.resizeWithBrowserSize(true);
+
         if (cc.director.setClearColor) cc.director.setClearColor(cc.color(15, 18, 48, 255));
-        var centerCanvas = function () {
+        var fitCanvasInSlot = function (forcePolicy) {
           var c = document.getElementById('gameCanvas');
+          var cont = document.getElementById('Cocos2dGameContainer');
           if (!c) return;
-          var cw = parseFloat(c.style.width) || c.offsetWidth;
-          var ch = parseFloat(c.style.height) || c.offsetHeight;
-          c.style.position = 'fixed';
+          var slot = null;
+          if (cont && cont.parentNode) slot = cont.parentNode;
+          else if (c.parentNode && c.parentNode.id === 'Cocos2dGameContainer') slot = c.parentNode.parentNode;
+          else slot = c.parentNode;
+          if (slot && slot.classList && slot.classList.contains('canvas-slot')) {
+            try { cc.view._frame = slot; } catch (eF) {}
+          }
+          if (forcePolicy && cc.view && cc.view._originalDesignResolutionSize) {
+            var od = cc.view._originalDesignResolutionSize;
+            if (od.width > 0) {
+              try {
+                cc.view.setDesignResolutionSize(od.width, od.height, makeSlotPolicy());
+              } catch (eP) {}
+            }
+          }
+          /* Never viewport-fixed — stay inside .canvas-slot / phone bezel */
+          c.style.position = 'absolute';
+          c.style.left = '0px';
+          c.style.top = '0px';
+          c.style.right = 'auto';
+          c.style.bottom = 'auto';
           c.style.margin = '0';
-          c.style.left = Math.max(0, Math.round((window.innerWidth - cw) / 2)) + 'px';
-          c.style.top = Math.max(0, Math.round((window.innerHeight - ch) / 2)) + 'px';
+          if (cont) {
+            cont.style.position = 'absolute';
+            cont.style.left = '0px';
+            cont.style.top = '0px';
+            cont.style.right = 'auto';
+            cont.style.bottom = 'auto';
+            cont.style.margin = '0';
+            cont.style.padding = '0';
+            cont.style.transform = 'none';
+            cont.style.webkitTransform = 'none';
+            if (slot && slot.classList && slot.classList.contains('canvas-slot')) {
+              var sw = slot.clientWidth | 0;
+              var sh = slot.clientHeight | 0;
+              if (sw > 40 && sh > 40) {
+                cont.style.width = sw + 'px';
+                cont.style.height = sh + 'px';
+                c.style.width = sw + 'px';
+                c.style.height = sh + 'px';
+              }
+            }
+          }
         };
-        cc.view.setResizeCallback(centerCanvas);
-        setTimeout(centerCanvas, 0);
+        window.__wbFitCanvas = fitCanvasInSlot;
+        cc.view.setResizeCallback(function () {
+          /* Cocos calls this BEFORE re-applying policy; pin after paint */
+          setTimeout(function () { fitCanvasInSlot(false); }, 0);
+        });
+        setTimeout(function () { fitCanvasInSlot(true); }, 0);
         ART.build();
         var res = [
           SP + 'walk_0.png', SP + 'walk_1.png', SP + 'walk_2.png', SP + 'walk_3.png',
@@ -1140,9 +1200,13 @@
             show(WB.ui.step);
           }
           WB.shell = readShellPref();
-    WB.ready = true;
+          WB.ready = true;
           WB.show = show;
           bootMsg('');
+          try {
+            if (window.__wbPlaceCanvas) window.__wbPlaceCanvas(window.__wbShell || readShellPref() || 'desktop');
+          } catch (ePlace) {}
+          setTimeout(function () { if (window.__wbFitCanvas) window.__wbFitCanvas(true); }, 0);
         }
         function tick() {
           left--;

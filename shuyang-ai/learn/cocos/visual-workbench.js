@@ -7,7 +7,7 @@
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
   var SP = '../../../xy-go/sprites/green/';
   var AV = ['../../avatars/xiaoyu.jpg', '../../avatars/dad-wuxin.jpg', '../../avatars/mom-chunyan.jpg'];
-  var STEPS = ['① 看图一句', '② 频率', '③ 摆关工坊', '④ 玩完'];
+  var STEPS = ['① 看图一句', '② 频率', '③ 设计一小关', '④ 玩完'];
   var STEPS_PHONE = ['①', '②', '③', '④'];
   var STORE = window.WBStore;
   var ART = window.WBArt;
@@ -56,6 +56,10 @@
   function $(id) { return document.getElementById(id); }
 
   function bootMsg(m, err) {
+    if (window.__wbClearBoot) {
+      window.__wbClearBoot(m || '', !!err);
+      if (!m && !err) return;
+    }
     var b = $('boot');
     if (!b) return;
     b.textContent = m || '';
@@ -251,7 +255,7 @@
     plate(layer, 0, 0, W, FOOT, ccColor(15, 18, 48, 242), 18);
     plate(layer, 0, FOOT - 3, W, 3, ccColor(255, 224, 122, 180), 19);
     plate(layer, 0, H - CHROME, W, CHROME, ccColor(15, 18, 48, 242), 20);
-    var slots = [36, 868, 918];
+    var slots = isPhoneShell() ? [28, 860, 920] : [36, 880, 930];
     AV.forEach(function (src, i) {
       var face = ART.avatars[src];
       var sp = face ? new cc.Sprite(face) : new cc.Sprite(src);
@@ -278,10 +282,10 @@
     });
     var phone = isPhoneShell();
     var labels = phone ? STEPS_PHONE : STEPS;
-    var centers = phone ? [140, 300, 480, 660] : [168, 352, 560, 748];
+    var centers = phone ? [120, 250, 400, 550] : [150, 330, 520, 700];
     labels.forEach(function (name, i) {
       var on = i === step;
-      var wBtn = phone ? 88 : (i === 2 ? 176 : 156);
+      var wBtn = phone ? 78 : (i === 2 ? 168 : 150);
       button(layer, name, centers[i], H - 26, wBtn, phone ? 40 : 34, on ? GREEN : NAVY, WHITE, function () {
         later(function () { show(i); });
       });
@@ -914,10 +918,14 @@
       var note = WB.data.expect ? ('记下了：' + WB.data.expect) : '点一个就行';
       words(this, note, 724, 120, 16, '#9ff0a8', 8);
 
-      button(this, '回摆关', 160, 32, 170, 44, NAVY, WHITE, function () { later(function () { show(2); }); });
-      button(this, '去玩这一关', 740, 32, 250, 48, GREEN, WHITE, function () {
+      button(this, '回摆关', isPhoneShell() ? 100 : 120, 30, isPhoneShell() ? 100 : 140, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show(2); }); });
+      button(this, '联机游玩', isPhoneShell() ? 360 : 420, 32, isPhoneShell() ? 160 : 180, isPhoneShell() ? 48 : 48, GOLD, INK, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c28';
+        location.href = 'custom-play.html?v=c31&net=1';
+      });
+      button(this, '去玩这一关', isPhoneShell() ? 720 : 760, 32, isPhoneShell() ? 240 : 220, isPhoneShell() ? 50 : 48, GREEN, WHITE, function () {
+        STORE.save(localStorage, WB.data);
+        location.href = 'custom-play.html?v=c31';
       });
       this._t = 0;
       this.scheduleUpdate();
@@ -1052,23 +1060,75 @@
     if (q.get('look') === '1') WB.ui.look = 1;
     cc.game.onStart = function () {
       try {
+
+        function makeSlotPolicy() {
+          try {
+            return new cc.ResolutionPolicy(cc.ContainerStrategy.EQUAL_TO_FRAME, cc.ContentStrategy.SHOW_ALL);
+          } catch (e) {
+            return cc.ResolutionPolicy.SHOW_ALL;
+          }
+        }
+        var slotPolicy = makeSlotPolicy();
         cc.view.enableRetina(false);
         cc.view.adjustViewPort(true);
-        cc.view.setDesignResolutionSize(W, H, cc.ResolutionPolicy.SHOW_ALL);
+        cc.view.setDesignResolutionSize(W, H, slotPolicy);
         cc.view.resizeWithBrowserSize(true);
+
         if (cc.director.setClearColor) cc.director.setClearColor(cc.color(15, 18, 48, 255));
-        var centerCanvas = function () {
+        var fitCanvasInSlot = function (forcePolicy) {
           var c = document.getElementById('gameCanvas');
+          var cont = document.getElementById('Cocos2dGameContainer');
           if (!c) return;
-          var cw = parseFloat(c.style.width) || c.offsetWidth;
-          var ch = parseFloat(c.style.height) || c.offsetHeight;
-          c.style.position = 'fixed';
+          var slot = null;
+          if (cont && cont.parentNode) slot = cont.parentNode;
+          else if (c.parentNode && c.parentNode.id === 'Cocos2dGameContainer') slot = c.parentNode.parentNode;
+          else slot = c.parentNode;
+          if (slot && slot.classList && slot.classList.contains('canvas-slot')) {
+            try { cc.view._frame = slot; } catch (eF) {}
+          }
+          if (forcePolicy && cc.view && cc.view._originalDesignResolutionSize) {
+            var od = cc.view._originalDesignResolutionSize;
+            if (od.width > 0) {
+              try {
+                cc.view.setDesignResolutionSize(od.width, od.height, makeSlotPolicy());
+              } catch (eP) {}
+            }
+          }
+          /* Never viewport-fixed — stay inside .canvas-slot / phone bezel */
+          c.style.position = 'absolute';
+          c.style.left = '0px';
+          c.style.top = '0px';
+          c.style.right = 'auto';
+          c.style.bottom = 'auto';
           c.style.margin = '0';
-          c.style.left = Math.max(0, Math.round((window.innerWidth - cw) / 2)) + 'px';
-          c.style.top = Math.max(0, Math.round((window.innerHeight - ch) / 2)) + 'px';
+          if (cont) {
+            cont.style.position = 'absolute';
+            cont.style.left = '0px';
+            cont.style.top = '0px';
+            cont.style.right = 'auto';
+            cont.style.bottom = 'auto';
+            cont.style.margin = '0';
+            cont.style.padding = '0';
+            cont.style.transform = 'none';
+            cont.style.webkitTransform = 'none';
+            if (slot && slot.classList && slot.classList.contains('canvas-slot')) {
+              var sw = slot.clientWidth | 0;
+              var sh = slot.clientHeight | 0;
+              if (sw > 40 && sh > 40) {
+                cont.style.width = sw + 'px';
+                cont.style.height = sh + 'px';
+                c.style.width = sw + 'px';
+                c.style.height = sh + 'px';
+              }
+            }
+          }
         };
-        cc.view.setResizeCallback(centerCanvas);
-        setTimeout(centerCanvas, 0);
+        window.__wbFitCanvas = fitCanvasInSlot;
+        cc.view.setResizeCallback(function () {
+          /* Cocos calls this BEFORE re-applying policy; pin after paint */
+          setTimeout(function () { fitCanvasInSlot(false); }, 0);
+        });
+        setTimeout(function () { fitCanvasInSlot(true); }, 0);
         ART.build();
         var res = [
           SP + 'walk_0.png', SP + 'walk_1.png', SP + 'walk_2.png', SP + 'walk_3.png',
@@ -1077,9 +1137,10 @@
         ].concat(AV);
         var left = res.length;
         var dirtImg = null, grassImg = null;
-        function tick() {
-          left--;
-          if (left > 0) return;
+        var booted = false;
+        function finishBoot() {
+          if (booted) return;
+          booted = true;
           try { ART.bakeGround(dirtImg, grassImg); } catch (eG) {}
           if (lesson !== 'tonight') {
             var layer = new cc.Layer();
@@ -1096,10 +1157,25 @@
             show(WB.ui.step);
           }
           WB.shell = readShellPref();
-    WB.ready = true;
+          WB.ready = true;
           WB.show = show;
           bootMsg('');
+          try {
+            if (window.__wbPlaceCanvas) window.__wbPlaceCanvas(window.__wbShell || readShellPref() || 'desktop');
+          } catch (ePlace) {}
+          setTimeout(function () { if (window.__wbFitCanvas) window.__wbFitCanvas(true); }, 0);
         }
+        function tick() {
+          left--;
+          if (left > 0) return;
+          finishBoot();
+        }
+        setTimeout(function () {
+          if (!booted) {
+            left = 0;
+            finishBoot();
+          }
+        }, 7000);
         res.forEach(function (src) {
           var img = new Image();
           img.onload = function () {
