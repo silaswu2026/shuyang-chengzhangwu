@@ -1,6 +1,7 @@
 /**
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·自制关
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
+ * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。横屏金框壳保留。
  * c42: P2 HUD 去「沼泽」壳话（保留 c29 着火/锤提示口径）· c41 换壳；PeerJS/玩法不动。
  * c29: 小岩签 — 沼泽保底可踩火源+着火/灭火短提示；锤子近战/投掷明确扣血闪白。弓/飞镖不回退。
  * c41: 试玩换壳 — 海军径向+手机横屏金框；fitStage 按壳槽；PeerJS/玩法不动。
@@ -264,16 +265,23 @@
     return s;
   }
 
-  /** c41: shell fills phone-bezel slot (workbench-family chrome); EXACT_FIT still kills letterbox. */
+  /** c30/c41: landscape uses phone-bezel slot; portrait uses full window like c28 (no 16:9 letterbox). */
   function fitStage() {
     updateOrientTip();
     var wrap = $('cvwrap');
     var shell = $('shell');
     if (!wrap || !shell) return;
-    /* Prefer shell/slot client size so gold bezel padding is not counted as play area */
-    var slot = document.getElementById('playSlot') || shell;
-    var aw = Math.max(2, slot.clientWidth || shell.clientWidth || window.innerWidth);
-    var ah = Math.max(2, slot.clientHeight || shell.clientHeight || window.innerHeight);
+    var aw, ah;
+    if (isPortrait()) {
+      /* c30: match c28 full-bleed — do not size to a 16:9 slot */
+      aw = Math.max(2, window.innerWidth || shell.clientWidth);
+      ah = Math.max(2, window.innerHeight || shell.clientHeight);
+    } else {
+      /* Prefer shell/slot client size so gold bezel padding is not counted as play area */
+      var slot = document.getElementById('playSlot') || shell;
+      aw = Math.max(2, slot.clientWidth || shell.clientWidth || window.innerWidth);
+      ah = Math.max(2, slot.clientHeight || shell.clientHeight || window.innerHeight);
+    }
     var zoom = ah / (TILES_VIS * T);
     zoom = Math.max(0.85, Math.min(zoom, 2.0));
     var nextW = Math.max(240, Math.round(aw / zoom));

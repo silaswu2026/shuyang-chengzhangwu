@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0f1230">
-<meta name="play-build" content="c42">
+<meta name="play-build" content="c30">
 <title>玩我的关 · 伍澍暘成长屋</title>
 <link rel="stylesheet" href="../../../brand-tokens.css"/>
 <style>
@@ -132,16 +132,23 @@ body{
 #result .sub .stat-row b{font-size:20px}
 #result .ctl{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 
-/* 竖屏：壳改为竖向凹槽，舞台仍尽量铺满 */
-@media (orientation:portrait),(pointer:coarse) and (max-width:900px){
+/* c30：仅 orientation:portrait 成片铺满（取消 16:9 横条+海军蓝留空）；横屏金框壳不动 */
+@media (orientation:portrait){
   #orientTip.on{display:block}
-  #stageOuter{padding:38px 4px 4px}
-  .phone-bezel{
-    flex-direction:column;width:min(100vw - 8px,504px);height:auto;
-    max-height:calc(100vh - 42px);border-radius:34px;padding:10px 8px 12px;gap:6px
+  #stageOuter{
+    padding:32px 0 0;align-items:stretch;justify-content:stretch;
+    background:#5a3a24; /* 竖屏外缘跟沼泽床，不再露大块海军蓝 */
   }
-  .phone-notch{width:38%;height:14px;flex:0 0 14px;margin:0 auto;border-radius:0 0 12px 12px}
-  .canvas-slot{width:100%;height:auto;aspect-ratio:16/9;max-height:calc(100vh - 100px);max-width:100%}
+  .phone-bezel{
+    flex-direction:column;width:100%;height:calc(100vh - 32px);max-height:calc(100dvh - 32px);
+    border-radius:0;padding:0;gap:0;border:0;box-shadow:none;
+    background:transparent
+  }
+  .phone-notch{display:none}
+  .canvas-slot{
+    width:100%;height:100%;flex:1 1 auto;aspect-ratio:auto;
+    max-height:none;max-width:100%;border-radius:0;border:0;background:#5a3a24
+  }
   .bar{min-height:28px;padding:2px 6px}
   .bar .chip{padding:3px 8px;border-radius:14px;max-width:calc(100vw - 100px)}
   .bar a,.bar button.net{padding:3px 8px;font-size:11px}
@@ -152,6 +159,12 @@ body{
   .touch #btnJ,.touch #btnT{width:56px;font-size:13px}
   .hud{top:6px}.lvlcard{min-height:36px;padding:5px 8px;min-width:110px}#lvlChip{font-size:12px;margin:0 0 3px}#bossBar{top:52px}#msg{top:82px;font-size:11px}
   .go{padding:8px 14px;font-size:14px;min-height:36px}
+}
+/* 触屏窄机（含横屏）仍缩键，但不改壳槽比例 */
+@media (pointer:coarse) and (max-width:900px){
+  .touch{padding:4px 10px calc(4px + env(safe-area-inset-bottom,0px));gap:6px}
+  .touch button{width:48px;height:48px;font-size:16px;border-radius:12px}
+  .touch #btnJ,.touch #btnT{width:56px;font-size:13px}
 }
 @media (orientation:landscape),(max-height:480px){
   #orientTip{display:none!important}
@@ -266,11 +279,11 @@ body{
     </div>
   </div>
 </div>
-<!-- c42: P2 HUD 去沼泽壳话（并入 c29 着火/锤反馈提示）· c29 保底火源 · c41壳 · c40 audio -->
+<!-- c30: 竖屏成片铺满（消 c41 竖屏 16:9 横条/海军蓝留空）· 保留 c29 着火/锤 + c42 HUD 口径 · c41 横屏壳 · c40 audio -->
 <script src="../../../vendor/peerjs/peerjs.min.js"></script>
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
 <script src="wb-store.js?v=wb6"></script>
 <script src="wb-audio.js?v=c42"></script>
-<script src="custom-play.js?v=c42"></script>
+<script src="custom-play.js?v=c30"></script>
 </body>
 </html>
