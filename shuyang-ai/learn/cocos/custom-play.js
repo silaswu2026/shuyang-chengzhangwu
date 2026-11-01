@@ -2,6 +2,7 @@
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·自制关
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
  * c40: 还原走动/待机为原版绿/红/蓝精灵帧（walk_0..3 flipbook）；撤掉 c33 程序化 WBNinjaWalk 走路与 c39 程序化冷开占位（原模型优先于摆臂）。
+ * c41: 沼泽外观（mist 紫圈→泥水芦苇）+ 减速 HUD（速度%与倒计时）+ 过关彩纸烟花；默认两处沼泽区；不改走动模型。
  * c38: 匹配中不再闪「C 红」— 开房路径立刻乐观锁 Host→A绿；id 占用改 Guest→B蓝；跳过 netRole=null 的中间态（PeerJS open 前 ~3s）。
  * c37: 踩踏伤害 — 下落踩中小怪一脚秒杀(2)、鳄王每次1约三踩；成功踩踏不伤自己并小反弹；侧面贴身仍伤玩家。
  * c36: 着火持续掉血；走路不能灭火（仅踩水/烧完灭）；去掉左右晃灭火。
@@ -363,7 +364,7 @@
 
   /**
    * Shared default with WBStore.buildDefaultSave (tonight-waves-v1).
-   * Safe 0–1 · 教 coin+spike · 练 fire+spring · 变 mist+rock · 考 denser spike+fire.
+   * Safe 0–1 · 教 coin+spike · 练 fire+spring · 变 mist×2+rock · 考 denser spike+fire.
    * Monsters/boss are placed after the design runway in loadLevel — not in early view.
    */
   function swampPreset(DC, DR) {
@@ -390,7 +391,7 @@
     put(Math.round(3 * sx), 'spike');
     put(Math.round(4 * sx), 'fire');
     put(Math.round(5 * sx), 'spring');
-    put(Math.round(6 * sx), 'coin');
+    put(Math.round(6 * sx), 'mist');
     put(Math.round(7 * sx), 'mist');
     put(Math.round(8 * sx), 'rock');
     put(Math.round(9 * sx), 'coin');
@@ -508,6 +509,39 @@
       for (x = 2; x < DC && want > 0; x++) {
         if (groundCols[x] === false || used[x]) continue;
         items.push({ type: 'fire', c: gx(x), designX: x });
+        used[x] = 1;
+        want--;
+      }
+    })();
+
+    /* c41: 沼泽关保底两处可踩沼泽（旧 mist 紫圈 → 泥水外观；减速玩法不变） */
+    (function ensureSwampMists() {
+      var mistN = 0;
+      var i;
+      for (i = 0; i < items.length; i++) {
+        if (items[i] && items[i].type === 'mist') mistN++;
+      }
+      if (mistN >= 2) return;
+      var want = 2 - mistN;
+      var used = {};
+      for (i = 0; i < items.length; i++) {
+        if (items[i] && typeof items[i].designX === 'number') used[items[i].designX] = 1;
+      }
+      var prefs = [7, 6, 8, 5, 3, 10, 4, 2, 11, 9];
+      var pi, x;
+      for (pi = 0; pi < prefs.length && want > 0; pi++) {
+        x = prefs[pi];
+        if (x < 0 || x >= DC) continue;
+        if (groundCols[x] === false) continue;
+        if (used[x]) continue;
+        if (x <= 1) continue;
+        items.push({ type: 'mist', c: gx(x), designX: x });
+        used[x] = 1;
+        want--;
+      }
+      for (x = 2; x < DC && want > 0; x++) {
+        if (groundCols[x] === false || used[x]) continue;
+        items.push({ type: 'mist', c: gx(x), designX: x });
         used[x] = 1;
         want--;
       }
@@ -645,10 +679,27 @@
       g.stroke();
       g.fillStyle = '#e23b3b'; g.fillRect(10, 8, 28, 8);
     } else if (kind === 'mist') {
-      g.fillStyle = 'rgba(150,80,190,0.55)';
-      g.beginPath(); g.ellipse(24, 28, 18, 12, 0, 0, 7); g.fill();
-      g.fillStyle = 'rgba(220,180,255,0.7)';
-      g.beginPath(); g.ellipse(16, 24, 7, 6, 0, 0, 7); g.ellipse(30, 30, 8, 6, 0, 0, 7); g.fill();
+      /* c41: swamp puddle — wet mud + water + reeds (not purple disk) */
+      g.fillStyle = 'rgba(40,28,16,0.45)';
+      g.beginPath(); g.ellipse(24, 40, 20, 6, 0, 0, 7); g.fill();
+      g.fillStyle = '#5a3a22';
+      g.beginPath(); g.ellipse(24, 34, 20, 10, 0, 0, 7); g.fill();
+      var wg = g.createLinearGradient(0, 22, 0, 40);
+      wg.addColorStop(0, 'rgba(70,140,110,0.95)');
+      wg.addColorStop(0.55, 'rgba(28,90,78,0.92)');
+      wg.addColorStop(1, 'rgba(18,55,48,0.95)');
+      g.fillStyle = wg;
+      g.beginPath(); g.ellipse(24, 30, 16, 8, 0, 0, 7); g.fill();
+      g.fillStyle = 'rgba(180,230,200,0.45)';
+      g.beginPath(); g.ellipse(18, 27, 6, 2.2, -0.3, 0, 7); g.fill();
+      g.strokeStyle = '#3f8a4a'; g.lineWidth = 1.4;
+      [[10, 34, 8], [14, 36, 11], [34, 35, 9], [38, 33, 7]].forEach(function (r) {
+        g.beginPath(); g.moveTo(r[0], r[1]); g.quadraticCurveTo(r[0] + 1.5, r[1] - r[2], r[0] + 3, r[1] - 2); g.stroke();
+      });
+      g.fillStyle = '#4ea85c';
+      [[11, 26], [15, 24], [35, 25], [39, 27]].forEach(function (l) {
+        g.beginPath(); g.ellipse(l[0], l[1], 2.2, 1.1, 0.5, 0, 7); g.fill();
+      });
     } else {
       g.fillStyle = '#6d6358';
       g.beginPath(); g.moveTo(8, 40); g.lineTo(14, 18); g.lineTo(24, 10); g.lineTo(38, 20); g.lineTo(42, 40); g.closePath(); g.fill();
@@ -768,7 +819,122 @@
       } else bossBar.classList.remove('on');
     }
   }
-  function hideResult() { var r = $('result'); if (r) r.classList.remove('show', 'win', 'fail'); }
+
+  /* c41: victory celebration egg — confetti + fireworks on #fxCelebrate */
+  var victoryFxRaf = 0;
+  var victoryFxParts = null;
+  function stopVictoryFx() {
+    if (victoryFxRaf) {
+      try { cancelAnimationFrame(victoryFxRaf); } catch (eC) {}
+      victoryFxRaf = 0;
+    }
+    victoryFxParts = null;
+    var cv = $('fxCelebrate');
+    if (cv) {
+      cv.style.display = 'none';
+      try {
+        var g = cv.getContext('2d');
+        if (g) g.clearRect(0, 0, cv.width || 0, cv.height || 0);
+      } catch (eG) {}
+    }
+  }
+  function startVictoryFx() {
+    var cv = $('fxCelebrate');
+    if (!cv || !cv.getContext) return;
+    stopVictoryFx();
+    var parent = cv.parentElement || document.body;
+    var rw = Math.max(320, parent.clientWidth || window.innerWidth || 844);
+    var rh = Math.max(200, parent.clientHeight || window.innerHeight || 390);
+    cv.width = rw;
+    cv.height = rh;
+    cv.style.display = 'block';
+    var g = cv.getContext('2d');
+    var colors = ['#ffe07a', '#9ff0a8', '#7ec8ff', '#ff8fab', '#ffd166', '#c4b5fd', '#fff', '#ff6b2d'];
+    var parts = [];
+    var i, k;
+    for (i = 0; i < 72; i++) {
+      parts.push({
+        kind: 'confetti',
+        x: Math.random() * rw,
+        y: -20 - Math.random() * rh * 0.35,
+        vx: (Math.random() - 0.5) * 180,
+        vy: 80 + Math.random() * 220,
+        rot: Math.random() * 6,
+        vr: (Math.random() - 0.5) * 10,
+        w: 4 + Math.random() * 5,
+        h: 6 + Math.random() * 8,
+        color: colors[i % colors.length],
+        life: 2.2 + Math.random() * 1.4
+      });
+    }
+    for (k = 0; k < 5; k++) {
+      var bx = rw * (0.15 + k * 0.175);
+      var by = rh * (0.28 + (k % 2) * 0.12);
+      var burst = 18;
+      for (i = 0; i < burst; i++) {
+        var ang = (Math.PI * 2 * i) / burst + Math.random() * 0.2;
+        var sp = 120 + Math.random() * 220;
+        parts.push({
+          kind: 'spark',
+          x: bx,
+          y: by,
+          vx: Math.cos(ang) * sp,
+          vy: Math.sin(ang) * sp,
+          life: 0.7 + Math.random() * 0.55,
+          color: colors[(i + k) % colors.length],
+          r: 2 + Math.random() * 2.5,
+          delay: k * 0.12
+        });
+      }
+    }
+    victoryFxParts = parts;
+    var last = performance.now();
+    function frame(now) {
+      var dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      g.clearRect(0, 0, rw, rh);
+      var alive = 0;
+      for (i = 0; i < parts.length; i++) {
+        var p = parts[i];
+        if (p.delay && p.delay > 0) { p.delay -= dt; alive++; continue; }
+        p.life -= dt;
+        if (p.life <= 0) continue;
+        alive++;
+        if (p.kind === 'confetti') {
+          p.vy += 420 * dt;
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.rot += p.vr * dt;
+          g.save();
+          g.translate(p.x, p.y);
+          g.rotate(p.rot);
+          g.globalAlpha = Math.max(0, Math.min(1, p.life));
+          g.fillStyle = p.color;
+          g.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          g.restore();
+        } else {
+          p.vx *= Math.max(0, 1 - dt * 1.2);
+          p.vy = p.vy * Math.max(0, 1 - dt * 1.2) + 60 * dt;
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          g.globalAlpha = Math.max(0, Math.min(1, p.life * 1.4));
+          g.fillStyle = p.color;
+          g.beginPath();
+          g.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          g.fill();
+          g.globalAlpha = 1;
+        }
+      }
+      if (alive > 0) victoryFxRaf = requestAnimationFrame(frame);
+      else stopVictoryFx();
+    }
+    victoryFxRaf = requestAnimationFrame(frame);
+  }
+
+  function hideResult() {
+    var r = $('result'); if (r) r.classList.remove('show', 'win', 'fail');
+    stopVictoryFx();
+  }
   function showResult(win, hp, coins, failTitle) {
     var r = $('result'); if (!r) return;
     r.classList.add('show');
@@ -1082,7 +1248,7 @@
           var prop = new cc.Sprite(it.type === 'spring' ? springTex : it.type === 'mist' ? mistTex : rockTex);
           prop.setAnchorPoint(0.5, 0);
           prop.setPosition(px, this.gy - 2);
-          prop.setScale(it.type === 'rock' ? 1.1 : 1.3);
+          prop.setScale(it.type === 'rock' ? 1.1 : (it.type === 'mist' ? 1.85 : 1.3));
           this.world.addChild(prop, 6);
           this.traps.push({ kind: it.type, x: px, sp: prop, w: T * 0.55 });
         } else if (it.type === 'coin') {
@@ -1151,7 +1317,7 @@
       this.slowT = 0;
       this.burnT = 0;
       this.burnTick = 0;
-      this.fog = new cc.LayerColor(cc.color(120, 70, 170, 255), 4000, 4000);
+      this.fog = new cc.LayerColor(cc.color(36, 78, 52, 255), 4000, 4000); /* c41 swamp wash, was purple mist */
       this.fog.setPosition(-500, -500);
       this.fog.setOpacity(0);
       this.addChild(this.fog, 40);
@@ -1500,7 +1666,24 @@
       if (tip) tip.textContent = note + ' · 免活' + (this.freeRevivesLeft | 0);
       playSfx('coin');
     },
-        _inWater: function () {
+    _tickSlowHud: function () {
+      /* c41: swamp slow HUD — speed% vs normal + countdown; burn tip owns #msg while on fire */
+      if ((this.burnT || 0) > 0) return;
+      if (this.won || this.dead || this.revivePending) return;
+      var tip = $('msg');
+      if (!tip) return;
+      if ((this.slowT || 0) > 0) {
+        var n = this._moveNormal || 200;
+        var sl = this._moveSlow || 90;
+        var pct = Math.max(1, Math.round((sl / n) * 100));
+        tip.textContent = '你走得慢了 · 速度约' + pct + '% · 还剩' + this.slowT.toFixed(1) + '秒';
+        this._slowHudOn = true;
+      } else if (this._slowHudOn) {
+        this._slowHudOn = false;
+        tip.textContent = '恢复正常速度了';
+      }
+    },
+    _inWater: function () {
       var c = Math.floor(this.px / T);
       return !this._solidAt(c) && this.py < this.gy + 28;
     },
@@ -1599,7 +1782,10 @@
           ff.n.setOpacity(90 + Math.floor((Math.sin(elapsed * 5 + i) * 0.5 + 0.5) * 140));
         }
 
-        var speed = this.slowT > 0 ? 90 : 200; /* ≈ xy-go MOVE */
+        var MOVE_N = 200, MOVE_S = 90; /* ≈ xy-go MOVE; swamp slow */
+        var speed = this.slowT > 0 ? MOVE_S : MOVE_N;
+        this._moveNormal = MOVE_N;
+        this._moveSlow = MOVE_S;
         if (inp.left && !inp.right) { this.vx = -speed; this.face = -1; }
         else if (inp.right && !inp.left) { this.vx = speed; this.face = 1; }
         else this.vx *= Math.max(0, 1 - dt * 12);
@@ -1615,8 +1801,11 @@
         if (this.cool > 0) this.cool -= dt;
         if (this.slowT > 0) {
           this.slowT -= dt;
-          if (this.fog) this.fog.setOpacity(Math.max(0, Math.floor(this.slowT / 1.6 * 110)));
+          if (this.slowT < 0) this.slowT = 0;
+          var slowDur = (level && level.traps && level.traps.mist && +level.traps.mist.slow) || 1.6;
+          if (this.fog) this.fog.setOpacity(Math.max(0, Math.floor(this.slowT / Math.max(0.4, slowDur) * 90)));
         } else if (this.fog) this.fog.setOpacity(0);
+        this._tickSlowHud();
         this._tickBurn(dt);
         if (inp.throwPressed) {
           inp.throwPressed = false;
@@ -1705,7 +1894,13 @@
               applyNinjaFrame(this.ninja, this.palette, 'jump_0');
               playSfx('spring');
             } else if (kind === 'mist' && touch) {
-              this.slowT = 1.6;
+              var mistSlow = (level.traps && level.traps.mist && +level.traps.mist.slow) || 1.6;
+              var wasSlow = this.slowT > 0.05;
+              this.slowT = mistSlow;
+              if (!wasSlow) {
+                var tipM = $('msg');
+                if (tipM && (this.burnT || 0) <= 0) tipM.textContent = '你走得慢了';
+              }
             } else if (kind === 'rock' && touch && this.py < this.gy + 28) {
               this.px = tr.x + (this.px < tr.x ? -1 : 1) * (tr.w + 6);
               if (this.invuln <= 0) {
@@ -1860,6 +2055,7 @@
           this.score = (this.score | 0) + SCORE.clear + SCORE.hp * Math.max(0, this.hp | 0);
           stopBgm(); startBgm('win');
           showResult(true, this.hp, this.coins);
+          startVictoryFx();
           $('msg').textContent = '到旗了！积分 ' + (this.score | 0);
         } else if (!this.won && this.px >= this.goalX - T * 0.4 && this.boss && this.boss.alive) {
           $('msg').textContent = '先投中鳄王再冲旗！';

@@ -693,19 +693,40 @@
     return texFromCanvas(c);
   }
   function buildMist() {
+    /* c41: swamp puddle for workbench chip (was purple mist ellipses) */
     var c = canvas(64, 64), g = c.getContext('2d');
-    var gr = g.createLinearGradient(0, 8, 0, 60);
-    gr.addColorStop(0, 'rgba(170,110,210,0.15)');
-    gr.addColorStop(0.5, 'rgba(130,60,180,0.55)');
-    gr.addColorStop(1, 'rgba(80,30,120,0.25)');
+    g.fillStyle = 'rgba(40,28,16,0.4)';
+    g.beginPath();
+    g.ellipse(32, 54, 26, 7, 0, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#5a3a22';
+    g.beginPath();
+    g.ellipse(32, 46, 26, 12, 0, 0, Math.PI * 2);
+    g.fill();
+    var gr = g.createLinearGradient(0, 28, 0, 52);
+    gr.addColorStop(0, 'rgba(70,140,110,0.95)');
+    gr.addColorStop(0.55, 'rgba(28,90,78,0.92)');
+    gr.addColorStop(1, 'rgba(18,55,48,0.95)');
     g.fillStyle = gr;
     g.beginPath();
-    g.ellipse(32, 40, 26, 18, 0, 0, Math.PI * 2);
+    g.ellipse(32, 40, 20, 10, 0, 0, Math.PI * 2);
     g.fill();
-    g.fillStyle = 'rgba(220,180,255,0.55)';
-    [[18, 34, 8], [32, 28, 10], [46, 38, 7], [28, 46, 9]].forEach(function (p) {
+    g.fillStyle = 'rgba(180,230,200,0.45)';
+    g.beginPath();
+    g.ellipse(24, 36, 8, 2.5, -0.3, 0, Math.PI * 2);
+    g.fill();
+    g.strokeStyle = '#3f8a4a';
+    g.lineWidth = 1.6;
+    [[14, 46, 12], [20, 48, 14], [44, 47, 11], [50, 45, 9]].forEach(function (r) {
       g.beginPath();
-      g.ellipse(p[0], p[1], p[2], p[2] * 0.7, 0, 0, Math.PI * 2);
+      g.moveTo(r[0], r[1]);
+      g.quadraticCurveTo(r[0] + 2, r[1] - r[2], r[0] + 4, r[1] - 3);
+      g.stroke();
+    });
+    g.fillStyle = '#4ea85c';
+    [[16, 34], [22, 32], [44, 33], [50, 35]].forEach(function (l) {
+      g.beginPath();
+      g.ellipse(l[0], l[1], 3, 1.4, 0.5, 0, Math.PI * 2);
       g.fill();
     });
     return texFromCanvas(c);

@@ -93,7 +93,7 @@
   /**
    * Perfect default runway: safe start, four waves, all trap kinds,
    * monsters/boss stay at the play end (not on the 12 design cells).
-   * 教 2–3 · 练 4–5 · 变 7–8 · 考 10–11, with coin breaths.
+   * 教 2–3 · 练 4–5 · 变 6–8 沼泽×2+石 · 考 10–11, with coin breaths.
    */
   function defaultMineMap() {
     var m = blankMap();
@@ -101,7 +101,7 @@
     m[3] = 'spike';
     m[4] = 'fire';
     m[5] = 'spring';
-    m[6] = 'coin';
+    m[6] = 'mist';
     m[7] = 'mist';
     m[8] = 'rock';
     m[9] = 'coin';
