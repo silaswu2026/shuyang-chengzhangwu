@@ -4,6 +4,7 @@
  * c21: layout/CSS chrome only (desktop denser keys, phone smaller pads); CHAR_FRAC/levels unchanged.
  * c27: short - load cocos in body (not head): mobile _initSys needs document.body or appendChild null aborts engine before Layer.
  * c26: canvas always visible (c25); renderMode 1=Canvas (lite has no rendererWebGL).
+ * c36: do not gate runScene on tint cache; tint via data-URL; swamp canvas bed (fix c35 blank navy).
  */
 (function () {
   var KEY = 'xygo-custom-level';
@@ -48,6 +49,7 @@
     return localPalette;
   }
   function p2Palette() { return 'blue'; }
+  /* c36: tint as data-URL strings (not live Texture2D) + NEVER block runScene on tint. */
   function buildTintTex(img, tintHex) {
     var c = document.createElement('canvas');
     var w = img.naturalWidth || img.width || 1;
@@ -62,19 +64,24 @@
     o.globalCompositeOperation = 'destination-in';
     o.drawImage(img, 0, 0, w, h);
     o.globalCompositeOperation = 'source-over';
-    var t = new cc.Texture2D();
-    t.initWithElement(c);
-    t.handleLoadedTexture();
-    return t;
+    return c.toDataURL('image/png');
   }
   function ensureTintCache(done) {
+    var finished = false;
+    function finish() {
+      if (finished) return;
+      finished = true;
+      tintReady = true;
+      if (done) done();
+    }
     var left = FRAME_NAMES.length;
-    if (left <= 0) { tintReady = true; if (done) done(); return; }
+    if (left <= 0) { finish(); return; }
+    /* Hard cap: never leave the stage waiting on red/blue recolor. */
+    setTimeout(finish, 1800);
     FRAME_NAMES.forEach(function (name) {
       var src = SP + name + '.png';
       TINT_CACHE.green[name] = src;
       var im = new Image();
-      im.decoding = 'async';
       im.onload = function () {
         try {
           TINT_CACHE.blue[name] = buildTintTex(im, SPRITE_TINT.blue);
@@ -84,26 +91,30 @@
           TINT_CACHE.red[name] = src;
         }
         left--;
-        if (left <= 0) { tintReady = true; if (done) done(); }
+        if (left <= 0) finish();
       };
       im.onerror = function () {
         TINT_CACHE.blue[name] = src;
         TINT_CACHE.red[name] = src;
         left--;
-        if (left <= 0) { tintReady = true; if (done) done(); }
+        if (left <= 0) finish();
       };
       im.src = src;
     });
   }
   function texFor(palette, name) {
     var p = (CAST.indexOf(palette) >= 0) ? palette : 'green';
-    if (p === 'green') return SP + name + '.png';
+    var fallback = SP + name + '.png';
+    if (p === 'green') return fallback;
+    if (!tintReady) return fallback;
     var t = TINT_CACHE[p] && TINT_CACHE[p][name];
-    return t || SP + name + '.png';
+    /* Only accept string paths / data-URLs — never hand raw Texture2D to setTexture. */
+    return (typeof t === 'string' && t) ? t : fallback;
   }
   function applyNinjaFrame(sp, palette, name) {
     if (!sp) return;
-    try { sp.setTexture(texFor(palette, name)); } catch (eF) {
+    var tex = texFor(palette, name);
+    try { sp.setTexture(tex); } catch (eF) {
       try { sp.setTexture(SP + name + '.png'); } catch (eF2) {}
     }
   }
@@ -1675,12 +1686,26 @@
             if (left > 0) return;
             fitStage();
             localPalette = readSkinParam();
-            ensureTintCache(function () {
-              bindCastUI();
-              syncCastUI();
+            bindCastUI();
+            syncCastUI();
+            /* c36: start play IMMEDIATELY (c33 behavior). Tint red/blue in background. */
+            try {
               cc.director.runScene(new PlayScene());
-              $('msg').textContent = '第9关 · 绿/红/蓝忍者 · ←→跳 · F/J投';
-              setTimeout(fitStage, 50);
+            } catch (eRun) {
+              bootErr('场景启动失败：' + (eRun && eRun.message || eRun));
+            }
+            try {
+              $('msg').textContent = '伍澍暘 · 第9关 · 绿/红/蓝 · ←→跳 · F/J投';
+            } catch (eMsg) {}
+            setTimeout(fitStage, 50);
+            ensureTintCache(function () {
+              if (sceneRef && sceneRef.ninja) {
+                try {
+                  applyNinjaFrame(sceneRef.ninja, sceneRef.palette || localPalette, 'idle');
+                  if (sceneRef.p2 && sceneRef.p2.sp) applyNinjaFrame(sceneRef.p2.sp, sceneRef.p2.palette || 'blue', 'idle');
+                } catch (eApply) {}
+              }
+              syncCastUI();
             });
           }
           if (!others.length) { left = 1; tick(); return; }
