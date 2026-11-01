@@ -1,7 +1,7 @@
 /** AI办学小屋 · 课程3 · 可视化关卡工坊 (deep editor). Same save key as tonight. */
 /**
  * 可视化工坊 · 与今晚工作台共用 xygo-custom-level v1.2。
- * ldt27: 去玩→c41 沼泽外观/减速HUD/过关烟花 · was ldt26: 去玩→c40 原版走动 · was ldt25→c39 冷开 · was ldt24→c37 踩踏 · was vw54/vw53/vw52/vw51。
+ * ldt29: ③调色板灰显占位 电/凹/大/箱（即将开放）· was ldt28 / ldt27→c41 沼泽 · was ldt26→c40 · was vw54/vw53/vw52/vw51。
  */
 (function () {
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
@@ -305,17 +305,18 @@
     var state = { ox: 0, max: Math.max(0, tools.length * gap + 16 - viewW) };
     var chipNodes = [];
     tools.forEach(function (t, i) {
-      var on = WB.data.tool === t[0];
+      var soon = t[2] === 'soon';
+      var on = !soon && WB.data.tool === t[0];
       var cx = 8 + i * gap + chipW / 2;
       var cy = (chipH + 20) / 2;
-      var bg = on ? GOLD : NAVY;
-      var fg = on ? '#222222' : '#ffffff';
-      ART.panel(content, cx, cy - 2, chipW, chipH, shade(bg), 255, 0, Math.min(14, chipH / 2));
-      ART.panel(content, cx, cy, chipW, chipH, bg, 255, 1, Math.min(14, chipH / 2));
+      var bg = soon ? cc.color(72, 76, 96) : (on ? GOLD : NAVY);
+      var fg = soon ? '#aeb6c8' : (on ? '#222222' : '#ffffff');
+      ART.panel(content, cx, cy - 2, chipW, chipH, soon ? cc.color(48, 52, 70) : shade(bg), soon ? 200 : 255, 0, Math.min(14, chipH / 2));
+      ART.panel(content, cx, cy, chipW, chipH, bg, soon ? 210 : 255, 1, Math.min(14, chipH / 2));
       words(content, t[1], cx, cy, Math.max(13, Math.min(18, Math.floor(chipH * 0.5))), fg, 2);
-      chipNodes.push({ id: t[0], x: cx, w: chipW });
+      chipNodes.push({ id: t[0], x: cx, w: chipW, soon: soon });
     });
-    if (phone) words(parent, '←滑→', viewX + viewW - 24, y + 20, 11, '#8f88b8', 32);
+    if (state.max > 0) words(parent, '←滑→', viewX + viewW - 24, y + 20, 11, '#8f88b8', 32);
     var drag = { on: false, lastX: 0, moved: false };
     cc.eventManager.addListener(cc.EventListener.create({
       event: cc.EventListener.TOUCH_ONE_BY_ONE,
@@ -343,6 +344,11 @@
         for (i = 0; i < chipNodes.length; i++) {
           c = chipNodes[i];
           if (Math.abs(px - c.x) <= c.w / 2 + 6) {
+            if (c.soon) {
+              WB.ui.flash = '即将开放';
+              later(function () { show(2); });
+              return;
+            }
             WB.data.tool = c.id;
             if (c.id !== 'coin' && c.id !== 'del') WB.data.sel = c.id;
             later(function () { show(2); });
@@ -950,7 +956,7 @@
       ART.addGround(this, EDIT.L, gy, STORE.MC * EDIT.cw, 4, 2);
       words(this, '摆关 · 前两格安全 · 点格子摆东西', 360, isPhoneShell() ? 430 : 448, 16, '#1a2744', 8);
       var self = this;
-      var tools = [['spike', '刺'], ['fire', '火'], ['spring', '弹'], ['mist', '沼'], ['rock', '石'], ['coin', '币'], ['del', '擦']];
+      var tools = [['spike', '刺'], ['fire', '火'], ['spring', '弹'], ['mist', '沼'], ['rock', '石'], ['electric', '电', 'soon'], ['groove', '凹', 'soon'], ['coin', '小'], ['coinBig', '大', 'soon'], ['chest', '箱', 'soon'], ['del', '擦']];
       addTrapChipStrip(self, tools, isPhoneShell() ? 412 : 416);
       var trayY = isPhoneShell() ? 412 : 416;
       button(self, '去设置', 560, trayY, 84, isPhoneShell() ? 26 : 36, GREEN, WHITE, function () {
