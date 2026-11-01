@@ -10,7 +10,7 @@
  * c33was: 曾用程序化 WBNinjaWalk 摆臂；c40 按 Silas 要求还原原版精灵模型。
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
  * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。
- * c42: P2 HUD 去「沼泽」壳话（保留 c29 着火/锤提示口径）· c41 换壳；PeerJS/玩法不动。
+ * c42: 默认关保底可见线圈弹簧垫（ensureSprings）+ 贴图更醒目；保留 c32 power=1300；P2 HUD 去「沼泽」壳话。
  * c29: 小岩签 — 沼泽保底可踩火源+着火/灭火短提示；锤子近战/投掷明确扣血闪白。弓/飞镖不回退。
  * c41: 试玩换壳 — 海军径向+手机横屏金框；fitStage 按壳槽；PeerJS/玩法不动。
  * c40audio(hist): levelAudio 第9关 BGM 回退全局；走路/砍击 SFX 钩子。
@@ -514,6 +514,52 @@
       }
     })();
 
+    /* c42: 保底可见线圈弹簧垫（旧档/自改关可能删掉 spring；火/沼已有 ensure，弹簧此前缺失导致 C13 无法验收） */
+    (function ensureSprings() {
+      var springN = 0;
+      var i;
+      for (i = 0; i < items.length; i++) {
+        if (items[i] && items[i].type === 'spring') springN++;
+      }
+      if (springN >= 2) return;
+      var want = 2 - springN;
+      var used = {};
+      for (i = 0; i < items.length; i++) {
+        if (items[i] && typeof items[i].designX === 'number' && items[i].designX >= 0) {
+          used[items[i].designX] = 1;
+        }
+      }
+      /* 练波优先 col5；第二处偏考区前，避开出生 0–1 */
+      var prefs = [5, 8, 3, 10, 4, 2, 11, 6, 7, 9];
+      var pi, x;
+      for (pi = 0; pi < prefs.length && want > 0; pi++) {
+        x = prefs[pi];
+        if (x < 0 || x >= DC) continue;
+        if (groundCols[x] === false) continue;
+        if (used[x]) continue;
+        if (x <= 1) continue;
+        items.push({ type: 'spring', c: gx(x), designX: x });
+        used[x] = 1;
+        want--;
+      }
+      for (x = 2; x < DC && want > 0; x++) {
+        if (groundCols[x] === false || used[x]) continue;
+        items.push({ type: 'spring', c: gx(x), designX: x });
+        used[x] = 1;
+        want--;
+      }
+      /* 设计列已满时：在跑道后、鳄王前补垫（实地；designX=-1 不进水面过滤） */
+      if (want > 0) {
+        var after = gx(DC - 1) + EXP + 4;
+        var step = 5;
+        var k;
+        for (k = 0; k < 4 && want > 0; k++) {
+          items.push({ type: 'spring', c: after + k * step, designX: -1 });
+          want--;
+        }
+      }
+    })();
+
     /* c41: 沼泽关保底两处可踩沼泽（旧 mist 紫圈 → 泥水外观；减速玩法不变） */
     (function ensureSwampMists() {
       var mistN = 0;
@@ -673,11 +719,25 @@
     var c = document.createElement('canvas'); c.width = 48; c.height = 48;
     var g = c.getContext('2d');
     if (kind === 'spring') {
-      g.strokeStyle = '#d5dde6'; g.lineWidth = 3;
-      g.beginPath(); g.moveTo(24, 44);
-      for (var i = 1; i <= 7; i++) g.lineTo(24 + (i % 2 ? -8 : 8), 44 - i * 4);
+      /* c42: clearer coil pad — thick zigzag + bright red top plate */
+      g.fillStyle = 'rgba(20,24,36,0.35)';
+      g.beginPath(); g.ellipse(24, 44, 16, 4, 0, 0, 7); g.fill();
+      g.strokeStyle = '#9aa8b8'; g.lineWidth = 4; g.lineJoin = 'round';
+      g.beginPath(); g.moveTo(24, 42);
+      for (var i = 1; i <= 8; i++) g.lineTo(24 + (i % 2 ? -11 : 11), 42 - i * 3.6);
       g.stroke();
-      g.fillStyle = '#e23b3b'; g.fillRect(10, 8, 28, 8);
+      g.strokeStyle = '#e8eef5'; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(24, 42);
+      for (i = 1; i <= 8; i++) g.lineTo(24 + (i % 2 ? -8 : 8), 42 - i * 3.6);
+      g.stroke();
+      g.fillStyle = '#e23b3b';
+      g.fillRect(8, 6, 32, 11);
+      g.fillStyle = '#ff6b6b';
+      g.fillRect(10, 8, 28, 4);
+      g.fillStyle = 'rgba(255,255,255,0.55)';
+      g.fillRect(12, 9, 10, 2);
+      g.strokeStyle = '#8b1e1e'; g.lineWidth = 1.2;
+      g.strokeRect(8.5, 6.5, 31, 10);
     } else if (kind === 'mist') {
       /* c41: swamp puddle — wet mud + water + reeds (not purple disk) */
       g.fillStyle = 'rgba(40,28,16,0.45)';
@@ -1248,7 +1308,7 @@
           var prop = new cc.Sprite(it.type === 'spring' ? springTex : it.type === 'mist' ? mistTex : rockTex);
           prop.setAnchorPoint(0.5, 0);
           prop.setPosition(px, this.gy - 2);
-          prop.setScale(it.type === 'rock' ? 1.1 : (it.type === 'mist' ? 1.85 : 1.3));
+          prop.setScale(it.type === 'rock' ? 1.1 : (it.type === 'mist' ? 1.85 : 1.7)); /* c42: spring pad larger */
           this.world.addChild(prop, 6);
           this.traps.push({ kind: it.type, x: px, sp: prop, w: T * 0.55 });
         } else if (it.type === 'coin') {
