@@ -1,15 +1,14 @@
 /** AI办学小屋 · 课程3 · 可视化关卡工坊 (deep editor). Same save key as tonight. */
 /**
- * 学习工作台 · 今晚四步（看图、频率、摆关、觉察）。
- * 画面按旧课件今晚路径的插画来拼：天空、远山、草皮、水面、钩子、鱼，
- * 道具用 ld-art 的小图。全是 Cocos 节点，不是整页截图。
- * 存档仍是 localStorage xygo-custom-level v1.1。试玩仍走 custom-play.html。
+ * 可视化工坊 · 与今晚工作台共用 xygo-custom-level v1.2。
+ * vw2: 手机/电脑双壳同源关卡 · 陷阱横滑短筹码 · 底栏拇指优先 · 更大忍者。
  */
 (function () {
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
   var SP = '../../../xy-go/sprites/green/';
   var AV = ['../../avatars/xiaoyu.jpg', '../../avatars/dad-wuxin.jpg', '../../avatars/mom-chunyan.jpg'];
   var STEPS = ['① 看图一句', '② 频率', '③ 摆关工坊', '④ 玩完'];
+  var STEPS_PHONE = ['①', '②', '③', '④'];
   var STORE = window.WBStore;
   var ART = window.WBArt;
   var DUR = 12;
@@ -21,12 +20,36 @@
   var WHITE = ccColor(255, 255, 255);
   var CREAM = ccColor(232, 244, 255);
 
+  function detectDevicePhone() {
+    try {
+      return window.innerWidth < 720 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || '');
+    } catch (e) { return false; }
+  }
+  function readShellPref() {
+    try {
+      if (window.__wbShell === 'phone' || window.__wbShell === 'desktop') return window.__wbShell;
+      var s0 = localStorage.getItem('vw-shell') || localStorage.getItem('wb-shell');
+      if (s0 === 'phone' || s0 === 'desktop') return s0;
+    } catch (e) {}
+    return detectDevicePhone() ? 'phone' : 'desktop';
+  }
+  function isPhoneShell() { return readShellPref() === 'phone'; }
+
   var WB = window.WB = {
     ready: false,
     sceneName: '',
     data: null,
+    shell: readShellPref(),
     ui: { step: 0, look: 0, running: false, runT0: 0, previewDone: false, flash: '', freqDone: false },
-    layout: {}
+    layout: {},
+    setShell: function (mode) {
+      if (mode !== 'phone' && mode !== 'desktop') return;
+      var prev = WB.shell;
+      WB.shell = mode;
+      try { localStorage.setItem('vw-shell', mode); } catch (e) {}
+      window.__wbShell = mode;
+      if (WB.ready && prev !== mode) later(function () { show(WB.ui.step | 0); });
+    }
   };
 
   function ccColor(r, g, b, a) { return cc.color(r, g, b, a == null ? 255 : a); }
@@ -139,6 +162,90 @@
     cc.director.runScene(new scenes[step]());
   }
 
+
+  function addTrapChipStrip(parent, tools, y) {
+    var phone = isPhoneShell();
+    var chipW = phone ? 52 : 64;
+    var chipH = phone ? 26 : 28;
+    var gap = phone ? 58 : 72;
+    var viewX = phone ? 16 : 40;
+    var viewW = phone ? 500 : 520;
+    var strip = new cc.Node();
+    strip.setAnchorPoint(0, 0);
+    strip.setContentSize(viewW, chipH + 20);
+    strip.setPosition(viewX, y - chipH / 2 - 10);
+    parent.addChild(strip, 31);
+    if (phone) ART.panel(strip, viewW / 2, (chipH + 20) / 2, viewW, chipH + 12, ccColor(12, 16, 40), 170, 0, 10);
+    var content = new cc.Node();
+    content.setPosition(0, 0);
+    strip.addChild(content, 2);
+    var state = { ox: 0, max: Math.max(0, tools.length * gap + 16 - viewW) };
+    var chipNodes = [];
+    tools.forEach(function (t, i) {
+      var on = WB.data.tool === t[0];
+      var cx = 8 + i * gap + chipW / 2;
+      var cy = (chipH + 20) / 2;
+      var bg = on ? GOLD : NAVY;
+      var fg = on ? '#222222' : '#ffffff';
+      ART.panel(content, cx, cy - 2, chipW, chipH, shade(bg), 255, 0, Math.min(14, chipH / 2));
+      ART.panel(content, cx, cy, chipW, chipH, bg, 255, 1, Math.min(14, chipH / 2));
+      words(content, t[1], cx, cy, Math.max(13, Math.min(18, Math.floor(chipH * 0.5))), fg, 2);
+      chipNodes.push({ id: t[0], x: cx, w: chipW });
+    });
+    if (phone) words(parent, '←滑→', viewX + viewW - 24, y + 20, 11, '#8f88b8', 32);
+    var drag = { on: false, lastX: 0, moved: false };
+    cc.eventManager.addListener(cc.EventListener.create({
+      event: cc.EventListener.TOUCH_ONE_BY_ONE,
+      swallowTouches: true,
+      onTouchBegan: function (touch, event) {
+        var loc = event.getCurrentTarget().convertToNodeSpace(touch.getLocation());
+        if (!cc.rectContainsPoint(cc.rect(0, 0, viewW, chipH + 20), loc)) return false;
+        drag.on = true; drag.moved = false; drag.lastX = touch.getLocation().x;
+        return true;
+      },
+      onTouchMoved: function (touch) {
+        if (!drag.on || state.max <= 0) return;
+        var dx = touch.getLocation().x - drag.lastX;
+        drag.lastX = touch.getLocation().x;
+        if (Math.abs(dx) > 3) drag.moved = true;
+        state.ox = Math.max(-state.max, Math.min(0, state.ox + dx));
+        content.setPosition(state.ox, 0);
+      },
+      onTouchEnded: function (touch, event) {
+        if (!drag.on) return;
+        drag.on = false;
+        if (drag.moved) return;
+        var loc = event.getCurrentTarget().convertToNodeSpace(touch.getLocation());
+        var px = loc.x - state.ox, i, c;
+        for (i = 0; i < chipNodes.length; i++) {
+          c = chipNodes[i];
+          if (Math.abs(px - c.x) <= c.w / 2 + 6) {
+            WB.data.tool = c.id;
+            if (c.id !== 'coin' && c.id !== 'del') WB.data.sel = c.id;
+            later(function () { show(2); });
+            return;
+          }
+        }
+      }
+    }), strip);
+    return strip;
+  }
+
+  function addFootTrio(parent, leftLabel, leftFn, midLabel, midFn, rightLabel, rightFn) {
+    var phone = isPhoneShell();
+    if (phone) {
+      button(parent, leftLabel, 110, 30, 100, 40, NAVY, WHITE, leftFn);
+      button(parent, midLabel, 480, 32, 210, 48, GREEN, WHITE, midFn);
+      button(parent, rightLabel, 850, 30, 110, 40, NAVY, WHITE, rightFn);
+      WB.layout.editRun = { x: 480, y: 32 };
+    } else {
+      button(parent, leftLabel, 120, 32, 150, 44, NAVY, WHITE, leftFn);
+      button(parent, midLabel, 470, 32, 180, 46, GREEN, WHITE, midFn);
+      button(parent, rightLabel, 830, 32, 160, 44, NAVY, WHITE, rightFn);
+      WB.layout.editRun = { x: 470, y: 32 };
+    }
+  }
+
   function addChrome(layer, step) {
     ART.fill(layer, ART.tex.night, 0);
     plate(layer, 0, 0, W, FOOT, ccColor(15, 18, 48, 242), 18);
@@ -169,10 +276,13 @@
         }, 50);
       }
     });
-    var centers = [168, 352, 560, 748];
-    STEPS.forEach(function (name, i) {
+    var phone = isPhoneShell();
+    var labels = phone ? STEPS_PHONE : STEPS;
+    var centers = phone ? [140, 300, 480, 660] : [168, 352, 560, 748];
+    labels.forEach(function (name, i) {
       var on = i === step;
-      button(layer, name, centers[i], H - 26, i === 2 ? 176 : 156, 34, on ? GREEN : NAVY, WHITE, function () {
+      var wBtn = phone ? 88 : (i === 2 ? 176 : 156);
+      button(layer, name, centers[i], H - 26, wBtn, phone ? 40 : 34, on ? GREEN : NAVY, WHITE, function () {
         later(function () { show(i); });
       });
     });
@@ -426,7 +536,7 @@
         this.marks.push(words(this, '', px, gy + 64, 16, '#ffffff', 9));
         base._px = px;
       }
-      this.ninja = addNinja(this, this.L, gy, 78);
+      this.ninja = addNinja(this, this.L, gy, isPhoneShell() ? 128 : 120);
       this.countLab = words(this, '', box.x + box.w - 70, gy + 150, 26, '#ffe07a', 8);
       this.hitLab = words(this, '', box.x + box.w - 70, gy + 70, 28, '#ff6b6b', 8);
       ART.place(this, ART.tex.heart, box.x + box.w - 70, gy + 36, { h: 22, z: 8 });
@@ -447,17 +557,19 @@
         });
       });
       this._applyHook();
-      button(this, '回看图', 130, 32, 150, 44, NAVY, WHITE, function () { later(function () { show(0); }); });
-      button(this, '跑一次', 470, 32, 180, 46, GREEN, WHITE, function () {
-        WB.ui.running = true;
-        WB.ui.freqDone = false;
-        WB.ui.runT0 = Date.now() / 1000;
-        self._applyHook();
-      });
-      button(this, '去摆关', 820, 32, 160, 44, NAVY, WHITE, function () { later(function () { show(2); }); });
+      addFootTrio(this,
+        '回看图', function () { later(function () { show(0); }); },
+        '跑一次', function () {
+          WB.ui.running = true;
+          WB.ui.freqDone = false;
+          WB.ui.runT0 = Date.now() / 1000;
+          self._applyHook();
+        },
+        '去摆关', function () { later(function () { show(2); }); }
+      );
       WB.layout.freqPlus = { x: 500, y: 430 };
       WB.layout.freqMinus = { x: 310, y: 430 };
-      WB.layout.freqRun = { x: 470, y: 32 };
+      WB.layout.freqRun = WB.layout.editRun || { x: 470, y: 32 };
       this._t = 0;
       this.scheduleUpdate();
       return true;
@@ -525,22 +637,16 @@
       words(this, '摆一小关 · 放陷阱 · 调频率 · 跑一次', 360, 470, 16, '#1a2744', 8);
       var self = this;
       var tools = [['spike', '刺'], ['fire', '火'], ['spring', '弹'], ['mist', '雾'], ['rock', '石'], ['coin', '币'], ['del', '擦']];
-      tools.forEach(function (t, i) {
-        var on = WB.data.tool === t[0];
-        button(self, t[1], 36 + i * 58, 428, 52, 36, on ? GOLD : NAVY, on ? INK : WHITE, function () {
-          WB.data.tool = t[0];
-          if (t[0] !== 'coin' && t[0] !== 'del') WB.data.sel = t[0];
-          later(function () { show(2); });
-        });
-      });
-      button(self, '商店', 460, 428, 72, 36, GREEN, WHITE, function () {
+      addTrapChipStrip(self, tools, isPhoneShell() ? 424 : 428);
+      var trayY = isPhoneShell() ? 424 : 428;
+      button(self, '商店', 560, trayY, 72, isPhoneShell() ? 26 : 36, GREEN, WHITE, function () {
         if (window.VW && VW.openShop) VW.openShop();
       });
-      button(self, '音乐', 540, 428, 72, 36, NAVY, WHITE, function () {
+      button(self, '音乐', 640, trayY, 72, isPhoneShell() ? 26 : 36, NAVY, WHITE, function () {
         if (window.VW && VW.openMusic) VW.openMusic();
       });
       /* shop lives in HTML drawer; keep a tiny wallet chip on canvas */
-      words(this, '💰' + ((WB.data.wallet && WB.data.wallet.coins) | 0), 640, 428, 15, '#ffe07a', 8);
+      words(this, '💰' + ((WB.data.wallet && WB.data.wallet.coins) | 0), 720, trayY, 15, '#ffe07a', 8);
       this._shop = function () {}; /* drawer owns shop */
       this.paramRow = new cc.Node();
       this.addChild(this.paramRow, 31);
@@ -586,7 +692,7 @@
           return true;
         }
       }), grid);
-      this.ninja = addNinja(this, EDIT.L + 28, gy, 118);
+      this.ninja = addNinja(this, EDIT.L + 28, gy, isPhoneShell() ? 140 : 132);
       this.card = ART.panel(this, 872, 250, 160, 300, cc.color(78, 201, 107), 255, 10, 16);
       words(this, '一共掉', 872, 372, 16, '#1b1b2a', 11);
       this.sumLab = words(this, '', 872, 336, 28, '#1b1b2a', 11);
@@ -599,16 +705,14 @@
       }
       ART.panel(this, 386, 96, 460, 30, cc.color(255, 244, 214), 235, 10, 12);
       this.flashLab = words(this, WB.ui.flash || '点格子摆东西', 386, 96, 15, '#7a4e00', 11);
-      button(this, '回频率', 120, 32, 150, 44, NAVY, WHITE, function () { later(function () { show(1); }); });
-      button(this, '跑一次', 470, 32, 180, 46, GREEN, WHITE, function () {
-        WB.ui.running = true;
-        WB.ui.runT0 = Date.now() / 1000;
-      });
-      button(this, '去觉察', 830, 32, 160, 44, NAVY, WHITE, function () { later(function () { show(3); }); });
+      addFootTrio(this,
+        '回频率', function () { later(function () { show(1); }); },
+        '跑一次', function () { WB.ui.running = true; WB.ui.runT0 = Date.now() / 1000; },
+        '去觉察', function () { later(function () { show(3); }); }
+      );
       WB.layout.editCell = function (i) {
         return { x: EDIT.L + (i + 0.5) * EDIT.cw, y: EDIT.gy + 50 };
       };
-      WB.layout.editRun = { x: 470, y: 32 };
       this._t = 0;
       this._sig = '';
       this._syncMarks();
@@ -991,7 +1095,8 @@
           } else {
             show(WB.ui.step);
           }
-          WB.ready = true;
+          WB.shell = readShellPref();
+    WB.ready = true;
           WB.show = show;
           bootMsg('');
         }
