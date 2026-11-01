@@ -1,6 +1,7 @@
 /**
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·自制关
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
+ * c36: 着火持续掉血；走路不能灭火（仅踩水/烧完灭）；去掉左右晃灭火。
  * c35: 死亡自动复活（−50积分或免活3次/关；用尽才失败重玩）。was c34: 键盘武器仅 KeyL。
  * c33: 走路手脚自然摆动 — 程序化 opposite arm/leg（旧 walk_* PNG 近同姿态仅飘围巾）；WBNinjaWalk。
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
@@ -1129,8 +1130,7 @@
       this.cool = 0;
       this.slowT = 0;
       this.burnT = 0;
-      this.burnShake = 0;
-      this.burnDir = 0;
+      this.burnTick = 0;
       this.fog = new cc.LayerColor(cc.color(120, 70, 170, 255), 4000, 4000);
       this.fog.setPosition(-500, -500);
       this.fog.setOpacity(0);
@@ -1159,7 +1159,7 @@
       var lvEl = $('lvlChip');
       if (lvEl) lvEl.textContent = '第9关 我的关卡';
       var iv = (level.traps.spike && +level.traps.spike.interval) || 3;
-      $('msg').textContent = (level.by ? level.by + ' · ' : '') + '自制关·踩火会着火·晃/踩水灭火·锤可砸可投 · Q切武器';
+      $('msg').textContent = (level.by ? level.by + ' · ' : '') + '自制关·踩火会着火·踩水/等时间灭火·锤可砸可投 · Q切武器';
     },
     reset: function () {
       this.px = level.spawnC * T + T * 0.5;
@@ -1174,8 +1174,7 @@
       this.cool = 0;
       this.slowT = 0;
       this.burnT = 0;
-      this.burnShake = 0;
-      this.burnDir = 0;
+      this.burnTick = 0;
       if (this.fog) this.fog.setOpacity(0);
       this.invuln = 0;
       this.playing = true;
@@ -1346,8 +1345,7 @@
     },
     _clearBurnSilent: function () {
       this.burnT = 0;
-      this.burnShake = 0;
-      this.burnDir = 0;
+      this.burnTick = 0;
       if (this.ninja) this.ninja.setColor(cc.color(255, 255, 255));
       if (this.burnFx) this.burnFx.setVisible(false);
     },
@@ -1465,18 +1463,18 @@
     },
     _ignite: function () {
       if ((this.burnT || 0) > 0) return;
-      this.burnT = 5;
-      this.burnShake = 0;
-      this.burnDir = 0;
+      var fire = (level && level.traps && level.traps.fire) || {};
+      /* burn 秒数；默认 5；期间按 tick 持续掉血 */
+      this.burnT = Math.max(2, +fire.burn || +fire.dur || 5);
+      this.burnTick = 0;
       var tip = $('msg');
-      if (tip) tip.textContent = '着火了';
+      if (tip) tip.textContent = '着火了 · 踩水灭火';
       playSfx('fire');
     },
     _extinguish: function (why) {
       if ((this.burnT || 0) <= 0) return;
       this.burnT = 0;
-      this.burnShake = 0;
-      this.burnDir = 0;
+      this.burnTick = 0;
       if (this.ninja) this.ninja.setColor(cc.color(255, 255, 255));
       if (this.burnFx) this.burnFx.setVisible(false);
       var tip = $('msg');
@@ -1489,18 +1487,9 @@
         if (this.burnFx) this.burnFx.setVisible(false);
         return;
       }
-      /* 踩水灭火优先 */
+      /* 仅踩水灭火；左右走动不再灭火（c36） */
       if (this._inWater()) {
-        this._extinguish('灭火了');
-        return;
-      }
-      var d = 0;
-      if (inp.left && !inp.right) d = -1;
-      else if (inp.right && !inp.left) d = 1;
-      if (d && this.burnDir && d !== this.burnDir) this.burnShake = (this.burnShake | 0) + 1;
-      if (d) this.burnDir = d;
-      if ((this.burnShake | 0) >= 3) {
-        this._extinguish('灭火了');
+        this._extinguish('踩水灭火了');
         return;
       }
       this.burnT = Math.max(0, this.burnT - dt);
@@ -1515,20 +1504,32 @@
         this.burnFx.setPosition(this.px, this.py + DRAW_H * 0.85);
         this.burnFx.setOpacity(180 + Math.floor((Math.sin(Date.now() / 60) * 0.5 + 0.5) * 75));
       }
-      if (this.burnT > 0) return;
-      /* 烧满：扣血一次，火停 */
-      this.burnShake = 0;
-      this.burnDir = 0;
       var fire = (level && level.traps && level.traps.fire) || {};
       var dmgF = Math.max(1, +fire.damage || 1);
-      this.hp -= dmgF;
-      this.invuln = Math.max(this.invuln, 0.6);
-      applyNinjaFrame(this.ninja, this.palette, 'knock_0');
-      playSfx('hurt');
-      updHUD(this.hp, this.coins);
-      var tip = $('msg');
-      if (tip) tip.textContent = '火烧满了 -' + dmgF + '血';
-      if (this.hp <= 0) this._killPlayer('火烧倒了');
+      var tickIv = Math.max(0.5, +fire.tick || 0.85);
+      this.burnTick = (this.burnTick || 0) + dt;
+      /* 持续掉血：约每 0.85s 一跳；短无敌避免同帧连扣 */
+      if (this.burnTick >= tickIv && (this.invuln || 0) <= 0 && this.playing && !this.dead) {
+        this.burnTick = 0;
+        this.hp -= dmgF;
+        this.invuln = Math.max(this.invuln || 0, 0.55);
+        applyNinjaFrame(this.ninja, this.palette, 'knock_0');
+        playSfx('hurt');
+        updHUD(this.hp, this.coins);
+        var tipD = $('msg');
+        if (tipD) tipD.textContent = '着火中 -' + dmgF + '血';
+        if (this.hp <= 0) {
+          this._killPlayer('火烧倒了');
+          return;
+        }
+      }
+      if (this.burnT > 0) return;
+      /* 时间到：火停（期间已持续掉血，不再额外终刀） */
+      this.burnTick = 0;
+      if (this.ninja) this.ninja.setColor(cc.color(255, 255, 255));
+      if (this.burnFx) this.burnFx.setVisible(false);
+      var tipE = $('msg');
+      if (tipE) tipE.textContent = '火自己灭了';
     },
     _groundYAt: function (px) {
       var c = Math.floor(px / T);
@@ -1686,7 +1687,7 @@
             if (near && !this.hitKeys[key]) {
               this.hitKeys[key] = 1;
               if (kind === 'fire') {
-                /* c28: 着火 → 晃/踩水灭；烧满才扣血 */
+                /* c36: 着火 → 持续掉血；仅踩水/烧完灭；走动不灭 */
                 this._ignite();
                 this.invuln = 0.35;
               } else {
