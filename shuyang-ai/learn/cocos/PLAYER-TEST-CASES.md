@@ -1,6 +1,6 @@
 # 伍澍暘成长屋 · 玩家测试用例
 
-> 实现进度：玩法 tip `c50`（DPR≤3 retina 缓冲消手机微糊）· 叠 c49 软萤火虫 / c48 retina / c47 §8 八条 / c46 同窗联机 / c41 沼泽；工坊 tip `ldt32`。
+> 实现进度：玩法 tip `c51`（去槽圆角裁切+DPR≤3）· 叠 c50/c49 软萤火虫 / c48 retina / c47 §8 八条 / c46 同窗联机 / c41 沼泽；工坊 tip `ldt32`。
 
 对照需求：`PRODUCT.md`（权威）· `DESIGN.md` · Player playtest · Jobs Pages QA。  
 测环境：GitHub Pages `main` → https://silaswu2026.github.io/shuyang-chengzhangwu/  

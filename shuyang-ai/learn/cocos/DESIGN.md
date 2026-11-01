@@ -9,6 +9,8 @@
 
 **铁律**：正式名 **伍澍暘** / 助手 **小宇**；自定义关与正式 1–8 隔离。
 
+> 会话耐久备份（usage 到期保险）：[`docs/BACKUP-2026-11-01-SESSION.md`](docs/BACKUP-2026-11-01-SESSION.md) · 基线 tip c51 / ls2 / ldt32 · 等确认 LEVEL-EDITOR-PLAN 再写代码。
+
 ---
 
 ## 2026-11-01 · 手机仍微糊（c51）
