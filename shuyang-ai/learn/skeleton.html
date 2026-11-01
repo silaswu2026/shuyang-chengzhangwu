@@ -133,18 +133,18 @@
 <div class="wrap">
   <h1>拖一拖：3D 骨头人</h1>
   <p class="tip">骨头 → 大块方块人 → 更细的小颗粒 → Minecraft式6方块 · 每张脸贴皮 + 灯光阴影</p>
-  <p class="callout" id="lesson">① <strong>只看骨头</strong>——里面先有一副会动的骨头架。</p>
+  <p class="callout" id="lesson">② <strong>大块方块人</strong>——模型＝很多不同的<strong>大颗粒 / 方块</strong>拼起来的（像积木）！</p>
 
   <div class="stage" id="stage" aria-label="可拖动的3D骨头人">
-    <span class="badge" id="badge">🦴 只看骨头</span>
+    <span class="badge" id="badge">🧱 大块方块</span>
     <canvas id="bone"></canvas>
   </div>
 
   <div class="steps" role="group" aria-label="四步揭示">
-    <button type="button" class="active" id="stepBones" data-step="1">
+    <button type="button" id="stepBones" data-step="1">
       <span class="num">①</span> 只看骨头
     </button>
-    <button type="button" id="stepBig" data-step="2">
+    <button type="button" class="active" id="stepBig" data-step="2">
       <span class="num">②</span> 大块方块人
     </button>
     <button type="button" id="stepFine" data-step="3">
@@ -1098,7 +1098,7 @@ new ResizeObserver(resize).observe(stage);
 
 let swayOn = true;
 let poseAnim = null;
-let step = 1;
+let step = 2;
 
 const LESSONS = {
   1: {
@@ -1277,7 +1277,7 @@ document.getElementById('stepBig').addEventListener('click', () => localSetStep(
 document.getElementById('stepFine').addEventListener('click', () => localSetStep(3));
 document.getElementById('stepSkin').addEventListener('click', () => localSetStep(4));
 
-/** Optional ?step= / #step= for classroom deep-link; default bones-only (1). */
+/** Optional ?step= / #step= for classroom deep-link; default ② big chunks (avoids blank ①). */
 function readInitialSkelStep() {
   try {
     const q = new URLSearchParams(location.search || '');
@@ -1289,7 +1289,7 @@ function readInitialSkelStep() {
     const m = /(?:^|[?&])(?:step|skelStep)=([1-4])/.exec(h) || /^([1-4])$/.exec(h);
     if (m) return Number(m[1]);
   } catch (_) {}
-  return 1;
+  return 2;
 }
 // Apply initial view + tell parent we can accept skel-set-step (fixes race after 开始)
 setStep(readInitialSkelStep());
