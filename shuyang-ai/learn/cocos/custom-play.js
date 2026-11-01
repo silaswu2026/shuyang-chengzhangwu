@@ -1,6 +1,7 @@
 /**
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·沼泽
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
+ * c29: 小岩签 — 沼泽保底可踩火源+着火/灭火短提示；锤子近战/投掷明确扣血闪白。弓/飞镖不回退。
  * c41: 试玩换壳 — 海军径向+手机横屏金框；fitStage 按壳槽；PeerJS/玩法不动。
  * c40: levelAudio 第9关 BGM 回退全局；走路/砍击 SFX 钩子。
  * c28: 明天玩关三件可测 — ①武器弓/锤/飞镖（默飞镖可切换）②水面无陷阱 ③着火踩水灭火（保留左右晃）；结算屏三数。
@@ -430,6 +431,43 @@
     if (!traps.rock) traps.rock = { damage: 1 };
     if (!traps.mist) traps.mist = { slow: 1.6 };
     if (!traps.spring) traps.spring = { power: 820 };
+
+    /* c29: 沼泽关保底可踩火源（设计台未摆火/被水面过滤光时补 2 处实地点火） */
+    (function ensureSwampFires() {
+      var fireN = 0;
+      var i;
+      for (i = 0; i < items.length; i++) {
+        if (items[i] && items[i].type === 'fire') fireN++;
+      }
+      if (fireN >= 2) return;
+      var want = 2 - fireN;
+      var used = {};
+      for (i = 0; i < items.length; i++) {
+        if (items[i] && items[i].type === 'fire' && typeof items[i].designX === 'number') {
+          used[items[i].designX] = 1;
+        }
+      }
+      var prefs = [4, 3, 5, 2, 6, 8, 10, 7, 9, 11, 1];
+      var pi, x;
+      for (pi = 0; pi < prefs.length && want > 0; pi++) {
+        x = prefs[pi];
+        if (x < 0 || x >= DC) continue;
+        if (groundCols[x] === false) continue;
+        if (used[x]) continue;
+        /* 避开出生附近 0–1 格，避免一开局就烧 */
+        if (x <= 1) continue;
+        items.push({ type: 'fire', c: gx(x), designX: x });
+        used[x] = 1;
+        want--;
+      }
+      /* 若仍不够：扫全部实地格 */
+      for (x = 2; x < DC && want > 0; x++) {
+        if (groundCols[x] === false || used[x]) continue;
+        items.push({ type: 'fire', c: gx(x), designX: x });
+        used[x] = 1;
+        want--;
+      }
+    })();
 
     /*
      * Waves first, monsters last: boss sits after the expanded design columns.
@@ -978,7 +1016,7 @@
           var sp = new cc.Sprite(it.type === 'fire' ? fireTex : spikeTex);
           sp.setAnchorPoint(0.5, 0);
           sp.setPosition(px, this.gy - 2);
-          sp.setScale(it.type === 'fire' ? 1.85 : 1.15);
+          sp.setScale(it.type === 'fire' ? 2.35 : 1.15);
           sp.setVisible(it.type === 'fire');
           this.world.addChild(sp, 6);
           this.traps.push({ kind: it.type, x: px, sp: sp, w: T * 0.7 });
@@ -1071,13 +1109,19 @@
       this.nScale = DRAW_H / Math.max(texH, 1);
       this.ninja.setScale(this.nScale);
       this.world.addChild(this.ninja, 10);
+      /* c29: 着火头顶火苗，停帧也能看见着火态 */
+      this.burnFx = new cc.Sprite(fireTex);
+      this.burnFx.setAnchorPoint(0.5, 0);
+      this.burnFx.setScale(1.2);
+      this.burnFx.setVisible(false);
+      this.world.addChild(this.burnFx, 11);
       this.walkFrames = ['walk_0', 'walk_1', 'walk_2', 'walk_3'];
       applyNinjaFrame(this.ninja, this.palette, 'idle');
 
       var lvEl = $('lvlChip');
       if (lvEl) lvEl.textContent = '第9关 我的关卡';
       var iv = (level.traps.spike && +level.traps.spike.interval) || 3;
-      $('msg').textContent = (level.by ? level.by + ' · ' : '') + '沼泽·武器可切(Q)·水面无刺火·着火晃/踩水灭 · 投打鳄王';
+      $('msg').textContent = (level.by ? level.by + ' · ' : '') + '沼泽·踩火会着火·晃/踩水灭火·锤可砸可投 · Q切武器';
     },
     reset: function () {
       this.px = level.spawnC * T + T * 0.5;
@@ -1152,29 +1196,50 @@
     },
     _hurtAt: function (x, y, reach, dmg) {
       var i;
-      if (this.boss && this.boss.alive && this.boss.hurtT <= 0 && Math.abs(x - this.bossSp.getPositionX()) < reach && Math.abs(y - (this.boss.y + 28)) < reach) {
-        this.boss.hp -= dmg;
-        this.boss.hurtT = 0.35;
-        playSfx('slash');
-        if (this.boss.hp <= 0) {
-          this.boss.alive = false;
-          this.bossSp.setVisible(false);
-          this._earn(8);
-          this.score = (this.score | 0) + SCORE.boss;
-          this._coinBurst(this.boss.x, this.boss.y + 40);
-          $('msg').textContent = '鳄王倒下！+8币 +' + SCORE.boss + '分';
-          var bb = $('bossBar'); if (bb) bb.classList.remove('on');
+      var tip = $('msg');
+      /* 用精灵当前 X（鳄巡逻会偏），加宽松 Y，锤子近战/投掷都好打中 */
+      if (this.boss && this.boss.alive && this.boss.hurtT <= 0) {
+        var bpx = this.bossSp ? this.bossSp.getPositionX() : this.boss.x;
+        if (Math.abs(x - bpx) < reach && Math.abs(y - (this.boss.y + 28)) < reach + 20) {
+          this.boss.hp -= dmg;
+          this.boss.hurtT = 0.45;
+          if (this.bossSp) {
+            this.bossSp.setColor(cc.color(255, 255, 255));
+            this.bossSp.setOpacity(255);
+          }
+          playSfx('slash');
+          if (tip) tip.textContent = '命中鳄王！血 ' + Math.max(0, this.boss.hp) + '/' + this.boss.max;
+          /* 命中时强制亮血条，方便看见下降 */
+          var bbOn = $('bossBar');
+          if (bbOn && this.boss.alive) {
+            bbOn.classList.add('on');
+            bbOn.querySelector('.bn').textContent = this.boss.name;
+            bbOn.querySelector('i').style.width = Math.round((Math.max(0, this.boss.hp) / this.boss.max) * 100) + '%';
+          }
+          if (this.boss.hp <= 0) {
+            this.boss.alive = false;
+            this.bossSp.setVisible(false);
+            this._earn(8);
+            this.score = (this.score | 0) + SCORE.boss;
+            this._coinBurst(this.boss.x, this.boss.y + 40);
+            $('msg').textContent = '鳄王倒下！+8币 +' + SCORE.boss + '分';
+            var bb = $('bossBar'); if (bb) bb.classList.remove('on');
+          }
+          updHUD(this.hp, this.coins);
+          return true;
         }
-        updHUD(this.hp, this.coins);
-        return true;
       }
       if (this.critters) {
         for (i = 0; i < this.critters.length; i++) {
           var cr = this.critters[i];
           if (!cr.alive || cr.hurtT > 0) continue;
-          if (Math.abs(x - cr.x) < reach && Math.abs(y - (this.gy + 16)) < reach) {
+          if (Math.abs(x - cr.x) < reach && Math.abs(y - (this.gy + 16)) < reach + 16) {
             cr.hp -= dmg;
-            cr.hurtT = 0.25;
+            cr.hurtT = 0.35;
+            if (cr.sp) {
+              cr.sp.setColor(cc.color(255, 255, 255));
+              cr.sp.setOpacity(255);
+            }
             playSfx('slash');
             if (cr.hp <= 0) {
               cr.alive = false;
@@ -1182,6 +1247,8 @@
               this._earn(1);
               this.score = (this.score | 0) + SCORE.slime;
               $('msg').textContent = '小怪 +1币 +' + SCORE.slime + '分';
+            } else if (tip) {
+              tip.textContent = '命中小怪！血 ' + cr.hp + '/' + cr.max;
             }
             updHUD(this.hp, this.coins);
             return true;
@@ -1204,9 +1271,19 @@
       var w = normalizeWeaponId(this.weapon) || 'dart';
       this.weapon = w;
       if (w === 'hammer') {
-        this.cool = 0.5;
-        this._hurtAt(this.px + this.face * 40, this.py + 24, 60, 2);
-        this._spawnShot(0, 28, 0.18, 0, hammerTex || bladeTex);
+        /* c29: 近战砸 + 可投掷飞锤（均带伤）；弓/飞镖路径不动 */
+        this.cool = 0.48;
+        var hx = this.px + this.face * 52;
+        var hy = this.py + 22;
+        var smashed = this._hurtAt(hx, hy, 96, 2);
+        if (smashed) {
+          var tipH = $('msg');
+          if (tipH && tipH.textContent.indexOf('命中') < 0 && tipH.textContent.indexOf('倒下') < 0 && tipH.textContent.indexOf('小怪') < 0) {
+            tipH.textContent = '锤子砸中！';
+          }
+        }
+        /* 投掷飞锤：有伤、有飞行，远端小怪/鳄也能打到 */
+        this._spawnShot(2, 340, 0.95, -40, hammerTex || bladeTex);
         return;
       }
       if (w === 'bow') {
@@ -1234,7 +1311,7 @@
       this.burnShake = 0;
       this.burnDir = 0;
       var tip = $('msg');
-      if (tip) tip.textContent = '着火了！左右快晃或踩进水灭火';
+      if (tip) tip.textContent = '着火了';
       playSfx('fire');
     },
     _extinguish: function (why) {
@@ -1243,18 +1320,20 @@
       this.burnShake = 0;
       this.burnDir = 0;
       if (this.ninja) this.ninja.setColor(cc.color(255, 255, 255));
+      if (this.burnFx) this.burnFx.setVisible(false);
       var tip = $('msg');
-      if (tip) tip.textContent = why || '灭火成功！';
+      if (tip) tip.textContent = why || '灭火了';
       playSfx('coin');
     },
     _tickBurn: function (dt) {
       if ((this.burnT || 0) <= 0) {
         if (this.ninja) this.ninja.setColor(cc.color(255, 255, 255));
+        if (this.burnFx) this.burnFx.setVisible(false);
         return;
       }
       /* 踩水灭火优先 */
       if (this._inWater()) {
-        this._extinguish('💦 踩水灭火成功！');
+        this._extinguish('灭火了');
         return;
       }
       var d = 0;
@@ -1262,14 +1341,21 @@
       else if (inp.right && !inp.left) d = 1;
       if (d && this.burnDir && d !== this.burnDir) this.burnShake = (this.burnShake | 0) + 1;
       if (d) this.burnDir = d;
-      if ((this.burnShake | 0) >= 5) {
-        this._extinguish('左右快晃灭火成功！没有掉血');
+      if ((this.burnShake | 0) >= 3) {
+        this._extinguish('灭火了');
         return;
       }
       this.burnT = Math.max(0, this.burnT - dt);
       if (this.ninja) {
-        var pulse = 180 + Math.floor((Math.sin(Date.now() / 80) * 0.5 + 0.5) * 75);
-        this.ninja.setColor(cc.color(255, pulse, 80));
+        /* 橙闪：更醒目，验收停帧也能看出着火态 */
+        var pulse = 90 + Math.floor((Math.sin(Date.now() / 70) * 0.5 + 0.5) * 120);
+        this.ninja.setColor(cc.color(255, pulse, 40));
+        this.ninja.setOpacity(255);
+      }
+      if (this.burnFx) {
+        this.burnFx.setVisible(true);
+        this.burnFx.setPosition(this.px, this.py + DRAW_H * 0.85);
+        this.burnFx.setOpacity(180 + Math.floor((Math.sin(Date.now() / 60) * 0.5 + 0.5) * 75));
       }
       if (this.burnT > 0) return;
       /* 烧满：扣血一次，火停 */
@@ -1353,7 +1439,7 @@
           if (!wasGrounded) playSfx('land');
         } else if (gY < -1000 && this.py < this.gy - 80) {
           /* fell in pit / swamp water */
-          if ((this.burnT || 0) > 0) this._extinguish('💦 踩水灭火成功！');
+          if ((this.burnT || 0) > 0) this._extinguish('灭火了');
           if (this.invuln <= 0) {
             this.hp -= 1;
             this.invuln = 1.0;
@@ -1390,7 +1476,7 @@
         } else this.ninja.setOpacity(255);
 
         /* 落地后再次判水灭火（_tickBurn 在位移前） */
-        if ((this.burnT || 0) > 0 && this._inWater()) this._extinguish('💦 踩水灭火成功！');
+        if ((this.burnT || 0) > 0 && this._inWater()) this._extinguish('灭火了');
 
         /* traps */
         var spk = level.traps.spike || {};
@@ -1483,8 +1569,14 @@
           var bx = this.boss.x + Math.sin(elapsed * 0.7) * 18;
           this.bossSp.setPosition(bx, this.boss.y);
           this.bossSp.setScaleX((this.px < bx ? -1 : 1) * crocDrawScale());
-          if (this.boss.hurtT > 0) this.bossSp.setOpacity(120 + (Math.floor(this.boss.hurtT * 20) % 2) * 100);
-          else this.bossSp.setOpacity(255);
+          if (this.boss.hurtT > 0) {
+            var bf = (Math.floor(this.boss.hurtT * 24) % 2);
+            this.bossSp.setOpacity(255);
+            this.bossSp.setColor(bf ? cc.color(255, 255, 255) : cc.color(255, 180, 180));
+          } else {
+            this.bossSp.setOpacity(255);
+            this.bossSp.setColor(cc.color(255, 255, 255));
+          }
           if (this.invuln <= 0 && Math.abs(this.px - bx) < T * 1.2 && this.py < this.gy + DRAW_H) {
             this.hp -= 1;
             this.invuln = 1.0;
@@ -1507,7 +1599,15 @@
             cr.hurtT = Math.max(0, cr.hurtT - dt);
             cr.x += Math.sin(elapsed * 1.4 + i) * 18 * dt;
             cr.sp.setPosition(cr.x, this.gy);
-            cr.sp.setOpacity(cr.hurtT > 0 ? 140 : 255);
+            if (cr.hurtT > 0) {
+              /* 受击闪白 */
+              var flash = (Math.floor(cr.hurtT * 24) % 2) ? 255 : 180;
+              cr.sp.setOpacity(255);
+              cr.sp.setColor(cc.color(255, flash, flash));
+            } else {
+              cr.sp.setOpacity(255);
+              cr.sp.setColor(cc.color(255, 255, 255));
+            }
             if (this.invuln <= 0 && Math.abs(this.px - cr.x) < T * 0.7 && this.py < this.gy + DRAW_H * 0.8) {
               this.hp -= 1;
               this.invuln = 0.8;
