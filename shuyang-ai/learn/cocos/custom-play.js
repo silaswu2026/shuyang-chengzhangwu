@@ -11,6 +11,7 @@
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
  * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。
  * c42: 默认关保底可见线圈弹簧垫（ensureSprings）+ 贴图更醒目；保留 c32 power=1300；P2 HUD 去「沼泽」壳话。
+ * c44: 冷开真凶 — `_addNightBg` 整屏棕 LayerColor(90,58,36) 在 canopy 未到前当稳态；改海军 fallback；地面 bed 高度压到草线（不再 gy+2T 盖树）；匹配中 id 占用改 Guest 时延后 B蓝 chip 到 guest peer open（「匹配中」仍 A绿）。
  * c43: P2 — ?net=1 立刻乐观锁 Host→A绿（撤掉匹配前 600ms 仍读本地红皮窗口）；冷开安全床/清屏改海军蓝，避免整屏棕底闪。
  * c29: 小岩签 — 沼泽保底可踩火源+着火/灭火短提示；锤子近战/投掷明确扣血闪白。弓/飞镖不回退。
  * c41: 试玩换壳 — 海军径向+手机横屏金框；fitStage 按壳槽；PeerJS/玩法不动。
@@ -92,7 +93,11 @@
     syncCastUI();
   }
   function netLockedPalette() {
-    if (typeof netRole !== 'undefined' && netRole === 'guest') return 'blue';
+    /* c44: guest pending (id taken, peer not open yet) still A绿 during 「匹配中」 */
+    if (typeof netRole !== 'undefined' && netRole === 'guest') {
+      if (typeof netGuestPending !== 'undefined' && netGuestPending) return 'green';
+      return 'blue';
+    }
     if (typeof netRole !== 'undefined' && netRole === 'host') return 'green';
     return localPalette;
   }
@@ -1125,7 +1130,8 @@
       return true;
     },
     _addNightBg: function () {
-      var fallback = mkColor(W + 4, H + 4, 90, 58, 36);
+      /* c44: navy night-sky bed until canopy loads — never full-stage brown #5a3a24 as steady state */
+      var fallback = mkColor(W + 4, H + 4, 15, 18, 48);
       fallback.setPosition(-2, -2);
       this.addChild(fallback, -6);
       this.bgNode = null;
@@ -1242,7 +1248,8 @@
       var c, x0, row, nRows;
       /* 泥土铺满画布底→草皮：多行 dirt，颜色像老版土层（忌近黑） */
       nRows = Math.max(3, Math.ceil(gy / T) + 1);
-      var bed = mkColor(this.worldW + 120, gy + T * 2, 90, 58, 36);
+      /* c44: bed only under grass — was gy+2T which painted brown strip into sky over trees */
+      var bed = mkColor(this.worldW + 120, gy, 90, 58, 36);
       bed.setPosition(-60, 0);
       this.world.addChild(bed, 0);
       for (c = 0; c < cols; c++) {
@@ -2176,6 +2183,7 @@
     ] }
   };
   var netRole = null, netPeer = null, netConn = null, netLinked = false, netCode = '';
+  var netGuestPending = false; /* c44: true while guest peer not yet open — chip stays A绿 */
   var netTransport = null, netBcSession = '', netBC = null, netP2 = null;
   try { netBC = new BroadcastChannel('sycocos-coop-v1'); } catch (eN) { netBC = null; }
 
@@ -2256,7 +2264,7 @@
     }
     if (msg.t === 'bc-offer' && !netLinked && netRole !== 'host') {
       netTransport = 'bc'; netBcSession = msg.session; netCode = msg.id || netCode;
-      netRole = 'guest'; netLinked = true;
+      netRole = 'guest'; netLinked = true; netGuestPending = false;
       applyRoleVisuals();
       netBanner('已连上·同机', true);
       netPanel(true, '已准备！等房主点「开始游戏」');
@@ -2299,7 +2307,7 @@
   function netStartMatch() {
     if (typeof Peer === 'undefined') {
       netPanel(true, 'PeerJS 未加载，用同页 BroadcastChannel 试同机…');
-      netRole = 'host'; netCode = netRoomId();
+      netRole = 'host'; netCode = netRoomId(); netGuestPending = false;
       netBcSession = 's' + Date.now();
       applyRoleVisuals();
       if (netBC) netBC.postMessage({ t: 'bc-offer', session: netBcSession, id: netCode });
@@ -2311,13 +2319,14 @@
     netLinked = false;
     /* c38: try-host path — lock Host/A绿 immediately. Do NOT null netRole (that flashed solo C红 ~3s while PeerJS open). */
     netRole = 'host';
+    netGuestPending = false;
     applyRoleVisuals();
     try { if (netPeer) netPeer.destroy(); } catch (e) {}
     /* Try host first on this minute's room id */
     netPeer = new Peer(netCode, NET_PEER_OPTS);
     var hosted = false;
     netPeer.on('open', function (id) {
-      hosted = true; netRole = 'host'; netCode = id;
+      hosted = true; netRole = 'host'; netCode = id; netGuestPending = false;
       applyRoleVisuals();
       netPanel(true, netSoft ? '开房成功 · 单人可继续，队友稍后可加入' : '开房成功 · 等另一位也点「联机游玩」');
       netBanner('房主 · ' + id.slice(-6), false);
@@ -2327,12 +2336,15 @@
     netPeer.on('connection', function (conn) { netWireConn(conn); });
     netPeer.on('error', function (err) {
       if (hosted) return;
-      /* id taken → join as guest; flip chip to B蓝 as soon as role is known */
+      /* id taken → join as guest; c44: keep A绿 through 「匹配中」 until guest peer opens */
       try { netPeer.destroy(); } catch (e2) {}
       netRole = 'guest';
-      applyRoleVisuals();
+      netGuestPending = true;
+      applyRoleVisuals(); /* still A绿 while pending */
       netPeer = new Peer(NET_PEER_OPTS);
       netPeer.on('open', function () {
+        netGuestPending = false;
+        applyRoleVisuals(); /* now B蓝 — joining */
         netPanel(true, '发现房间，正在连接…');
         var c = netPeer.connect(netCode, { reliable: true });
         netWireConn(c);
@@ -2364,7 +2376,7 @@
       }
       netBanner('', false);
       try { if (netPeer) netPeer.destroy(); } catch (e) {}
-      netRole = null; netLinked = false;
+      netRole = null; netLinked = false; netGuestPending = false;
       applyRoleVisuals();
     };
     var start = $('netStart');
@@ -2436,6 +2448,7 @@
         /* c43: lock Host/A绿 BEFORE any delayed match + before goPlay reads sycocos-skin=red.
          * Old 600ms setTimeout left netRole=null → HUD flashed C红 ~0.6–0.9s. */
         netRole = 'host';
+        netGuestPending = false;
         applyRoleVisuals();
         netBanner('联机邀请中（可继续单人）·点「联机游玩」看房间', false);
         setTimeout(function () {
