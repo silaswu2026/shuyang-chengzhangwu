@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0f1230">
-<meta name="play-build" content="c42">
+<meta name="play-build" content="c43">
 <title>玩我的关 · 伍澍暘成长屋</title>
 <link rel="stylesheet" href="../../../brand-tokens.css"/>
 <link rel="preload" as="image" href="../../../xy-go/sprites/green/idle.png" fetchpriority="high"/>
@@ -81,9 +81,9 @@ body{
   max-width:calc(100% - 18px);border-radius:14px;overflow:hidden;
   background:#0f1230;border:1px solid rgba(255,224,122,.2)
 }
-.shell{position:absolute;inset:0;z-index:0;width:100%;height:100%;background:#5a3a24;display:block}
+.shell{position:absolute;inset:0;z-index:0;width:100%;height:100%;background:#0f1230;display:block} /* c43: navy safety bed */
 .cvwrap{position:absolute;inset:0;width:100%;height:100%;background:transparent;overflow:hidden;line-height:0}
-#stagePad{position:absolute;inset:0;z-index:0;background:#5a3a24;pointer-events:none;opacity:1}
+#stagePad{position:absolute;inset:0;z-index:0;background:#0f1230;pointer-events:none;opacity:1} /* c43 */
 #gameCanvas{position:absolute;inset:0;z-index:1;width:100%!important;height:100%!important;display:block;background:transparent;touch-action:none;opacity:1}
 
 /* HUD — schoolhouse navy/gold（舞台仍 canopy-night） */
@@ -143,7 +143,7 @@ body{
     /* 顶给顶栏，底留安全区；flex 子项吃满剩余，避免 100vh 高出可视区裁掉底栏 */
     padding:32px 0 max(10px, env(safe-area-inset-bottom, 0px));
     align-items:stretch;justify-content:stretch;flex-direction:column;
-    background:#5a3a24; /* 竖屏外缘跟沼泽床，不再露大块海军蓝 */
+    background:#0f1230; /* c43: 冷开跟壳海军，土带由关内 dirt 画 */
   }
   .phone-bezel{
     flex:1 1 auto;flex-direction:column;width:100%;
@@ -154,7 +154,7 @@ body{
   .phone-notch{display:none}
   .canvas-slot{
     width:100%;height:100%;flex:1 1 auto;aspect-ratio:auto;min-height:0;
-    max-height:none;max-width:100%;border-radius:0;border:0;background:#5a3a24
+    max-height:none;max-width:100%;border-radius:0;border:0;background:#0f1230
   }
   .bar{min-height:28px;padding:2px 6px}
   .bar .chip{padding:3px 8px;border-radius:14px;max-width:calc(100vw - 100px)}
@@ -293,11 +293,11 @@ body{
     </div>
   </div>
 </div>
-<!-- c42: 保底线圈弹簧垫+更醒目贴图 · was c41: 沼泽外观+减速HUD+过关彩纸 · was c40: 原版走动 · was c39: 冷开 -->
+<!-- c43: 匹配立刻A绿+冷开海军床 · was c42: 弹簧垫 · was c41: 沼泽/减速/烟花 · was c40: 原版走动 · was c39: 冷开 -->
 <script src="../../../vendor/peerjs/peerjs.min.js"></script>
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
 <script src="wb-store.js?v=wb6"></script>
-<script src="wb-audio.js?v=c42"></script>
-<script src="custom-play.js?v=c42"></script>
+<script src="wb-audio.js?v=c43"></script>
+<script src="custom-play.js?v=c43"></script>
 </body>
 </html>

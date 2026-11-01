@@ -158,7 +158,7 @@
 
 已经做上的（c39 · 2026-11-01）：
 
-- **试玩冷开首帧忍者**：横屏曾测到冷开 ~0.9–3.2s 只有夜景森林+HUD、透明画布无忍者（非整屏棕底；暖刷 ~0.2s OK）。根因：`boot` 等 `window.load`，被 `#castStrip` 三张大肖像 JPG（~0.9MB）+ CSS `canopy-night` 床图拖住，期间 HTML HUD/床已可见。现：①脚本末立刻 boot（不等 load）；②肖像改 `data-src` 首帧后再灌；③CSS 床纯 `#5a3a24`（夜林仍 JS 并行后贴）；④`<link rel=preload>` idle/dirt/grass；⑤idle 解析期预载；⑥≤1.2s 硬顶开玩。**c40**：占位改为原版 `earlyIdleImg`/idle PNG（不再程序化剪影）。保留 critical 路径与 c38 chip / c37 踩踏 / c36 着火。正式名 **伍澍暘** / 助手 **小宇**。
+- **试玩冷开首帧忍者**：横屏曾测到冷开 ~0.9–3.2s 只有夜景森林+HUD、透明画布无忍者（非整屏棕底；暖刷 ~0.2s OK）。根因：`boot` 等 `window.load`，被 `#castStrip` 三张大肖像 JPG（~0.9MB）+ CSS `canopy-night` 床图拖住，期间 HTML HUD/床已可见。现：①脚本末立刻 boot（不等 load）；②肖像改 `data-src` 首帧后再灌；③CSS 床纯色安全垫（**c43** 改为海军 `#0f1230`，不再整屏 `#5a3a24` 棕；夜林仍 JS 并行后贴；土带由关内 dirt）；④`<link rel=preload>` idle/dirt/grass；⑤idle 解析期预载；⑥≤1.2s 硬顶开玩。**c40**：占位改为原版 `earlyIdleImg`/idle PNG（不再程序化剪影）。保留 critical 路径与 c38 chip / c37 踩踏 / c36 着火。正式名 **伍澍暘** / 助手 **小宇**。
 
 
 ## 旧→新画面对照（parity）
@@ -185,6 +185,7 @@
 可控皮肤 **只许** 绿 / 红 / 蓝（`xy-go/sprites/green/` 底图 + canvas color-tint；肖像 `xy-go/ninjas/ninja-{green,blue,red}.jpg`）。
 - `custom-play`：单人选色（`#castPick` / `?skin=` / `localStorage sycocos-skin`）；联机锁定 Host=绿、Guest=蓝；禁第四主角；`tex.head` 等插画不是玩家皮。
 - **c38 chip 同步 + 匹配不闪红**：开房主 / 进房客 / 选色 / tint 就绪后，HUD `hpchip` 与可见忍者同色（`applyRoleVisuals` + `updHUD` 一律读 `netLockedPalette()`）。**匹配阶段**不再把 `netRole` 置空：开房路径立刻乐观锁 Host→**A 绿**（跳过中间「C 红」）；id 占用改 Guest→**B 蓝**。闪红应 ≤~0.5s 或根本不出现（横屏曾测到 ~2.5–3.1s）。终态映射不变：房主 A 绿 / 客人 B 蓝 / 单人可选绿红蓝。
+- **c43 P2（匹配窗口 + 冷开床）**：`?net=1` 在 boot 里**立刻** `netRole=host` + `applyRoleVisuals`（含无场景时 `forceHpChip`），再 `setTimeout(0)` 开 Peer；去掉旧 600ms「先读 `sycocos-skin=red` 再锁房主」窗口（横屏曾 ~0.6–0.9s C红）。冷开 `#stagePad`/`.shell`/清屏色改海军 `#0f1230`，关内 dirt 仍画土带——减少整屏棕底一闪。正式名 **伍澍暘** / 助手 **小宇**。
 - 工坊演示跑图目前默认绿忍者（三色子集，合格）；不引入绿色小人头像当主控。
 - 备路 `xy-go` 本身已有三色 tint；仍标过渡（见上表）。
 

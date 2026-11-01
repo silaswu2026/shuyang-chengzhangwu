@@ -11,6 +11,7 @@
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
  * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。
  * c42: 默认关保底可见线圈弹簧垫（ensureSprings）+ 贴图更醒目；保留 c32 power=1300；P2 HUD 去「沼泽」壳话。
+ * c43: P2 — ?net=1 立刻乐观锁 Host→A绿（撤掉匹配前 600ms 仍读本地红皮窗口）；冷开安全床/清屏改海军蓝，避免整屏棕底闪。
  * c29: 小岩签 — 沼泽保底可踩火源+着火/灭火短提示；锤子近战/投掷明确扣血闪白。弓/飞镖不回退。
  * c41: 试玩换壳 — 海军径向+手机横屏金框；fitStage 按壳槽；PeerJS/玩法不动。
  * c40audio(hist): levelAudio 第9关 BGM 回退全局；走路/砍击 SFX 钩子。
@@ -189,6 +190,19 @@
       btn.setAttribute('aria-pressed', sk === cur ? 'true' : 'false');
     });
   }
+  /** Sync #hp chip text even before PlayLayer exists (matchmaking / cold open). */
+  function forceHpChip(pal) {
+    var hpEl = $('hp');
+    if (!hpEl) return;
+    var chip = CAST_LABEL[pal] || 'A 绿';
+    var bar = hpEl.querySelector('.hpbar');
+    var width = '100%';
+    if (bar) {
+      var i = bar.querySelector('i');
+      if (i && i.style && i.style.width) width = i.style.width;
+    }
+    hpEl.innerHTML = '<span class="hpchip">' + chip + '</span><span class="hpbar"><i style="width:' + width + '"></i></span>';
+  }
   /** Keep sprite + HUD chip + cast row on the same palette (host=绿 / guest=蓝 / solo=local). */
   function applyRoleVisuals() {
     var pal = netLockedPalette();
@@ -196,6 +210,9 @@
       sceneRef.palette = pal;
       if (sceneRef.ninja) applyNinjaFrame(sceneRef.ninja, pal, sceneRef.grounded === false ? 'jump_0' : 'idle');
       updHUD(sceneRef.hp, sceneRef.coins);
+    } else {
+      /* c43: matching can start before PlayLayer — still show A绿/B蓝, never stale C红 */
+      forceHpChip(pal);
     }
     syncCastUI();
   }
@@ -348,7 +365,7 @@
       cc.view.setDesignResolutionSize(W, H, cc.ResolutionPolicy.EXACT_FIT);
       if (cc.director && cc.director.setClearColor) {
         /* swamp-dirt clear — pad matches first-frame bed; no navy empty flash on portrait */
-        cc.director.setClearColor(cc.color(90, 58, 36, 255));
+        cc.director.setClearColor(cc.color(15, 18, 48, 255)); /* c43: navy bed, not full-screen brown */
       }
       if (cc.view._resizeEvent) cc.view._resizeEvent();
     } catch (e) {}
@@ -2416,12 +2433,16 @@
       if (q.get('net') === '1') {
         /* Solo-first: soft BEFORE any panel; play never waits on peer */
         netSoft = true;
+        /* c43: lock Host/A绿 BEFORE any delayed match + before goPlay reads sycocos-skin=red.
+         * Old 600ms setTimeout left netRole=null → HUD flashed C红 ~0.6–0.9s. */
+        netRole = 'host';
+        applyRoleVisuals();
         netBanner('联机邀请中（可继续单人）·点「联机游玩」看房间', false);
         setTimeout(function () {
           netSoft = true;
           netBanner('联机邀请中（可继续单人）·点「联机游玩」看房间', false);
           netStartMatch();
-        }, 600);
+        }, 0);
       }
     } catch (eNet) {}
     updateOrientTip();
@@ -2471,7 +2492,7 @@
           fitStage();
           cc.view.setDesignResolutionSize(W, H, cc.ResolutionPolicy.EXACT_FIT);
           if (cc.director && cc.director.setClearColor) {
-            cc.director.setClearColor(cc.color(90, 58, 36, 255));
+            cc.director.setClearColor(cc.color(15, 18, 48, 255)); /* c43: navy bed, not full-screen brown */
           }
           spikeTex = buildSpikeTex();
           fireTex = buildFireTex();
@@ -2497,6 +2518,8 @@
             fitStage();
             localPalette = readSkinParam();
             bindCastUI();
+            /* c43: if soft-host already locked, chip/sprite stay A绿 even when local skin=red */
+            applyRoleVisuals();
             syncCastUI();
             /* c36+c39: never gate on tint or night BG. */
             try {
