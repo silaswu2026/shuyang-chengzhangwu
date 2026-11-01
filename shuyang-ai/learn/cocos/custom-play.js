@@ -15,6 +15,129 @@
     SP + 'idle.png', SP + 'knock_0.png', SP + 'jump_0.png',
     BG, SC + 'dirt-tile.png', SC + 'grass-cap.png'
   ];
+
+  /* PRODUCT §8: only green/red/blue controllable skins (tint from green sheet; no 4th hero). */
+  var CAST = ['green', 'blue', 'red'];
+  var CAST_LABEL = { green: 'A 绿', blue: 'B 蓝', red: 'C 红' };
+  var SPRITE_TINT = { blue: '#2a6bff', red: '#ff2a2a' };
+  var FRAME_NAMES = ['idle', 'walk_0', 'walk_1', 'walk_2', 'walk_3', 'jump_0', 'knock_0'];
+  var TINT_CACHE = { green: {}, blue: {}, red: {} };
+  var tintReady = false;
+  var localPalette = 'green';
+
+  function readSkinParam() {
+    try {
+      var m = /(?:\?|&)skin=(green|red|blue)/.exec(location.search || '');
+      if (m && CAST.indexOf(m[1]) >= 0) return m[1];
+    } catch (e0) {}
+    try {
+      var s = localStorage.getItem('sycocos-skin');
+      if (s && CAST.indexOf(s) >= 0) return s;
+    } catch (e1) {}
+    return 'green';
+  }
+  function writeSkin(p) {
+    if (CAST.indexOf(p) < 0) return;
+    localPalette = p;
+    try { localStorage.setItem('sycocos-skin', p); } catch (e2) {}
+    syncCastUI();
+  }
+  function netLockedPalette() {
+    if (typeof netRole !== 'undefined' && netRole === 'guest') return 'blue';
+    if (typeof netRole !== 'undefined' && netRole === 'host') return 'green';
+    return localPalette;
+  }
+  function p2Palette() { return 'blue'; }
+  function buildTintTex(img, tintHex) {
+    var c = document.createElement('canvas');
+    var w = img.naturalWidth || img.width || 1;
+    var h = img.naturalHeight || img.height || 1;
+    c.width = w; c.height = h;
+    var o = c.getContext('2d');
+    o.globalCompositeOperation = 'source-over';
+    o.drawImage(img, 0, 0, w, h);
+    o.globalCompositeOperation = 'color';
+    o.fillStyle = tintHex;
+    o.fillRect(0, 0, w, h);
+    o.globalCompositeOperation = 'destination-in';
+    o.drawImage(img, 0, 0, w, h);
+    o.globalCompositeOperation = 'source-over';
+    var t = new cc.Texture2D();
+    t.initWithElement(c);
+    t.handleLoadedTexture();
+    return t;
+  }
+  function ensureTintCache(done) {
+    var left = FRAME_NAMES.length;
+    if (left <= 0) { tintReady = true; if (done) done(); return; }
+    FRAME_NAMES.forEach(function (name) {
+      var src = SP + name + '.png';
+      TINT_CACHE.green[name] = src;
+      var im = new Image();
+      im.decoding = 'async';
+      im.onload = function () {
+        try {
+          TINT_CACHE.blue[name] = buildTintTex(im, SPRITE_TINT.blue);
+          TINT_CACHE.red[name] = buildTintTex(im, SPRITE_TINT.red);
+        } catch (eT) {
+          TINT_CACHE.blue[name] = src;
+          TINT_CACHE.red[name] = src;
+        }
+        left--;
+        if (left <= 0) { tintReady = true; if (done) done(); }
+      };
+      im.onerror = function () {
+        TINT_CACHE.blue[name] = src;
+        TINT_CACHE.red[name] = src;
+        left--;
+        if (left <= 0) { tintReady = true; if (done) done(); }
+      };
+      im.src = src;
+    });
+  }
+  function texFor(palette, name) {
+    var p = (CAST.indexOf(palette) >= 0) ? palette : 'green';
+    if (p === 'green') return SP + name + '.png';
+    var t = TINT_CACHE[p] && TINT_CACHE[p][name];
+    return t || SP + name + '.png';
+  }
+  function applyNinjaFrame(sp, palette, name) {
+    if (!sp) return;
+    try { sp.setTexture(texFor(palette, name)); } catch (eF) {
+      try { sp.setTexture(SP + name + '.png'); } catch (eF2) {}
+    }
+  }
+  function syncCastUI() {
+    var row = document.getElementById('castPick');
+    if (!row) return;
+    var locked = !!(typeof netRole !== 'undefined' && netRole);
+    var cur = netLockedPalette();
+    row.querySelectorAll('[data-skin]').forEach(function (btn) {
+      var sk = btn.getAttribute('data-skin');
+      btn.classList.toggle('on', sk === cur);
+      btn.disabled = locked && sk !== cur;
+      btn.setAttribute('aria-pressed', sk === cur ? 'true' : 'false');
+    });
+  }
+  function bindCastUI() {
+    var row = document.getElementById('castPick');
+    if (!row || row._bound) return;
+    row._bound = true;
+    row.addEventListener('click', function (ev) {
+      var t = ev.target;
+      if (!t || !t.getAttribute) return;
+      var sk = t.getAttribute('data-skin');
+      if (!sk || CAST.indexOf(sk) < 0) return;
+      if (typeof netRole !== 'undefined' && netRole) return;
+      writeSkin(sk);
+      if (sceneRef) {
+        sceneRef.palette = localPalette;
+        applyNinjaFrame(sceneRef.ninja, sceneRef.palette, 'idle');
+        updHUD(sceneRef.hp, sceneRef.coins);
+      }
+    });
+    syncCastUI();
+  }
   var T = 40;
   var CHAR_FRAC = 0.22; /* wb6: bigger ninja (~22% viewport) */
   var DRAW_H = 78; /* recomputed each fit/build from H * CHAR_FRAC */
@@ -429,9 +552,11 @@
     var left = Math.max(0, hp);
     var hpEl = $('hp');
     if (hpEl) {
-      /* Green chip bar like xy-go A绿 + hearts */
       var pct = Math.round((left / MAX_HP) * 100);
-      hpEl.innerHTML = '<span class="hpchip">A 绿</span><span class="hpbar"><i style="width:' + pct + '%"></i></span>';
+      var pal = (sceneRef && sceneRef.palette) || netLockedPalette();
+      var chip = CAST_LABEL[pal] || 'A 绿';
+      var extra = (sceneRef && sceneRef.p2) ? ' · B 蓝' : '';
+      hpEl.innerHTML = '<span class="hpchip">' + chip + extra + '</span><span class="hpbar"><i style="width:' + pct + '%"></i></span>';
     }
     var c = $('coins');
     if (c) c.textContent = '🪙 ' + coins;
@@ -785,7 +910,8 @@
       this.fog.setOpacity(0);
       this.addChild(this.fog, 40);
 
-      this.ninja = new cc.Sprite(SP + 'idle.png');
+      this.palette = netLockedPalette();
+      this.ninja = new cc.Sprite(texFor(this.palette, 'idle'));
       this.ninja.setAnchorPoint(0.5, 0);
       var sz = this.ninja.getContentSize();
       var texH = idleTexH;
@@ -794,7 +920,8 @@
       this.nScale = DRAW_H / Math.max(texH, 1);
       this.ninja.setScale(this.nScale);
       this.world.addChild(this.ninja, 10);
-      this.walk = [SP + 'walk_0.png', SP + 'walk_1.png', SP + 'walk_2.png', SP + 'walk_3.png'];
+      this.walkFrames = ['walk_0', 'walk_1', 'walk_2', 'walk_3'];
+      applyNinjaFrame(this.ninja, this.palette, 'idle');
 
       var lvEl = $('lvlChip');
       if (lvEl) lvEl.textContent = '第9关 我的关卡';
@@ -840,8 +967,9 @@
           if (cr.sp) { cr.sp.setVisible(true); cr.sp.setOpacity(255); cr.sp.setPosition(cr.home, this.gy); }
         }, this);
       }
+      this.palette = netLockedPalette();
       this.ninja.setPosition(this.px, this.py);
-      this.ninja.setTexture(SP + 'idle.png');
+      applyNinjaFrame(this.ninja, this.palette, 'idle');
       this.ninja.setOpacity(255);
       this.camX = Math.max(0, this.px - W * camBias());
       this.world.setPosition(-this.camX, 0);
@@ -970,7 +1098,7 @@
         if (this.grounded && inp.jumpPressed) {
           this.vy = 680; /* ≈ xy-go JUMP_V — 3-tile pit jumpable */
           this.grounded = false;
-          this.ninja.setTexture(SP + 'jump_0.png');
+          applyNinjaFrame(this.ninja, this.palette, 'jump_0');
           playSfx('jump');
         }
         inp.jumpPressed = false;
@@ -1023,12 +1151,12 @@
         this.ninja.setScaleX(this.face * this.nScale);
         this.ninja.setScaleY(this.nScale);
 
-        if (!this.grounded) this.ninja.setTexture(SP + 'jump_0.png');
+        if (!this.grounded) applyNinjaFrame(this.ninja, this.palette, 'jump_0');
         else if (Math.abs(this.vx) > 20) {
           this.frameT += dt;
           if (this.frameT > 0.1) { this.frameT = 0; this.frame = (this.frame + 1) % 4; }
-          this.ninja.setTexture(this.walk[this.frame]);
-        } else this.ninja.setTexture(SP + 'idle.png');
+          applyNinjaFrame(this.ninja, this.palette, this.walkFrames[this.frame]);
+        } else applyNinjaFrame(this.ninja, this.palette, 'idle');
         if (AUDIO) AUDIO.footstep(dt, Math.abs(this.vx) > 20, this.grounded);
 
         if (this.invuln > 0) {
@@ -1054,7 +1182,7 @@
             if (kind === 'spring' && touch && this.grounded) {
               this.vy = 860;
               this.grounded = false;
-              this.ninja.setTexture(SP + 'jump_0.png');
+              applyNinjaFrame(this.ninja, this.palette, 'jump_0');
               playSfx('spring');
             } else if (kind === 'mist' && touch) {
               this.slowT = 1.6;
@@ -1063,7 +1191,7 @@
               if (this.invuln <= 0) {
                 this.hp -= 1;
                 this.invuln = 0.8;
-                this.ninja.setTexture(SP + 'knock_0.png');
+                applyNinjaFrame(this.ninja, this.palette, 'knock_0');
                 playSfx('hurt');
                 updHUD(this.hp, this.coins);
                 if (this.hp <= 0) {
@@ -1084,7 +1212,7 @@
               this.hitKeys[key] = 1;
               this.hp -= (kind === 'fire' ? dmgF : dmgS);
               this.invuln = 1.0;
-              this.ninja.setTexture(SP + 'knock_0.png');
+              applyNinjaFrame(this.ninja, this.palette, 'knock_0');
               playSfx(kind === 'fire' ? 'fire' : 'spike');
               playSfx('hurt');
               updHUD(this.hp, this.coins);
@@ -1124,7 +1252,7 @@
             this.hp -= 1;
             this.invuln = 1.0;
             this.vx = (this.px < bx ? -1 : 1) * 120;
-            this.ninja.setTexture(SP + 'knock_0.png');
+            applyNinjaFrame(this.ninja, this.palette, 'knock_0');
             playSfx('hurt');
             updHUD(this.hp, this.coins);
             if (this.hp <= 0) {
@@ -1146,7 +1274,7 @@
             if (this.invuln <= 0 && Math.abs(this.px - cr.x) < T * 0.7 && this.py < this.gy + DRAW_H * 0.8) {
               this.hp -= 1;
               this.invuln = 0.8;
-              this.ninja.setTexture(SP + 'knock_0.png');
+              applyNinjaFrame(this.ninja, this.palette, 'knock_0');
               updHUD(this.hp, this.coins);
               if (this.hp <= 0) {
                 this.hp = 0; this.dead = true; this.playing = false;
@@ -1201,6 +1329,29 @@
     }
   });
 
+
+  function spawnNetP2(layer) {
+    if (!layer || layer.p2) return;
+    try {
+      var pal = p2Palette();
+      var sp = new cc.Sprite(texFor(pal, 'idle'));
+      sp.setAnchorPoint(0.5, 0);
+      sp.setScale(layer.nScale);
+      sp.setOpacity(220);
+      layer.world.addChild(sp, 9);
+      applyNinjaFrame(sp, pal, 'idle');
+      layer.p2 = { sp: sp, palette: pal, x: layer.px - 40, y: layer.py, _nl: false, _nr: false, _nj: false, _nt: false };
+      if (netRole === 'host') {
+        layer.palette = 'green';
+        applyNinjaFrame(layer.ninja, 'green', 'idle');
+      } else if (netRole === 'guest') {
+        layer.palette = 'blue';
+        applyNinjaFrame(layer.ninja, 'blue', 'idle');
+      }
+      syncCastUI();
+      updHUD(layer.hp, layer.coins);
+    } catch (eP2) {}
+  }
 
   /* —— PeerJS 联机 (同 xy-go：Peer + BroadcastChannel) —— */
   var NET_PREFIX = 'sycocos1';
@@ -1324,16 +1475,7 @@
         netBanner('联机中 · 房主（单人未停）', true);
         netSend({ t: 'hello', role: 'host' });
         netSend({ t: 'go' });
-        if (sceneRef && !sceneRef.p2) {
-          try {
-            var sp = new cc.Sprite(SP + 'idle.png');
-            sp.setAnchorPoint(0.5, 0);
-            sp.setScale(sceneRef.nScale);
-            sp.setOpacity(200);
-            sceneRef.world.addChild(sp, 9);
-            sceneRef.p2 = { sp: sp, x: sceneRef.px - 40, y: sceneRef.py, _nl: false, _nr: false, _nj: false, _nt: false };
-          } catch (eSoft) {}
-        }
+        spawnNetP2(sceneRef);
         return;
       }
       netPanel(true, netRole === 'host' ? '队友已到！点「开始游戏」' : '已准备！等房主开始');
@@ -1360,6 +1502,8 @@
     var hosted = false;
     netPeer.on('open', function (id) {
       hosted = true; netRole = 'host'; netCode = id;
+      if (sceneRef) { sceneRef.palette = 'green'; applyNinjaFrame(sceneRef.ninja, 'green', 'idle'); }
+      syncCastUI();
       netPanel(true, netSoft ? '开房成功 · 单人可继续，队友稍后可加入' : '开房成功 · 等另一位也点「联机游玩」');
       netBanner('房主 · ' + id.slice(-6), false);
       netBcSession = 's' + Date.now();
@@ -1371,6 +1515,8 @@
       /* id taken → join as guest */
       try { netPeer.destroy(); } catch (e2) {}
       netRole = 'guest';
+      if (sceneRef) { sceneRef.palette = 'blue'; applyNinjaFrame(sceneRef.ninja, 'blue', 'idle'); updHUD(sceneRef.hp, sceneRef.coins); }
+      syncCastUI();
       netPeer = new Peer(NET_PEER_OPTS);
       netPeer.on('open', function () {
         netPanel(true, '发现房间，正在连接…');
@@ -1414,14 +1560,7 @@
       netBanner('联机中 · 房主', true);
       if (sceneRef) {
         /* spawn p2 ghost */
-        if (!sceneRef.p2) {
-          var sp = new cc.Sprite(SP + 'idle.png');
-          sp.setAnchorPoint(0.5, 0);
-          sp.setScale(sceneRef.nScale);
-          sp.setOpacity(200);
-          sceneRef.world.addChild(sp, 9);
-          sceneRef.p2 = { sp: sp, x: sceneRef.px - 40, y: sceneRef.py, _nl: false, _nr: false, _nj: false, _nt: false };
-        }
+        spawnNetP2(sceneRef);
         sceneRef.reset();
       }
     };
@@ -1535,9 +1674,14 @@
             left--;
             if (left > 0) return;
             fitStage();
-            cc.director.runScene(new PlayScene());
-            $('msg').textContent = '第9关沼泽 · ←→跳 · F/J投';
-            setTimeout(fitStage, 50);
+            localPalette = readSkinParam();
+            ensureTintCache(function () {
+              bindCastUI();
+              syncCastUI();
+              cc.director.runScene(new PlayScene());
+              $('msg').textContent = '第9关 · 绿/红/蓝忍者 · ←→跳 · F/J投';
+              setTimeout(fitStage, 50);
+            });
           }
           if (!others.length) { left = 1; tick(); return; }
           others.forEach(function (src) {

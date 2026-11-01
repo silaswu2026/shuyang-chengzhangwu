@@ -8,33 +8,40 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#5a3a24">
-<title>玩我的关 · 第9关沼泽</title>
+<meta name="theme-color" content="#0f1230">
+<title>玩我的关 · 伍澍暘成长屋</title>
+<link rel="stylesheet" href="../../../brand-tokens.css"/>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;overflow:hidden;background:#1a2048}
-body{font-family:-apple-system,"PingFang SC","Noto Sans SC",sans-serif;color:#f7f4ff;height:100dvh;height:100vh;position:relative}
-.bar{position:fixed;left:0;right:0;top:0;z-index:30;display:flex;gap:6px;padding:4px 8px;align-items:center;background:#05070f99;min-height:32px;backdrop-filter:blur(4px)}
-.bar a,.bar button.net{color:#fff;font-weight:800;text-decoration:none;background:#3b4590;border:0;border-radius:999px;padding:5px 10px;font-size:12px;cursor:pointer}
-.bar button.net{background:linear-gradient(180deg,#78d484,#4ea85c);color:#083018}
-h1{margin:0;font-size:13px;color:#ffe7a0;flex:1;text-align:center;font-weight:900}
-.badge{font-size:10px;font-weight:800;color:#1a2040;background:linear-gradient(180deg,#9ff0a8,#4ea85c);border-radius:999px;padding:3px 8px}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--navy,#0f1230)}
+body{font-family:var(--family-font,-apple-system,"PingFang SC","Noto Sans SC",sans-serif);color:var(--ink,#f4f0ff);height:100dvh;height:100vh;position:relative}
+.bar{position:fixed;left:0;right:0;top:0;z-index:30;display:flex;gap:6px;padding:4px 8px;align-items:center;background:linear-gradient(180deg,#0f1230ee,#161b3dcc);min-height:32px;backdrop-filter:blur(6px);border-bottom:1px solid rgba(255,224,122,.28)}
+.bar a,.bar button.net{color:#fff;font-weight:800;text-decoration:none;background:#24305f;border:1px solid rgba(255,224,122,.35);border-radius:999px;padding:5px 10px;font-size:12px;cursor:pointer}
+.bar button.net{background:linear-gradient(180deg,var(--green,#3ecf6a),var(--green2,#2aa85a));color:#083018;border-color:transparent}
+h1{margin:0;font-size:13px;color:var(--gold,#ffe07a);flex:1;text-align:center;font-weight:900}
+.badge{font-size:10px;font-weight:800;color:#0f1230;background:linear-gradient(180deg,var(--gold,#ffe07a),var(--gold2,#e6b422));border-radius:999px;padding:3px 8px}
 #orientTip{display:none;position:absolute;left:50%;transform:translateX(-50%);top:34px;z-index:12;font-size:11px;font-weight:800;color:#ffe7a0;background:#1a2048cc;padding:3px 10px;border-radius:999px;pointer-events:none;white-space:nowrap}
 #orientTip.on{display:block}
 .shell{position:fixed;inset:0;z-index:0;width:100%;height:100%;background:#5a3a24 url(../../../xy-go/scenes/canopy-night.jpg) center/cover no-repeat;display:block}
 .cvwrap{position:absolute;inset:0;width:100%;height:100%;background:transparent;overflow:hidden;line-height:0}
 #stagePad{position:absolute;inset:0;z-index:0;background:#5a3a24 url(../../../xy-go/scenes/canopy-night.jpg) center/cover no-repeat;pointer-events:none;opacity:1}
 #gameCanvas{position:absolute;inset:0;z-index:1;width:100%!important;height:100%!important;display:block;background:#1a2048;touch-action:none;opacity:1}
-/* HUD — xy-go style: level card + green bar + coins (no six hearts) */
+/* HUD — schoolhouse navy/gold (stage still canopy-night Cocos asset family) */
 .hud{position:fixed;top:40px;left:8px;right:8px;z-index:28;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;gap:8px}
-.lvlcard{background:#102016ee;border-radius:10px;padding:7px 12px;min-width:132px;min-height:44px;border:1px solid #9ff0a855;box-shadow:0 2px 8px #0006}
+.lvlcard{background:#161b3dee;border-radius:12px;padding:7px 12px;min-width:132px;min-height:44px;border:1px solid rgba(255,224,122,.38);box-shadow:0 2px 10px #0007}
 #lvlChip{display:block;font-size:14px;font-weight:900;color:#fff;line-height:1.3;min-height:18px;margin:0 0 5px;white-space:nowrap}
 #hp{display:flex;align-items:center;gap:6px;min-height:14px}
-#hp .hpchip{font-size:11px;font-weight:900;color:#9ff0a8;background:#1a3a24;border-radius:999px;padding:2px 7px;line-height:1.2}
-#hp .hpbar{display:inline-block;width:84px;height:10px;background:#1a3020;border-radius:5px;overflow:hidden;vertical-align:middle;border:1px solid #4ea85c66}
-#hp .hpbar i{display:block;height:100%;min-height:8px;background:linear-gradient(90deg,#4ea85c,#9ff0a8);width:100%}
-#coins,#score,#weapon{font-size:14px;color:#ffe7a0;font-weight:800;text-shadow:0 1px 3px #000a;background:#102016ee;border-radius:10px;padding:6px 10px;border:1px solid #ffe7a044}
-#bossBar{display:none;position:fixed;top:96px;left:50%;transform:translateX(-50%);z-index:28;background:#102016ee;border-radius:10px;padding:6px 12px;min-width:200px;max-width:90%;pointer-events:none;border:1px solid #ff5a5a66}
+#hp .hpchip{font-size:11px;font-weight:900;color:#0f1230;background:linear-gradient(180deg,#9ff0a8,#3ecf6a);border-radius:999px;padding:2px 7px;line-height:1.2}
+#hp .hpbar{display:inline-block;width:84px;height:10px;background:#1a2040;border-radius:5px;overflow:hidden;vertical-align:middle;border:1px solid rgba(62,207,106,.45)}
+#hp .hpbar i{display:block;height:100%;min-height:8px;background:linear-gradient(90deg,#2aa85a,#3ecf6a);width:100%}
+#coins,#score,#weapon{font-size:14px;color:var(--gold,#ffe07a);font-weight:800;text-shadow:0 1px 3px #000a;background:#161b3dee;border-radius:12px;padding:6px 10px;border:1px solid rgba(255,224,122,.32)}
+#castPick{position:fixed;left:8px;bottom:calc(62px + env(safe-area-inset-bottom,0px));z-index:29;display:flex;gap:6px;pointer-events:auto}
+#castPick button{border:1px solid rgba(255,224,122,.4);border-radius:999px;padding:5px 10px;font-size:11px;font-weight:900;color:#ffe07a;background:#161b3dee;cursor:pointer}
+#castPick button.on{background:linear-gradient(180deg,#3ecf6a,#2aa85a);color:#083018;border-color:transparent}
+#castPick button:disabled{opacity:.45;cursor:not-allowed}
+.castStrip{display:flex;gap:4px;align-items:center;margin-left:4px}
+.castStrip img{width:22px;height:22px;border-radius:50%;border:2px solid #ffe07a;object-fit:cover;background:#161b3d}
+#bossBar{display:none;position:fixed;top:96px;left:50%;transform:translateX(-50%);z-index:28;background:#161b3dee;border-radius:12px;padding:6px 12px;min-width:200px;max-width:90%;pointer-events:none;border:1px solid #ff5a5a66}
 #bossBar.on{display:block}
 #bossBar .bn{font-size:13px;font-weight:800;color:#fff;margin:0 0 4px;text-align:center}
 #bossBar .bb{height:8px;background:#3a1818;border-radius:4px;overflow:hidden}
@@ -42,12 +49,12 @@ h1{margin:0;font-size:13px;color:#ffe7a0;flex:1;text-align:center;font-weight:90
 #msg{position:fixed;top:128px;left:0;right:0;z-index:28;text-align:center;font-weight:800;font-size:12px;color:#fff;text-shadow:0 1px 4px #000c;pointer-events:none;padding:0 8px}
 #boot{display:none;position:absolute;inset:0;z-index:15;align-items:center;justify-content:center;text-align:center;font-size:13px;color:#ffb4b4;font-weight:800;background:#05070fcc;padding:16px}
 #boot.err{display:flex}
-#netBanner{display:none;position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:11;font-size:12px;font-weight:800;background:#1a2048ee;color:#9ff0a8;padding:4px 12px;border-radius:999px;white-space:nowrap}
+#netBanner{display:none;position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:11;font-size:12px;font-weight:800;background:#0f1230ee;color:#3ecf6a;padding:4px 12px;border-radius:999px;white-space:nowrap;border:1px solid rgba(255,224,122,.35)}
 #netBanner.on{display:block}
 #netPanel{display:none;position:fixed;inset:0;z-index:40;align-items:center;justify-content:center;background:rgba(8,10,20,.82);pointer-events:none}
 #netPanel.on{display:flex;pointer-events:auto}
-#netPanel .card{background:linear-gradient(180deg,#2a3360,#1a2048);border:2px solid #9ff0a866;border-radius:16px;padding:16px 18px;text-align:center;max-width:92%;min-width:260px}
-#netPanel h2{margin:0 0 8px;font-size:18px;color:#ffe7a0}
+#netPanel .card{background:linear-gradient(180deg,#161b3d,#0f1230);border:2px solid rgba(255,224,122,.45);border-radius:16px;padding:16px 18px;text-align:center;max-width:92%;min-width:260px}
+#netPanel h2{margin:0 0 8px;font-size:18px;color:var(--gold,#ffe07a)}
 #netPanel p{margin:0 0 10px;font-size:13px;color:#c9c3ef;font-weight:700}
 #netPanel .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px}
 /* Touch — ALWAYS in view on desktop too (was display:none ≥900px → 投丢失) */
@@ -60,13 +67,13 @@ h1{margin:0;font-size:13px;color:#ffe7a0;flex:1;text-align:center;font-weight:90
 .touch #btnT{width:60px;background:linear-gradient(180deg,#7ab0ffdd,#3b6fd4ee);box-shadow:0 3px 0 #274a8a;font-size:14px}
 .dock{position:absolute;z-index:9;right:8px;top:44px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:46%}
 /* c23/c24：.go 与设计台「去玩」同色同圆角同字号风格 */
-.go{border:0;border-radius:999px;padding:10px 18px;font-size:15px;font-weight:900;color:#fff;background:linear-gradient(180deg,#78d484,#4ea85c);box-shadow:0 2px 0 #2f6d3a;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;min-height:40px}
-.go.sec{background:linear-gradient(180deg,#7ab0ff,#3b6fd4);box-shadow:0 2px 0 #274a8a;font-size:11px}
+.go{border:0;border-radius:999px;padding:10px 18px;font-size:15px;font-weight:900;color:#083018;background:linear-gradient(180deg,var(--green,#3ecf6a),var(--green2,#2aa85a));box-shadow:0 2px 0 #1e6b3a;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;min-height:40px}
+.go.sec{background:linear-gradient(180deg,#3b4590,#24305f);color:#ffe07a;box-shadow:0 2px 0 #12162c;font-size:11px}
 /* c22：死屏脱离 cvwrap line-height:0；fixed 盖过 HUD；标题/剩❤/回上一页各占一行 */
 /* c24：去玩同色 CTA；stagePad/清屏改沼泽棕土 #5a3a24，消竖屏海军蓝空底闪 */
 #result{display:none;position:fixed;inset:0;z-index:35;align-items:center;justify-content:center;background:rgba(8,10,28,.75);line-height:normal}
 #result.show{display:flex}
-#result .card{background:linear-gradient(180deg,#2a3360,#1a2048);border:2px solid #ffe7a066;border-radius:18px;padding:16px 18px;text-align:center;max-width:92%;line-height:1.4}
+#result .card{background:linear-gradient(180deg,#161b3d,#0f1230);border:2px solid rgba(255,224,122,.5);border-radius:18px;padding:16px 18px;text-align:center;max-width:92%;line-height:1.4}
 #result .big{font-size:26px;font-weight:900;margin:0 0 10px;line-height:1.3;display:block}
 #result .sub{font-size:13px;color:#c9c3ef;font-weight:800;margin:0 0 12px;line-height:1.5;display:block}
 #result .sub .sub-hp,#result .sub .sub-hint{display:block;margin:0 0 6px;line-height:1.5}
@@ -101,7 +108,7 @@ h1{margin:0;font-size:13px;color:#ffe7a0;flex:1;text-align:center;font-weight:90
   .dock{top:auto;bottom:66px;right:12px}
   .go{padding:8px 14px;font-size:13px;min-height:32px}
   .cvwrap{border-radius:0}
-  html,body{background:#5a3a24 url(../../../xy-go/scenes/canopy-night.jpg) center/cover no-repeat}
+  html,body{background:var(--navy,#0f1230) url(../../../xy-go/scenes/canopy-night.jpg) center/cover no-repeat}
 }
 </style>
 <script>document.ccConfig={debugMode:0,frameRate:60,id:"gameCanvas",renderMode:1,showFPS:false};</script>
@@ -110,9 +117,14 @@ h1{margin:0;font-size:13px;color:#ffe7a0;flex:1;text-align:center;font-weight:90
 <div class="bar">
   <a href="visual-workbench.html">← 回工坊</a>
   <a href="visual-workbench.html">回摆关</a>
-  <h1>🎮 玩我的关</h1>
+  <h1>🎮 玩我的关 · 小宇</h1>
   <button class="net" id="btnNet" type="button">🤝 联机游玩</button>
   <span class="badge">Cocos</span>
+  <span class="castStrip" id="castStrip" title="仅绿/红/蓝三忍者">
+    <img src="../../../xy-go/ninjas/ninja-green.jpg" alt="绿忍者"/>
+    <img src="../../../xy-go/ninjas/ninja-blue.jpg" alt="蓝忍者"/>
+    <img src="../../../xy-go/ninjas/ninja-red.jpg" alt="红忍者"/>
+  </span>
 </div>
 <div id="orientTip">📱 竖屏可玩 · 比例同横屏</div>
 <div id="netBanner"></div>
@@ -157,6 +169,11 @@ h1{margin:0;font-size:13px;color:#ffe7a0;flex:1;text-align:center;font-weight:90
     </div>
   </div>
 </div>
+<div id="castPick" aria-label="选忍者（仅绿红蓝）">
+  <button type="button" data-skin="green">绿</button>
+  <button type="button" data-skin="blue">蓝</button>
+  <button type="button" data-skin="red">红</button>
+</div>
 <div id="netPanel">
   <div class="card">
     <h2>🤝 联机游玩</h2>
@@ -167,11 +184,11 @@ h1{margin:0;font-size:13px;color:#ffe7a0;flex:1;text-align:center;font-weight:90
     </div>
   </div>
 </div>
-<!-- c34: first-paint navy (less brown flash) · c27: load cocos AFTER body exists — lite _initSys mobile path does document.body.appendChild; head sync load → null → engine abort → Layer.extend crash -->
+<!-- c35: cast green/red/blue + schoolhouse HUD · c34: first-paint navy (less brown flash) · c27: load cocos AFTER body exists — lite _initSys mobile path does document.body.appendChild; head sync load → null → engine abort → Layer.extend crash -->
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
 <script src="wb-store.js?v=wb6"></script>
 <script src="wb-audio.js?v=wb6"></script>
-<script src="custom-play.js?v=c34"></script>
+<script src="custom-play.js?v=c35"></script>
 </body>
 </html>
