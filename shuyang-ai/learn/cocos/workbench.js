@@ -1,7 +1,7 @@
 /**
- * ldt19: 去玩→c31 竖屏底栏完整 · was ldt18→c30 · was wb85 二级 band · wb84/wb83 P2 · wb82 壳 tip→c41。
+ * ldt20: 去玩→c33 走路摆臂 · was ldt19: 去玩→c31 竖屏底栏完整 · was ldt18→c30 · was wb85 二级 band · wb84/wb83 P2 · wb82 壳 tip→c41。
  * 学习工作台 · 四芯片；关卡设计二级摆关|设置|关联；切片4 音乐绑九关+走路/砍击。
- * 存档 localStorage xygo-custom-level v1.2（wallet + audio）。试玩 custom-play.html?v=c32。
+ * 存档 localStorage xygo-custom-level v1.2（wallet + audio）。试玩 custom-play.html?v=c33。
  * wb80: 关卡设计合并 · wb79 觉察闸 · wb78 看图三阶段。
  */
 (function () {
@@ -553,16 +553,52 @@
     parent.addChild(sp, z == null ? 16 : z);
     sp._frame = 0;
     sp._frameT = 0;
+    sp._locoT = 0;
     sp._h = h;
     return sp;
   }
 
   function stepNinja(sp, dt, hurt, idle) {
     sp._frameT += dt;
+    if (hurt) {
+      if (sp._frameT < 0.1) return;
+      sp._frameT = 0;
+      var pathH = SP + 'knock_0.png';
+      var th = cc.textureCache.addImage(pathH);
+      if (th) {
+        sp.setTexture(th);
+        var rh = th.getContentSize();
+        if (rh.height > 2) {
+          sp.setTextureRect(cc.rect(0, 0, rh.width, rh.height));
+          sp.setScale(sp._h / rh.height);
+        }
+      }
+      return;
+    }
+    if (idle) {
+      if (sp._frameT < 0.12) return;
+      sp._frameT = 0;
+      var pathI = SP + 'idle.png';
+      var ti = cc.textureCache.addImage(pathI);
+      if (ti) {
+        sp.setTexture(ti);
+        var ri = ti.getContentSize();
+        if (ri.height > 2) {
+          sp.setTextureRect(cc.rect(0, 0, ri.width, ri.height));
+          sp.setScale(sp._h / ri.height);
+        }
+      }
+      sp._locoT = 0;
+      return;
+    }
+    /* c33/ldt20: procedural opposite limb swing while preview runs */
+    sp._locoT = (sp._locoT || 0) + dt * 10;
+    var WNW = window.WBNinjaWalk;
+    if (WNW && WNW.applyToSprite(sp, sp._locoT, 'green', 180, sp._h)) return;
     if (sp._frameT < 0.1) return;
     sp._frameT = 0;
     sp._frame = (sp._frame + 1) % 4;
-    var path = hurt ? SP + 'knock_0.png' : (idle ? SP + 'idle.png' : SP + 'walk_' + sp._frame + '.png');
+    var path = SP + 'walk_' + sp._frame + '.png';
     var t = cc.textureCache.addImage(path);
     if (t) {
       sp.setTexture(t);
@@ -1336,14 +1372,14 @@
       button(this, '回关卡', isPhoneShell() ? 90 : 110, 30, isPhoneShell() ? 100 : 130, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show((WB.ui.ldStep | 0) || 2); }); });
       button(this, '联机游玩', isPhoneShell() ? 300 : 360, 32, isPhoneShell() ? 140 : 160, isPhoneShell() ? 48 : 48, GOLD, INK, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c32&net=1';
+        location.href = 'custom-play.html?v=c33&net=1';
       });
       button(this, '去听选', isPhoneShell() ? 520 : 560, 32, isPhoneShell() ? 120 : 140, isPhoneShell() ? 48 : 46, NAVY, WHITE, function () {
         later(function () { show(5); });
       });
       button(this, '去玩这一关', isPhoneShell() ? 760 : 800, 32, isPhoneShell() ? 200 : 200, isPhoneShell() ? 50 : 48, GREEN, WHITE, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c32';
+        location.href = 'custom-play.html?v=c33';
       });
       this._t = 0;
       this.scheduleUpdate();
@@ -1478,7 +1514,7 @@
         '去⑥听选', function () { later(function () { show(5); }); },
         '去玩第9关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c32';
+          location.href = 'custom-play.html?v=c33';
         }
       );
       return true;
@@ -1561,7 +1597,7 @@
         },
         '去玩这一关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c32';
+          location.href = 'custom-play.html?v=c33';
         }
       );
       return true;

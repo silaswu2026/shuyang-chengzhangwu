@@ -3839,16 +3839,12 @@
     let alpha = blink ? 0.45 : 1;
     if (n.flash > 0 && Math.sin(sim * 55) > 0) alpha = 0.5;
     // Loco: always procedural arm-swing for walk/run (green/blue/red same new swing).
-    // Idle/jump may use Cocos frames; never use old walk_* images (white hands / stiff arms).
+    // Idle/jump may use Cocos frames; never use old walk_* images (near-identical mid-stride / stiff arms).
     ctx.translate(0, -bob);
     let ok = false;
     if (n.anim === 'run') {
-      // same authored ninja as idle/jump: walk_1..3 (walk_0 is a broken ghost frame)
-      const RUN_SEQ = ['walk_1', 'walk_2', 'walk_3', 'walk_2'];
-      const fi = Math.floor(((n.phase || 0) / Math.PI) * 2) & 3;
-      ok = drawSpriteFrame(RUN_SEQ[fi], n.face, alpha, 82, n.palette || 'green');
-      if (!ok) ok = drawSpriteFrame('idle', n.face, alpha, 82, n.palette || 'green');
-      if (!ok) drawHero(n.phase, 'run', n.face, alpha, n.palette || 'green', Math.abs(n.vx));
+      drawHero(n.phase, 'run', n.face, alpha, n.palette || 'green', Math.abs(n.vx));
+      ok = true;
     } else if (n.anim === 'jump' || n.anim === 'walljump' || n.anim === 'slide') {
       const fname = locoFrameName(n);
       ok = drawSpriteFrame(fname, n.face, alpha, 82, n.palette || 'green');

@@ -1,6 +1,7 @@
 /**
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·自制关
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
+ * c33: 走路手脚自然摆动 — 程序化 opposite arm/leg（旧 walk_* PNG 近同姿态仅飘围巾）；WBNinjaWalk。
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
  * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。
  * c42: P2 HUD 去「沼泽」壳话（保留 c29 着火/锤提示口径）· c41 换壳；PeerJS/玩法不动。
@@ -132,9 +133,26 @@
   function applyNinjaFrame(sp, palette, name) {
     if (!sp) return;
     var tex = texFor(palette, name);
-    try { sp.setTexture(tex); } catch (eF) {
+    try {
+      var t = null;
+      if (typeof tex === 'string') {
+        try { t = cc.textureCache.addImage(tex); } catch (eAdd) { t = null; }
+      }
+      if (t) {
+        sp.setTexture(t);
+        var r = t.getContentSize && t.getContentSize();
+        if (r && r.height > 2) sp.setTextureRect(cc.rect(0, 0, r.width, r.height));
+      } else {
+        sp.setTexture(tex);
+      }
+    } catch (eF) {
       try { sp.setTexture(SP + name + '.png'); } catch (eF2) {}
     }
+  }
+  function applyWalkPose(sp, palette, phase, speed) {
+    var WNW = window.WBNinjaWalk;
+    if (!WNW || !sp) return false;
+    return !!WNW.applyToSprite(sp, phase, palette, speed, null);
   }
   function syncCastUI() {
     var row = document.getElementById('castPick');
@@ -1120,6 +1138,7 @@
       this.burnFx.setVisible(false);
       this.world.addChild(this.burnFx, 11);
       this.walkFrames = ['walk_0', 'walk_1', 'walk_2', 'walk_3'];
+      this.locoT = 0;
       applyNinjaFrame(this.ninja, this.palette, 'idle');
 
       var lvEl = $('lvlChip');
@@ -1468,10 +1487,17 @@
 
         if (!this.grounded) applyNinjaFrame(this.ninja, this.palette, 'jump_0');
         else if (Math.abs(this.vx) > 20) {
-          this.frameT += dt;
-          if (this.frameT > 0.1) { this.frameT = 0; this.frame = (this.frame + 1) % 4; }
-          applyNinjaFrame(this.ninja, this.palette, this.walkFrames[this.frame]);
-        } else applyNinjaFrame(this.ninja, this.palette, 'idle');
+          /* c33: phase-driven opposite limb swing (not stiff walk_* flipbook). */
+          this.locoT = (this.locoT || 0) + Math.abs(this.vx) * dt * 0.085;
+          if (!applyWalkPose(this.ninja, this.palette, this.locoT, Math.abs(this.vx))) {
+            this.frameT += dt;
+            if (this.frameT > 0.1) { this.frameT = 0; this.frame = (this.frame + 1) % 4; }
+            applyNinjaFrame(this.ninja, this.palette, this.walkFrames[this.frame]);
+          }
+        } else {
+          this.locoT = 0;
+          applyNinjaFrame(this.ninja, this.palette, 'idle');
+        }
         if (AUDIO) AUDIO.footstep(dt, Math.abs(this.vx) > 20, this.grounded);
 
         if (this.invuln > 0) {
