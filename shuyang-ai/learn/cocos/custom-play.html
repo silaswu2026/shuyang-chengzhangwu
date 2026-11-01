@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0f1230">
-<meta name="play-build" content="c30">
+<meta name="play-build" content="c31">
 <title>玩我的关 · 伍澍暘成长屋</title>
 <link rel="stylesheet" href="../../../brand-tokens.css"/>
 <style>
@@ -132,21 +132,24 @@ body{
 #result .sub .stat-row b{font-size:20px}
 #result .ctl{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 
-/* c30：仅 orientation:portrait 成片铺满（取消 16:9 横条+海军蓝留空）；横屏金框壳不动 */
+/* c31：竖屏成片铺满 + 底栏完整可见；横屏金框壳不动 */
 @media (orientation:portrait){
   #orientTip.on{display:block}
   #stageOuter{
-    padding:32px 0 0;align-items:stretch;justify-content:stretch;
+    /* 顶给顶栏，底留安全区；flex 子项吃满剩余，避免 100vh 高出可视区裁掉底栏 */
+    padding:32px 0 max(10px, env(safe-area-inset-bottom, 0px));
+    align-items:stretch;justify-content:stretch;flex-direction:column;
     background:#5a3a24; /* 竖屏外缘跟沼泽床，不再露大块海军蓝 */
   }
   .phone-bezel{
-    flex-direction:column;width:100%;height:calc(100vh - 32px);max-height:calc(100dvh - 32px);
+    flex:1 1 auto;flex-direction:column;width:100%;
+    height:auto;min-height:0;max-height:none;
     border-radius:0;padding:0;gap:0;border:0;box-shadow:none;
     background:transparent
   }
   .phone-notch{display:none}
   .canvas-slot{
-    width:100%;height:100%;flex:1 1 auto;aspect-ratio:auto;
+    width:100%;height:100%;flex:1 1 auto;aspect-ratio:auto;min-height:0;
     max-height:none;max-width:100%;border-radius:0;border:0;background:#5a3a24
   }
   .bar{min-height:28px;padding:2px 6px}
@@ -154,17 +157,23 @@ body{
   .bar a,.bar button.net{padding:3px 8px;font-size:11px}
   .bar h1{font-size:12px;max-width:34vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .badge{display:none}
-  .touch{padding:4px 10px calc(4px + env(safe-area-inset-bottom,0px));gap:6px}
+  /* 底栏：加大上下垫，键+阴影完整落在槽内（安全区已由 #stageOuter 吃） */
+  .touch{padding:10px 12px 14px;gap:8px;align-items:flex-end}
   .touch button{width:48px;height:48px;font-size:16px;border-radius:12px}
   .touch #btnJ,.touch #btnT{width:56px;font-size:13px}
+  #castPick{bottom:76px} /* 抬到更高触控带之上 */
   .hud{top:6px}.lvlcard{min-height:36px;padding:5px 8px;min-width:110px}#lvlChip{font-size:12px;margin:0 0 3px}#bossBar{top:52px}#msg{top:82px;font-size:11px}
   .go{padding:8px 14px;font-size:14px;min-height:36px}
 }
-/* 触屏窄机（含横屏）仍缩键，但不改壳槽比例 */
+/* 触屏窄机（含横屏）仍缩键，但不改壳槽比例；竖屏底垫交给上面 portrait 块，勿再压回 4px */
 @media (pointer:coarse) and (max-width:900px){
   .touch{padding:4px 10px calc(4px + env(safe-area-inset-bottom,0px));gap:6px}
   .touch button{width:48px;height:48px;font-size:16px;border-radius:12px}
   .touch #btnJ,.touch #btnT{width:56px;font-size:13px}
+}
+@media (orientation:portrait) and (pointer:coarse) and (max-width:900px){
+  .touch{padding:10px 12px 14px;gap:8px;align-items:flex-end}
+  #castPick{bottom:76px}
 }
 @media (orientation:landscape),(max-height:480px){
   #orientTip{display:none!important}
@@ -279,11 +288,11 @@ body{
     </div>
   </div>
 </div>
-<!-- c30: 竖屏成片铺满（消 c41 竖屏 16:9 横条/海军蓝留空）· 保留 c29 着火/锤 + c42 HUD 口径 · c41 横屏壳 · c40 audio -->
+<!-- c31: 竖屏底栏 ◀▶/跳/投完整可见（dvh+安全区+触控垫高）· was c30 铺满 · 保留 c29 着火/锤 + c42 HUD · c41 横屏壳 -->
 <script src="../../../vendor/peerjs/peerjs.min.js"></script>
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
 <script src="wb-store.js?v=wb6"></script>
 <script src="wb-audio.js?v=c42"></script>
-<script src="custom-play.js?v=c30"></script>
+<script src="custom-play.js?v=c31"></script>
 </body>
 </html>
