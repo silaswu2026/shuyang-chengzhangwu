@@ -340,7 +340,7 @@
     d.lastScore = (state.lastScore | 0);
     d.presetId = prev.presetId || 'tonight-waves-v1';
     d.savedAt = new Date().toISOString();
-    d.by = prev.by || '伍澍暘';
+    d.by = prev.by || '五树杨';
     storage.setItem(KEY, JSON.stringify(d));
     return d;
   }

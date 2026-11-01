@@ -1,4 +1,4 @@
-/* 伍澍暘 · 第 1 月 · 异地微信语音课 */
+/* 五树杨 · 第 1 月 · 异地微信语音课 */
 const V = '11';
 const STORE = 'shuyang_ai_month_v1';
 const REWARD_STORE = 'shuyang_ai_rewards_v1';
@@ -642,7 +642,7 @@ function replyTo(text) {
 }
 function coachText(day) {
   return [
-    '你是小雨姐姐，在微信语音里陪 9 岁的伍澍暘和他爸爸上课。妈妈可能也在听。',
+    '你是小雨姐姐，在微信语音里陪 9 岁的五树杨和他爸爸上课。妈妈可能也在听。',
     `今天是第 ${day.d} 天《${day.title}》。`,
     `原理：${day.principle}`,
     `学习方法：${day.method}`,

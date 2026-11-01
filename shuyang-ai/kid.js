@@ -9,10 +9,10 @@
     '小雨': { src: 'avatars/xiaoyu.jpg', cls: 'xiaoyu', name: '小雨' },
     '爸爸': { src: 'avatars/dad-wuxin.jpg', cls: 'dad', name: '爸爸' },
     '妈妈': { src: 'avatars/mom-chunyan.jpg', cls: 'mom', name: '妈妈' },
-    '澍暘': { src: 'avatars/pengpeng.jpg', cls: 'son', name: '伍澍暘' },
-    '伍澍暘': { src: 'avatars/pengpeng.jpg', cls: 'son', name: '伍澍暘' },
+    '澍暘': { src: 'avatars/pengpeng.jpg', cls: 'son', name: '五树杨' },
+    '五树杨': { src: 'avatars/pengpeng.jpg', cls: 'son', name: '五树杨' },
   };
-  const HOME_CAST = ['小雨', '爸爸', '妈妈', '伍澍暘'];
+  const HOME_CAST = ['小雨', '爸爸', '妈妈', '五树杨'];
 
   const LESSONS = [
     {
