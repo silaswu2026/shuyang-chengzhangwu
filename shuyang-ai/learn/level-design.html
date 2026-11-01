@@ -286,13 +286,13 @@ body.tonight #s3 #playCard #engineNote,body.tonight #s3 .card:has(#play) #engine
   body.tonight #play{font-size:14px;padding:8px 14px;min-height:36px}
 }
 </style><script src="ld-art.js?v=ld37"></script></head><body>
-<div class="bar"><figure class="pp"><img src="../avatars/xiaoyu.jpg" alt="小雨" style="object-position:32% 34%"><figcaption>小雨</figcaption></figure>
+<div class="bar"><figure class="pp"><img src="../avatars/xiaoyu.jpg" alt="小宇" style="object-position:32% 34%"><figcaption>小宇</figcaption></figure>
 <div class="st full-only" data-s="0">⓪ 上节课回顾</div><div class="st" data-s="1">① 看图学习</div><div class="st" data-s="2">② 关卡频率 <i class="sd" data-s="2">●</i><i class="sd" data-s="3">●</i></div><div class="st full-only" data-s="4">③ 关卡位置 <i class="sd" data-s="4">●</i><i class="sd" data-s="5">●</i></div><div class="st full-only" data-s="6">④ 关卡难度 <i class="sd" data-s="6">●</i><i class="sd" data-s="7">●</i></div><div class="st" data-s="8">⑤ 设计关卡</div><div class="st" data-s="9">⑥ 单机玩</div>
 <figure class="pp"><img src="../avatars/dad-wuxin.jpg" alt="爸爸"><figcaption>爸爸</figcaption></figure><figure class="pp"><img src="../avatars/mom-chunyan.jpg" alt="妈妈"><figcaption>妈妈</figcaption></figure></div>
 <main>
 <section class="stage" id="sR"><h2 class="keep">⓪ 动画帧 · 帧速 <input type="range" id="fps" min="1" max="12" value="4" style="width:100px;vertical-align:middle"> <b id="fpsv">4</b> <button class="go sm" id="rPl">⏸</button> <button class="go sm" id="rSt" style="background:linear-gradient(180deg,#ffb06b,#e2793b)">⏭ 一帧</button></h2>
 <div class="cvwrap"><canvas id="cvR" width="960" height="380" style="width:100%;min-height:0;background:#d6ecd0;border-radius:12px"></canvas></div>
-<div class="msg" style="font-size:15px">同一个小雨，换姿势 → 脸、衣服、颜色都不变（这样才能认出他）</div></section>
+<div class="msg" style="font-size:15px">同一个小宇，换姿势 → 脸、衣服、颜色都不变（这样才能认出他）</div></section>
 <section class="stage" id="s0"><h2 class="keep"><button class="back sl" id="slp" style="border:0;border-radius:999px;background:#3b4590;color:#fff;font-size:16px;padding:3px 12px">◀</button> <span id="slt">好关卡：先简单，再变难</span> <span id="sld" style="font-size:13px"></span> <button class="sl" id="sln" style="border:0;border-radius:999px;background:#3b4590;color:#fff;font-size:16px;padding:3px 12px">▶</button> <button class="go" id="play0" style="font-size:15px;padding:4px 14px">▶ 播放</button></h2>
 <div class="cvwrap"><canvas id="cv0" width="960" height="380" style="width:100%;min-height:0;background:#6ec8ff;border-radius:12px"></canvas></div>
 <div class="msg" id="s0msg" style="font-size:14px">🎣 进游戏＝上钩 · ⏰ 自己决定停</div></section>
@@ -951,7 +951,7 @@ const SCR=TONIGHT
 const BLK=TONIGHT?[0,1,2,3]:[0,1,2,2,3,3,4,4,5,6];
 const MAX=SCR.length-1;
 
-const REFLECT={hook_seen:'',vs_expect:'',best_fun:'',hardest:'',add_one:'',who:'小雨'};
+const REFLECT={hook_seen:'',vs_expect:'',best_fun:'',hardest:'',add_one:'',who:'小宇'};
 try{const _r=JSON.parse(localStorage.getItem(KEY)||'null');if(_r){if(_r.hook_seen||_r.reflectHook)REFLECT.hook_seen=_r.hook_seen||_r.reflectHook||'';if(_r.vs_expect||_r.reflectExpect)REFLECT.vs_expect=_r.vs_expect||_r.reflectExpect||'';['best_fun','hardest','add_one','who'].forEach(k=>{if(_r[k])REFLECT[k]=_r[k];});}}catch(_e){}
 function persistLevel(extra){
   let d={};
@@ -960,7 +960,7 @@ function persistLevel(extra){
   d.version='1.1';
   d.reflectHook=REFLECT.hook_seen;d.hook_seen=REFLECT.hook_seen;
   d.reflectExpect=REFLECT.vs_expect;d.vs_expect=REFLECT.vs_expect;
-  d.best_fun=REFLECT.best_fun;d.hardest=REFLECT.hardest;d.add_one=REFLECT.add_one;d.who=REFLECT.who||'小雨';
+  d.best_fun=REFLECT.best_fun;d.hardest=REFLECT.hardest;d.add_one=REFLECT.add_one;d.who=REFLECT.who||'小宇';
   d.savedAt=new Date().toISOString();d.by=d.by||'五树杨';
   localStorage.setItem(KEY,JSON.stringify(d));
   return d;

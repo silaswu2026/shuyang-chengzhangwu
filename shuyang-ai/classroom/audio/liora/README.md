@@ -7,7 +7,7 @@ Short Chinese samples synthesized with **LiveKit Inference** → `xai/tts-1` voi
 - Voice: `liora` — Calm, grounded, and luminous (Grok/xAI roster). User said “Lyora”; official id is `liora`.
 
 Files (short TTS only, not copyrighted media):
-- `hello-zh.wav` — 你好，我是小雨。
+- `hello-zh.wav` — 你好，我是小宇。
 - `listening-zh.wav` — 我在听你说。
 - `happy-zh.wav` — 好呀，我们一起加油！
 

@@ -1,14 +1,14 @@
-# 课程同步约定（classroom ↔ 电话小雨）
+# 课程同步约定（classroom ↔ 电话小宇）
 
 ## 唯一真相源（canonical）
 
 **文件：** `shuyang-ai/classroom/course-today.json`
 
 - 教室页右栏「今日课题」+ 流程遮罩 + iframe 课题，都以这份 JSON 为准。
-- **电话 / Grok Bot 语音频道里的小雨不会自动读教室状态**；要跟课，必须由父 bot 在本回合 `Read` 这份 JSON，再按 `theme` / `overview` / `speakOverview` / `steps[].speak` 说话。
+- **电话 / Grok Bot 语音频道里的小宇不会自动读教室状态**；要跟课，必须由父 bot 在本回合 `Read` 这份 JSON，再按 `theme` / `overview` / `speakOverview` / `steps[].speak` 说话。
 - 改课顺序：**先改 `course-today.json`**，再改 `learn/skeleton.html`（或其它 iframe），最后才动 `classroom/index.html`。
 
-## 稳定路径（给电话小雨 / 父 bot）
+## 稳定路径（给电话小宇 / 父 bot）
 
 | 用途 | 路径 |
 |------|------|
@@ -23,7 +23,7 @@
 
 1. `loadCourseToday()`：`fetch('./course-today.json?v=' + Date.now(), { cache: 'no-store' })`
 2. 用 JSON 的 `theme` / `overview` 填右栏「今日课题」摘要与开始遮罩
-3. 点「开始」→ 小雨通过 LiveKit `{t:'xiaoyu_say', text}` 念 `speakOverview` 与各步 `speak`（网页 listener）
+3. 点「开始」→ 小宇通过 LiveKit `{t:'xiaoyu_say', text}` 念 `speakOverview` 与各步 `speak`（网页 listener）
 4. 各步 `skelStep` 同步 iframe `skeleton.html` 的步骤
 
 ## 与冒险月的关系
@@ -34,7 +34,7 @@
 
 ## 为何会不同步（常见根因）
 
-1. **两个独立频道**：Grok 电话小雨 ≠ 教室 LiveKit listener；电话不读 JSON，除非父 bot 显式加载。
+1. **两个独立频道**：Grok 电话小宇 ≠ 教室 LiveKit listener；电话不读 JSON，除非父 bot 显式加载。
 2. **缓存**：旧版用固定 `?v=mc20`，浏览器 / GitHub Pages 可能仍吐旧 JSON 或旧 iframe。
 3. **脚本各写各的**：有人按冒险月 Day 口述，教室仍显示 skeleton 专课。
 
@@ -44,4 +44,4 @@
 - [ ] 确认 iframe 课题与 `steps[].skelStep` 一致
 - [ ] 复制到 `/home/box/agent-data/course-today-canonical.json`
 - [ ] commit + push；教室页点「强制刷新」或硬刷新（清缓存）
-- [ ] 电话回合：父 bot `Read` canonical JSON 后再让小雨开口
+- [ ] 电话回合：父 bot `Read` canonical JSON 后再让小宇开口

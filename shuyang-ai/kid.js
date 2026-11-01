@@ -1,4 +1,4 @@
-/* 澍暘的简单版。一天三拍：知识点 → 小视频 → 互动（含甜点）。
+/* 五树杨的简单版。一天三拍：知识点 → 小视频 → 互动（含甜点）。
    新的一晚：往 LESSONS 末尾加一课。kid.html 默认打开最后一课，?lesson=id 可指定。
    进度写进和完整版相同的 localStorage，键是 kid:<课id>，不占用 30 天课程的天数。
    带 #sync= 打开时，用同一套合并规则接上。 */
@@ -6,20 +6,21 @@
   const STORE = 'shuyang_ai_month_v1';
   const REWARD_STORE = 'shuyang_ai_rewards_v1';
   const PEOPLE = {
-    '小雨': { src: 'avatars/xiaoyu.jpg', cls: 'xiaoyu', name: '小雨' },
+    '小宇': { src: 'avatars/xiaoyu.jpg', cls: 'xiaoyu', name: '小宇' },
+    '小雨': { src: 'avatars/xiaoyu.jpg', cls: 'xiaoyu', name: '小宇' }, // legacy alias
     '爸爸': { src: 'avatars/dad-wuxin.jpg', cls: 'dad', name: '爸爸' },
     '妈妈': { src: 'avatars/mom-chunyan.jpg', cls: 'mom', name: '妈妈' },
-    '澍暘': { src: 'avatars/pengpeng.jpg', cls: 'son', name: '五树杨' },
     '五树杨': { src: 'avatars/pengpeng.jpg', cls: 'son', name: '五树杨' },
+    '澍暘': { src: 'avatars/pengpeng.jpg', cls: 'son', name: '五树杨' }, // legacy alias
   };
-  const HOME_CAST = ['小雨', '爸爸', '妈妈', '五树杨'];
+  const HOME_CAST = ['小宇', '爸爸', '妈妈', '五树杨'];
 
   const LESSONS = [
     {
       id: '2026-10-28',
       kicker: '昨晚',
       title: '人怎么动',
-      with: ['小雨', '爸爸', '妈妈', '澍暘'],
+      with: ['小宇', '爸爸', '妈妈', '五树杨'],
       principle: '2D 是很多张画一张一张换；3D 是骨头架子在摆，皮跟着动。',
       skeleton: { url: 'learn/skeleton.html?v=mc12', label: '拖一拖：3D骨头人' },
       // 2D/3D explainer (relative to kid.html).
@@ -43,7 +44,7 @@
       id: '2026-10-29',
       kicker: '昨晚',
       title: '逐帧动画',
-      with: ['小雨', '爸爸', '妈妈', '澍暘'],
+      with: ['小宇', '爸爸', '妈妈', '五树杨'],
       principle: '一张张画好的图按顺序换，就「动」起来了——像翻书一样。人物、怪物、陷阱都一样。',
       lab: { url: 'learn/frame-anim.html?v=mc12', label: '打开动手页 · 换帧试试' },
       skeleton: { url: 'learn/skeleton.html?v=mc12', label: '拖一拖：3D骨头人' },
@@ -67,12 +68,12 @@
       id: '2026-10-30',
       kicker: '今晚',
       title: '道具和关卡是怎么设计的',
-      with: ['小雨', '爸爸', '澍暘'],
+      with: ['小宇', '爸爸', '五树杨'],
       principle: '一关 = 地形 + 陷阱 + 道具 + 节奏（先易后难）；每个陷阱都有躲法。道具 = 作用 + 代价 + 什么时候用。',
       lab: { url: 'learn/level-design.html?v=ld27', label: '打开关卡设计台' },
       video: null,
       guess: {
-        prompt: '小雨闯关里的落石，为什么玩家躲得开？',
+        prompt: '小宇闯关里的落石，为什么玩家躲得开？',
         options: [
           { id: 'rule', t: '它先抖一下再掉，有规律', ok: true },
           { id: 'luck', t: '全靠运气', ok: false },
@@ -80,7 +81,7 @@
         then: '对！好陷阱都有规律和躲法。去设计台给沼泽、海洋或太空关排一排。',
       },
       dessert: {
-        line: '在小雨闯关里试玩你保存的关卡，爸爸当第一个玩家',
+        line: '在小宇闯关里试玩你保存的关卡，爸爸当第一个玩家',
         play: '../xy-go/?custom=1',
         label: '单机玩我的关卡',
       },

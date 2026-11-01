@@ -40,14 +40,14 @@
 </header>
 <main>
   <section class="panel">
-    <div class="hint">三格：爸爸 / 芃芃 / <strong>小雨在线</strong>。点角色进房后允许摄像头。小雨框表示我在房里听、可插话（试跑版先显示在线状态）。</div>
+    <div class="hint">三格：爸爸 / 芃芃 / <strong>小宇在线</strong>。点角色进房后允许摄像头。小宇框表示我在房里听、可插话（试跑版先显示在线状态）。</div>
     <div class="vids" id="vids">
       <div class="tile" id="tile-dad-slot"><div class="name">爸爸</div></div>
       <div class="tile" id="tile-kid-slot"><div class="name">芃芃</div></div>
       <div class="tile rain online" id="tile-xiaoyu">
-        <div class="avatar-fallback"><div class="face">🌧️</div><div>小雨</div></div>
+        <div class="avatar-fallback"><div class="face">🌧️</div><div>小宇</div></div>
         <div class="badge" id="rainBadge">在线·听你们</div>
-        <div class="name">小雨</div>
+        <div class="name">小宇</div>
       </div>
     </div>
     <pre id="log"></pre>
@@ -94,16 +94,16 @@ function setRainOnline(on, detail){
   badge.textContent = on ? (detail || '在线·听你们') : '离线';
 }
 async function joinRainPresence(){
-  // third participant: 小雨 joins room for presence (no cam); shows the online box
+  // third participant: 小宇 joins room for presence (no cam); shows the online box
   try {
     const rainRoom = new Room();
     await rainRoom.connect(URL_WS, TOKENS.rain);
     setRainOnline(true, '在线·听你们');
-    log('小雨已进房（旁听席）');
+    log('小宇已进房（旁听席）');
     window.__rainRoom = rainRoom;
   } catch (e) {
     setRainOnline(true, '在线·示意');
-    log('小雨旁听进房失败，仍显示在线框: ' + (e.message||e));
+    log('小宇旁听进房失败，仍显示在线框: ' + (e.message||e));
   }
 }
 async function join(role){
@@ -152,7 +152,7 @@ document.getElementById('leave').onclick = async () => {
   document.getElementById('tile-dad-slot') || null;
 };
 setRainOnline(true, '在线·待命');
-log('LiveKit ESM 客户端已加载。小雨框已亮。点「爸爸进房」或「芃芃进房」。');
+log('LiveKit ESM 客户端已加载。小宇框已亮。点「爸爸进房」或「芃芃进房」。');
 </script>
 </body>
 </html>

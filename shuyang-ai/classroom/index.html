@@ -279,7 +279,7 @@
   }
 
 
-  /* 小雨：可爱数字人头部 + 情绪动画 */
+  /* 小宇：可爱数字人头部 + 情绪动画 */
   .xy-glow{
     position:absolute;inset:-2px;z-index:1;pointer-events:none;border-radius:inherit;
     background:radial-gradient(circle at 50% 28%, #9dffb855, transparent 55%);
@@ -443,7 +443,7 @@
     background:#3a2a1a;border-color:#c9a06a;color:#ffe8c8;
   }
 
-  /* 课程流程遮罩：小雨头像在上，文字在下（上方不放文案） */
+  /* 课程流程遮罩：小宇头像在上，文字在下（上方不放文案） */
   .course{position:relative}
   .course-shell{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
   .course-shell iframe{flex:1;min-height:0;width:100%;border:0;border-radius:0;background:#000}
@@ -836,7 +836,7 @@
       <p class="ts-overview" id="todayOverview"></p>
       <ul class="ts-steps" id="todaySteps"></ul>
       <div class="course-play-bar">
-        <button type="button" class="play-game-btn" id="playGameBtn" aria-label="去玩小雨闯关">去玩小雨闯关</button>
+        <button type="button" class="play-game-btn" id="playGameBtn" aria-label="去玩小宇闯关">去玩小宇闯关</button>
       </div>
     </div>
     <div class="course-shell" id="courseShell">
@@ -848,7 +848,7 @@
         allow="fullscreen; autoplay; gamepad; accelerometer; gyroscope; clipboard-write"
         allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
       <div class="course-flow" id="courseFlow" role="dialog" aria-labelledby="cfTheme">
-        <img class="xy-hero" src="../avatars/xiaoyu.jpg" alt="小雨" width="96" height="96"/>
+        <img class="xy-hero" src="../avatars/xiaoyu.jpg" alt="小宇" width="96" height="96"/>
         <div class="cf-body">
           <div class="cf-intro">
             <h3 class="cf-theme" id="cfTheme">今日课程</h3>
@@ -866,15 +866,15 @@
   <section class="panel cams">
     <h2>五树杨</h2>
     <div class="vids" id="vids">
-      <div class="tile rain online digital mood-idle" id="tile-xiaoyu" data-role="xiaoyu" role="button" tabindex="0" aria-label="小雨：默认静音旁听，点一下开口；再点静音" title="默认静音。点小雨开口说话；再点静音（仍旁听）。Grok 电话时请静音或点「关掉小雨声音」">
+      <div class="tile rain online digital mood-idle" id="tile-xiaoyu" data-role="xiaoyu" role="button" tabindex="0" aria-label="小宇：默认静音旁听，点一下开口；再点静音" title="默认静音。点小宇开口说话；再点静音（仍旁听）。Grok 电话时请静音或点「关掉小宇声音」">
         <div class="tile-inner">
           <div class="xy-glow" aria-hidden="true"></div>
-          <img class="avatar xy-bob" src="../avatars/xiaoyu.jpg" alt="小雨"/>
+          <img class="avatar xy-bob" src="../avatars/xiaoyu.jpg" alt="小宇"/>
           <div class="xy-sparkles" aria-hidden="true"><span>✨</span><span>⭐</span><span>💫</span></div>
           <div class="xy-face" aria-hidden="true"></div>
           <div class="speak-mode" id="xySpeakMode" aria-live="polite">静音</div>
           <div class="badge" id="rainBadge">在线·静音</div>
-          <div class="name">小雨</div>
+          <div class="name">小宇</div>
           <audio id="xyMoodAudio" preload="auto" playsinline></audio>
         </div>
       </div>
@@ -909,11 +909,11 @@
         </div>
       </div>
     </div>
-    <div class="vol-bar" id="volBar" title="远程音频 / 小雨音量">
+    <div class="vol-bar" id="volBar" title="远程音频 / 小宇音量">
       <label for="volSlider">音量</label>
       <input type="range" id="volSlider" min="0" max="10" step="1" value="3" aria-valuemin="0" aria-valuemax="10" aria-valuenow="3"/>
       <span class="vol-val" id="volVal">3</span>
-      <button type="button" class="xy-mute-btn is-muted" id="xyMuteBtn" aria-pressed="true" title="关掉网页小雨声音（Grok 电话时用；仍旁听）">关掉小雨声音</button>
+      <button type="button" class="xy-mute-btn is-muted" id="xyMuteBtn" aria-pressed="true" title="关掉网页小宇声音（Grok 电话时用；仍旁听）">关掉小宇声音</button>
     </div>
     <div class="react-bar" id="reactBar" aria-label="快捷表情">
       <button type="button" class="react bang" data-react="！">！</button>
@@ -980,7 +980,7 @@ let courseFrameReady = false;
 let pendingSkelStep = null; // last desired skeleton.html step (1 bones, 2 blocks, 3 fine, 4 skin)
 let courseViewMode = 'course'; // course | play — iframe hosts skeleton or xy-go
 const GAME_IFRAME_URL = '../../xy-go/'; // legacy embed path (unused for play button)
-const GAME_STANDALONE_URL = 'https://silaswu2026.github.io/shuyang-chengzhangwu/xy-go/'; // standalone 小雨闯关 (new tab, not iframe)
+const GAME_STANDALONE_URL = 'https://silaswu2026.github.io/shuyang-chengzhangwu/xy-go/'; // standalone 小宇闯关 (new tab, not iframe)
 const courseFrame = document.getElementById('courseFrame');
 const courseFlow = document.getElementById('courseFlow');
 const courseShell = document.getElementById('courseShell');
@@ -1006,10 +1006,10 @@ function updateXyMuteBtnUi(){
   const muted = xiaoyuPlaybackMuted || !xiaoyuSpeakActive;
   btn.classList.toggle('is-muted', muted);
   btn.setAttribute('aria-pressed', muted ? 'true' : 'false');
-  btn.textContent = muted ? '关掉小雨声音' : '小雨有声·点静音';
+  btn.textContent = muted ? '关掉小宇声音' : '小宇有声·点静音';
   btn.title = muted
-    ? '网页小雨已静音（Grok 电话时请保持；点小雨头像可再开口）'
-    : '点一下关掉网页小雨声音（发布静音 + 停播 TTS）';
+    ? '网页小宇已静音（Grok 电话时请保持；点小宇头像可再开口）'
+    : '点一下关掉网页小宇声音（发布静音 + 停播 TTS）';
 }
 function setXiaoyuPlaybackMuted(muted){
   xiaoyuPlaybackMuted = !!muted;
@@ -1101,13 +1101,13 @@ function attachRemoteAudio(track, opts = {}){
   }
   remoteAudioEls.add(a);
   document.body.appendChild(a);
-  // Autoplay may be blocked until a user gesture; unlock on join/volume/小雨 tap.
-  // Never auto-play 小雨 TTS while in 静音 / force-mute (phone-call clash).
+  // Autoplay may be blocked until a user gesture; unlock on join/volume/小宇 tap.
+  // Never auto-play 小宇 TTS while in 静音 / force-mute (phone-call clash).
   if (!(fromXiaoyu && (xiaoyuPlaybackMuted || !xiaoyuSpeakActive))) {
     try {
       const p = a.play();
       if (p && typeof p.catch === 'function') {
-        p.catch(() => log('系统：浏览器暂未播放远程音频，点一下音量或小雨头像解锁'));
+        p.catch(() => log('系统：浏览器暂未播放远程音频，点一下音量或小宇头像解锁'));
       }
     } catch (_) {}
   }
@@ -1266,7 +1266,7 @@ window.addEventListener('message', (ev) => {
       const url = (typeof GAME_STANDALONE_URL === 'string' && GAME_STANDALONE_URL) ? GAME_STANDALONE_URL : '../../xy-go/';
       try { const w = window.open(url, '_blank', 'noopener,noreferrer'); if (!w) location.href = url; }
       catch (_) { location.href = url; }
-      log('系统：课件请求打开小雨闯关（独立页面）');
+      log('系统：课件请求打开小宇闯关（独立页面）');
     } else {
       applyCourseView('course', { publish: true });
     }
@@ -1285,7 +1285,7 @@ async function askXiaoyuSay(text, mood){
   const t = String(text || '').trim();
   if (!t) return;
   if (readXiaoyuForceMute() || (xiaoyuPlaybackMuted && !xiaoyuSpeakActive)) {
-    log('系统：小雨静音中，跳过朗读：' + t.slice(0, 40));
+    log('系统：小宇静音中，跳过朗读：' + t.slice(0, 40));
     return;
   }
   await publishXiaoyuActive(true);
@@ -1380,7 +1380,7 @@ async function startCourseFlow({ publish = true } = {}){
   if (publish) await publishRoomData({ t: 'course', phase: 'start' });
   // Switch iframe to step1 (骨头) immediately — do not wait for overview TTS
   goCourseStep(0, { speak: false, publish: true });
-  // Overview speak is optional (skipped when 小雨静音)
+  // Overview speak is optional (skipped when 小宇静音)
   await askXiaoyuSay(courseData.speakOverview || courseData.overview || courseData.theme);
   const step0 = courseData.steps && courseData.steps[0];
   if (step0 && step0.speak) await askXiaoyuSay(step0.speak);
@@ -1475,9 +1475,9 @@ function whoToTileId(who, identity){
   }
   const w = String(who || '');
   if (/爸爸|dad/i.test(w)) return 'tile-dad';
-  if (/芃芃|五树杨|澍暘|kid|lucas/i.test(w)) return 'tile-kid';
+  if (/芃芃|五树杨|五树杨|kid|lucas/i.test(w)) return 'tile-kid';
   if (/妈妈|mom/i.test(w)) return 'tile-mom';
-  if (/小雨|xiaoyu|rain/i.test(w)) return 'tile-xiaoyu';
+  if (/小宇|xiaoyu|rain/i.test(w)) return 'tile-xiaoyu';
   if (myRole === 'dad') return 'tile-dad';
   if (myRole === 'kid') return 'tile-kid';
   if (myRole === 'mom') return 'tile-mom';
@@ -1669,7 +1669,7 @@ async function joinRainPresence(){
     await rainRoom.connect(URL_WS, TOKENS.rain);
     setRainOnline(true, '在线·静音');
     setXiaoyuMood('idle');
-    log('系统：小雨已进同房（数字人旁听）');
+    log('系统：小宇已进同房（数字人旁听）');
     rainRoom.on(RoomEvent.DataReceived, (payload, participant) => {
       try {
         if (room) return;
@@ -1680,7 +1680,7 @@ async function joinRainPresence(){
     window.__rainRoom = rainRoom;
   } catch (e) {
     setRainOnline(true, '在线·示意');
-    log('系统：小雨旁听: ' + (e.message||e));
+    log('系统：小宇旁听: ' + (e.message||e));
   }
 }
 const XY_LIORA = {
@@ -1710,7 +1710,7 @@ function playLioraCue(kind){
 function applyXiaoyuSpeakUi(on){
   if (on && readXiaoyuForceMute()) {
     on = false;
-    log('系统：localStorage xiaoyuForceMute 已开 — 保持网页小雨静音（Grok 电话时请勿关）');
+    log('系统：localStorage xiaoyuForceMute 已开 — 保持网页小宇静音（Grok 电话时请勿关）');
   }
   xiaoyuSpeakActive = !!on;
   setXiaoyuPlaybackMuted(!xiaoyuSpeakActive);
@@ -1725,8 +1725,8 @@ function applyXiaoyuSpeakUi(on){
   }
   if (el) {
     el.setAttribute('aria-label', xiaoyuSpeakActive
-      ? '小雨开口中：再说点什么；点一下静音'
-      : '小雨静音旁听：点一下开口对话');
+      ? '小宇开口中：再说点什么；点一下静音'
+      : '小宇静音旁听：点一下开口对话');
     el.title = xiaoyuSpeakActive ? '开口中 — 点一下静音（仍旁听）' : '静音旁听 — 点一下开口对话';
   }
   if (xiaoyuSpeakActive) {
@@ -1749,14 +1749,14 @@ async function publishXiaoyuActive(on){
   const lp = (room && room.localParticipant)
     || (window.__rainRoom && window.__rainRoom.localParticipant);
   if (!lp) {
-    log('系统：请先点爸爸/妈妈/芃芃头像进房，再点小雨开口');
+    log('系统：请先点爸爸/妈妈/芃芃头像进房，再点小宇开口');
     return false;
   }
   try {
     await lp.publishData(payload, { reliable: true });
     return true;
   } catch (e) {
-    log('系统：无法通知小雨开口: ' + (e.message || e));
+    log('系统：无法通知小宇开口: ' + (e.message || e));
     return false;
   }
 }
@@ -1766,13 +1766,13 @@ async function muteXiaoyuSound(){
   const ok = await publishXiaoyuActive(false);
   unlockRemoteAudio();
   log(ok
-    ? '系统：已【关掉小雨声音】— 网页静音旁听；与 Grok 电话同时用时请保持静音'
-    : '系统：已静音网页小雨播放（进房后再点可通知 listener）');
+    ? '系统：已【关掉小宇声音】— 网页静音旁听；与 Grok 电话同时用时请保持静音'
+    : '系统：已静音网页小宇播放（进房后再点可通知 listener）');
   updateXyMuteBtnUi();
 }
 async function toggleXiaoyuSpeak(){
   if (readXiaoyuForceMute() && !xiaoyuSpeakActive) {
-    log('系统：xiaoyuForceMute=1 — 无法开口。电话结束后：localStorage.removeItem("xiaoyuForceMute") 再点小雨');
+    log('系统：xiaoyuForceMute=1 — 无法开口。电话结束后：localStorage.removeItem("xiaoyuForceMute") 再点小宇');
     applyXiaoyuSpeakUi(false);
     return;
   }
@@ -1783,7 +1783,7 @@ async function toggleXiaoyuSpeak(){
   if (!ok) applyXiaoyuSpeakUi(false);
   else {
     unlockRemoteAudio();
-    log(next ? '系统：小雨【开口】— 听你说话并回复（Liora 音色）；再点变静音' : '系统：小雨【静音】— 仍旁听，不说话；网页也不播 TTS');
+    log(next ? '系统：小宇【开口】— 听你说话并回复（Liora 音色）；再点变静音' : '系统：小宇【静音】— 仍旁听，不说话；网页也不播 TTS');
   }
 }
 function handleRoomDataMessage(msg, participant){
@@ -1814,18 +1814,18 @@ function handleRoomDataMessage(msg, participant){
     const wake = !!msg.wake;
     // STT log only — no avatar text bubbles
     log(wake
-      ? `小雨听到了（喊到她）：[${who}] ${msg.text}`
-      : `小雨听到了：[${who}] ${msg.text}`);
+      ? `小宇听到了（喊到她）：[${who}] ${msg.text}`
+      : `小宇听到了：[${who}] ${msg.text}`);
     return;
   }
   if (msg.t === 'chat' && typeof msg.text === 'string') {
     const who = (msg.who) || (participant && (participant.name || participant.identity)) || '对方';
     const identity = msg.id || (participant && participant.identity);
-    const fromXy = isXiaoyuIdentity(identity) || who === '小雨';
-    // Gate 小雨 reply bubbles/chat behind speak mode (system messages always ok)
+    const fromXy = isXiaoyuIdentity(identity) || who === '小宇';
+    // Gate 小宇 reply bubbles/chat behind speak mode (system messages always ok)
     if (fromXy && who !== '系统' && !xiaoyuSpeakActive) return;
     presentMessage(who, msg.text, identity);
-    if (fromXy && who === '小雨') {
+    if (fromXy && who === '小宇') {
       setXiaoyuMood(msg.mood === 'star' ? 'star' : 'happy');
     }
   }
@@ -1913,7 +1913,7 @@ async function join(role){
     room = new Room({ adaptiveStream: true, dynacast: true });
     setupChatHandlers(room);
     room.on(RoomEvent.TrackSubscribed, (track, _pub, participant) => {
-      // One 小雨 only: cartoon tile. Never spawn tile for xiaoyu / xiaoyu-listener.
+      // One 小宇 only: cartoon tile. Never spawn tile for xiaoyu / xiaoyu-listener.
       if (isXiaoyuIdentity(participant.identity)) {
         setRainOnline(true, xiaoyuSpeakActive ? '在线·开口' : '在线·静音');
         if (track.kind === Track.Kind.Audio) attachRemoteAudio(track, { fromXiaoyu: true });
@@ -1976,16 +1976,16 @@ async function join(role){
       }
       if (publishedAudio && videoOk) log('系统：已打开摄像头+麦克风并发布到同房');
       else if (publishedAudio) log('系统：已发布麦克风到同房（无摄像头）');
-      else log('系统：警告 — 未发布麦克风，小雨听不到');
+      else log('系统：警告 — 未发布麦克风，小宇听不到');
       unlockRemoteAudio();
     } catch (camErr) {
       ensureVideoTile(localId, localName + '·无摄像头');
       setTileLoading(loadingTile, false);
-      log('系统：麦克风/摄像头不可用（已进同房，小雨听不到你）: ' + camErr.message);
+      log('系统：麦克风/摄像头不可用（已进同房，小宇听不到你）: ' + camErr.message);
     }
     markMeTile();
     document.getElementById('leave').disabled = false;
-    // Default classroom 小雨 = 静音 until user taps 开口
+    // Default classroom 小宇 = 静音 until user taps 开口
     applyXiaoyuSpeakUi(false);
     setXiaoyuPlaybackMuted(true);
     try { await publishXiaoyuActive(false); } catch (_) {}
@@ -2022,18 +2022,18 @@ function onJoinableActivate(el){
 const xyTile = document.getElementById('tile-xiaoyu');
 xyTile.addEventListener('click', (e) => {
   e.preventDefault();
-  toggleXiaoyuSpeak().catch(err => log('系统：小雨开口失败: ' + (err.message||err)));
+  toggleXiaoyuSpeak().catch(err => log('系统：小宇开口失败: ' + (err.message||err)));
 });
 xyTile.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') {
     e.preventDefault();
-    toggleXiaoyuSpeak().catch(err => log('系统：小雨开口失败: ' + (err.message||err)));
+    toggleXiaoyuSpeak().catch(err => log('系统：小宇开口失败: ' + (err.message||err)));
   }
 });
 document.getElementById('xyMuteBtn')?.addEventListener('click', (e) => {
   e.preventDefault();
   e.stopPropagation();
-  muteXiaoyuSound().catch(err => log('系统：关小雨声失败: ' + (err.message||err)));
+  muteXiaoyuSound().catch(err => log('系统：关小宇声失败: ' + (err.message||err)));
 });
 
 document.getElementById('joinDad').onclick = () => join('dad').catch(e => log('系统：失败: ' + (e.message||e)));
@@ -2047,7 +2047,7 @@ document.getElementById('leave').onclick = async () => {
   await leaveRoom({ keepRain: false });
   setRainOnline(true, '在线·静音');
   setXiaoyuMood('idle');
-  log('系统：已离开同房（小雨仍在示意席）');
+  log('系统：已离开同房（小宇仍在示意席）');
 };
 document.getElementById('chatSend').onclick = () => sendChat();
 chatInput.addEventListener('keydown', (e) => {
@@ -2114,7 +2114,7 @@ if (courseFsBtn) {
   });
 }
 syncFsButton();
-// Remove any stray duplicate 小雨 tiles from older sessions / bad ids
+// Remove any stray duplicate 小宇 tiles from older sessions / bad ids
 document.querySelectorAll('.vids .tile[id^="tile-xiaoyu"]').forEach(el => {
   if (el.id !== 'tile-xiaoyu') el.remove();
 });
@@ -2130,7 +2130,7 @@ playGameBtn?.addEventListener('click', (e) => {
   } catch (_) {
     location.href = url;
   }
-  log('系统：已打开小雨闯关（独立页面，未嵌入教室）');
+  log('系统：已打开小宇闯关（独立页面，未嵌入教室）');
 });
 backCourseBtn?.addEventListener('click', (e) => {
   e.preventDefault();
@@ -2199,7 +2199,7 @@ document.getElementById('hardRefreshBtn')?.addEventListener('click', (e) => {
   });
 });
 
-log('系统：同房教室 — 默认小雨【静音】旁听。点小雨【开口】才 TTS；音量旁「关掉小雨声音」可一键静音网页播放。与 Grok 电话同时用时请保持静音（或 localStorage xiaoyuForceMute=1）。');
+log('系统：同房教室 — 默认小宇【静音】旁听。点小宇【开口】才 TTS；音量旁「关掉小宇声音」可一键静音网页播放。与 Grok 电话同时用时请保持静音（或 localStorage xiaoyuForceMute=1）。');
 
 </script>
 <div class="fs-stack">
