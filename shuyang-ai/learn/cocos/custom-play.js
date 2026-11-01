@@ -1,13 +1,18 @@
 /**
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·沼泽
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
- * c21: layout/CSS chrome only (desktop denser keys, phone smaller pads); CHAR_FRAC/levels unchanged.
+ * c28: 明天玩关三件可测 — ①武器弓/锤/飞镖（默飞镖可切换）②水面无陷阱 ③着火踩水灭火（保留左右晃）；结算屏三数。
  * c27: short - load cocos in body (not head): mobile _initSys needs document.body or appendChild null aborts engine before Layer.
- * c26: canvas always visible (c25); renderMode 1=Canvas (lite has no rendererWebGL).
  * c39: first interactive frame fast — critical idle+dirt+grass then runScene; night BG deferred; 2.5s hard cap; PeerJS local.
  * c38: net host/guest chip always matches visible cast (fix stale 「C 红」 on green host).
  * c37: shorten dirt bed (gy≈H*0.28, min 72) for phone landscape play space.
  * c36: do not gate runScene on tint cache; tint via data-URL; swamp canvas bed (fix c35 blank navy).
+ *
+ * RULE_BANK（本关不塞，只记库）:
+ * - 藤蔓爬：可攀藤蔓上下，另关再开
+ * - 红蛋/雷电差异化免伤：红免火、绿免刺等，另关再开
+ * - 泥土尖刺超十秒死：踩泥刺计时>10s 即死，另关再开
+ * - 全套追击奖励细化：连杀/追击加成分档，另关再开
  */
 (function () {
   var KEY = 'xygo-custom-level';
@@ -207,7 +212,8 @@
   var sceneRef = null, spikeTex = null, fireTex = null, coinTex = null, flagTex = null;
   var starTex = null, shurikenTex = null, crocTex = null;
   var slimeTex = null, springTex = null, mistTex = null, rockTex = null;
-  var dartTex = null, gunTex = null, bladeTex = null;
+  var dartTex = null, gunTex = null, bladeTex = null, bowTex = null, hammerTex = null;
+  var sessionDeaths = 0; /* 本页会话死亡次数，重来不清零 */
   var forestImg = null;
   var level = null, lastFitKey = '', rebuilding = false;
   var inp = { left: false, right: false, jump: false, jumpPressed: false, throwPressed: false };
@@ -338,7 +344,7 @@
         spring: { power: 820 }
       },
       mine: null,
-      wallet: { coins: 0, weapons: [], equipped: null },
+      wallet: { coins: 0, weapons: ['dart', 'bow', 'hammer'], equipped: 'dart' },
       lastScore: 0,
       by: '',
       presetId: 'tonight-waves-v1'
@@ -382,9 +388,12 @@
       groundCols.push(hasG);
     }
     var items = [];
+    var HAZARD = { spike: 1, fire: 1, rock: 1, mist: 1, spring: 1 };
     tiles.forEach(function (tt) {
       if (!tt || tt.type === 'g' || tt.type === 'p') return;
       if ((tt.y | 0) >= DR - 1) return;
+      /* c28: 水面无陷阱 — 断坑/水格不刷刺火等（金币/旗仍可） */
+      if (HAZARD[tt.type] && groundCols[tt.x | 0] === false) return;
       items.push({ type: tt.type, c: gx(tt.x | 0), designX: tt.x | 0 });
     });
     /* 断坑：若完全没有，在变/考交界补一个，不挡安全出生与前两波 */
@@ -392,6 +401,12 @@
     if (holeN === 0 && DC >= 8) {
       groundCols[Math.min(DC - 1, Math.max(6, Math.floor(DC * 0.75)))] = false;
     }
+    /* 断坑后二次过滤：确保水面上无刺/火等 */
+    items = items.filter(function (it) {
+      if (!it || it.designX < 0) return true;
+      if (!HAZARD[it.type]) return true;
+      return groundCols[it.designX] !== false;
+    });
     if (!traps.fire) traps.fire = { damage: 1, dur: 3, burn: 3 };
     if (!traps.spike) traps.spike = { interval: 3, up: 1, damage: 1 };
     if (!traps.rock) traps.rock = { damage: 1 };
@@ -542,18 +557,50 @@
     }
     return texFromCanvas(c);
   }
-  var WEAPON_NAMES = { dart: '飞镖', blade: '砍刀', gun: '枪' };
+  /* c28 玩关武器三选一：弓 / 锤子 / 飞镖（旧 blade→锤、gun→弓） */
+  var WEAPON_NAMES = { dart: '飞镖', bow: '弓', hammer: '锤子' };
+  var WEAPON_ORDER = ['dart', 'bow', 'hammer'];
+  var WEAPON_ALIAS = { blade: 'hammer', gun: 'bow', dart: 'dart', bow: 'bow', hammer: 'hammer' };
+  function normalizeWeaponId(id) {
+    if (!id) return null;
+    var n = WEAPON_ALIAS[id] || id;
+    return WEAPON_NAMES[n] ? n : null;
+  }
+  function ensurePlayWeapons(w) {
+    if (!w || typeof w !== 'object') w = { coins: 0, weapons: [], equipped: null };
+    WEAPON_ORDER.forEach(function (id) {
+      if (w.weapons.indexOf(id) < 0) w.weapons.push(id);
+    });
+    w.equipped = normalizeWeaponId(w.equipped) || 'dart';
+    return w;
+  }
+  function cycleWeapon(scene) {
+    if (!scene) return;
+    var cur = normalizeWeaponId(scene.weapon) || 'dart';
+    var ix = WEAPON_ORDER.indexOf(cur);
+    var next = WEAPON_ORDER[(ix + 1) % WEAPON_ORDER.length];
+    scene.weapon = next;
+    if (!scene.wallet) scene.wallet = { coins: scene.coins | 0, weapons: WEAPON_ORDER.slice(), equipped: next };
+    scene.wallet.equipped = next;
+    scene.wallet.weapons = WEAPON_ORDER.slice();
+    writeWallet(scene.wallet);
+    updHUD(scene.hp, scene.coins);
+    var tip = $('msg');
+    if (tip) tip.textContent = '切换武器 → ' + WEAPON_NAMES[next] + '（点武器条或按 Q）';
+  }
   function readWallet(raw) {
     var w = { coins: 0, weapons: [], equipped: null };
-    if (!raw || typeof raw !== 'object') return w;
+    if (!raw || typeof raw !== 'object') return ensurePlayWeapons(w);
     if (typeof raw.coins === 'number' && raw.coins >= 0) w.coins = raw.coins | 0;
     if (Array.isArray(raw.weapons)) {
       raw.weapons.forEach(function (id) {
-        if (WEAPON_NAMES[id] && w.weapons.indexOf(id) < 0) w.weapons.push(id);
+        var n = normalizeWeaponId(id);
+        if (n && w.weapons.indexOf(n) < 0) w.weapons.push(n);
       });
     }
-    if (raw.equipped && WEAPON_NAMES[raw.equipped] && w.weapons.indexOf(raw.equipped) >= 0) w.equipped = raw.equipped;
-    return w;
+    w.equipped = normalizeWeaponId(raw.equipped);
+    if (w.equipped && w.weapons.indexOf(w.equipped) < 0) w.weapons.push(w.equipped);
+    return ensurePlayWeapons(w);
   }
   function writeWallet(w) {
     try {
@@ -617,13 +664,22 @@
   function showResult(win, hp, coins) {
     var r = $('result'); if (!r) return;
     r.classList.add('show');
+    r.classList.add(win ? 'win' : 'fail');
     $('resultBig').textContent = win ? '🎉 过关！' : '😵 再试一次';
     $('resultBig').style.color = win ? '#9ff0a8' : '#ffb4b4';
     var sc = (sceneRef && (sceneRef.score | 0)) || 0;
-    var hint = (level && level.vs_expect) ? ('你预计：' + level.vs_expect) : '回上一页答：和预计一样吗？';
-    $('resultSub').innerHTML = '<span class="sub-hp">剩 <b>' + hp + '❤</b> · 金币 <b style="color:#ffe7a0">' + coins + '</b> · 积分 <b style="color:#9ff0a8">' + sc + '</b></span>' +
-      '<span class="sub-hint">' + hint + '</span>';
+    var deaths = sessionDeaths | 0;
+    var cleared = win ? '是' : '否';
+    /* 结算一页三数：金币 / 死亡次数 / 是否通关 */
+    $('resultSub').innerHTML =
+      '<span class="stat-row">🪙 金币 <b style="color:#ffe7a0">' + (coins | 0) + '</b></span>' +
+      '<span class="stat-row">💀 死亡 <b style="color:#ffb4b4">' + deaths + '</b></span>' +
+      '<span class="stat-row">🏁 通关 <b style="color:' + (win ? '#9ff0a8' : '#ffb4b4') + '">' + cleared + '</b></span>' +
+      '<span class="sub-hint">积分 ' + sc + (hp != null ? ' · 剩' + hp + '❤' : '') + '</span>';
     writeLastScore(sc);
+  }
+  function markDeath() {
+    sessionDeaths = (sessionDeaths | 0) + 1;
   }
 
   function bindControls() {
@@ -668,6 +724,16 @@
       if (e.code === 'ArrowRight' || e.code === 'KeyD') inp.right = false;
       if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'KeyK') inp.jump = false;
     });
+    window.addEventListener('keydown', function (e) {
+      if (e.code === 'KeyQ') { cycleWeapon(sceneRef); e.preventDefault(); }
+    });
+    var weBtn = $('weapon');
+    if (weBtn && !weBtn._cycBound) {
+      weBtn._cycBound = 1;
+      weBtn.style.cursor = 'pointer';
+      weBtn.title = '点击切换武器（弓/锤子/飞镖）';
+      weBtn.addEventListener('click', function () { cycleWeapon(sceneRef); });
+    }
   }
 
   if (typeof cc === 'undefined' || !cc.Layer || typeof cc.Layer.extend !== 'function') {
@@ -880,6 +946,13 @@
       for (i = 0; i < items.length; i++) {
         it = items[i];
         px = it.c * T + T * 0.5;
+        /* c28 水面无陷阱兜底 */
+        if (it.type === 'spike' || it.type === 'fire' || it.type === 'rock' || it.type === 'mist' || it.type === 'spring') {
+          var dxTrap = (typeof it.designX === 'number' && it.designX >= 0)
+            ? it.designX
+            : Math.floor((it.c - PAD) / EXP);
+          if (dxTrap >= 0 && dxTrap < level.DC && level.groundCols[dxTrap] === false) continue;
+        }
         if (it.type === 'spike' || it.type === 'fire') {
           var base = mkColor(T * 0.85, 6, 58, 58, 66);
           base.setPosition(px - T * 0.42, this.gy - 4);
@@ -957,11 +1030,14 @@
         this.critters.push({ x: cx, hp: 2, max: 2, alive: true, hurtT: 0, sp: body, home: cx });
       }
 
-      this.wallet = level.wallet || readWallet(null);
+      this.wallet = ensurePlayWeapons(level.wallet || readWallet(null));
       this.walletCoins = this.wallet.coins | 0;
-      this.weapon = this.wallet.equipped;
+      this.weapon = this.wallet.equipped || 'dart';
       this.cool = 0;
       this.slowT = 0;
+      this.burnT = 0;
+      this.burnShake = 0;
+      this.burnDir = 0;
       this.fog = new cc.LayerColor(cc.color(120, 70, 170, 255), 4000, 4000);
       this.fog.setPosition(-500, -500);
       this.fog.setOpacity(0);
@@ -983,7 +1059,7 @@
       var lvEl = $('lvlChip');
       if (lvEl) lvEl.textContent = '第9关 我的关卡';
       var iv = (level.traps.spike && +level.traps.spike.interval) || 3;
-      $('msg').textContent = (level.by ? level.by + ' · ' : '') + '四波沼泽·刺每' + iv + '秒 · 怪在最后 · 跳/投打鳄王';
+      $('msg').textContent = (level.by ? level.by + ' · ' : '') + '沼泽·武器可切(Q)·水面无刺火·着火晃/踩水灭 · 投打鳄王';
     },
     reset: function () {
       this.px = level.spawnC * T + T * 0.5;
@@ -997,6 +1073,9 @@
       this.score = 0;
       this.cool = 0;
       this.slowT = 0;
+      this.burnT = 0;
+      this.burnShake = 0;
+      this.burnDir = 0;
       if (this.fog) this.fog.setOpacity(0);
       this.invuln = 0;
       this.playing = true;
@@ -1104,18 +1183,20 @@
     },
     _attack: function () {
       if (this.cool > 0) return;
-      var w = this.weapon;
-      if (w === 'blade') {
-        this.cool = 0.45;
-        this._hurtAt(this.px + this.face * 36, this.py + 24, 56, 2);
-        this._spawnShot(0, 30, 0.16, 0, bladeTex);
+      var w = normalizeWeaponId(this.weapon) || 'dart';
+      this.weapon = w;
+      if (w === 'hammer') {
+        this.cool = 0.5;
+        this._hurtAt(this.px + this.face * 40, this.py + 24, 60, 2);
+        this._spawnShot(0, 28, 0.18, 0, hammerTex || bladeTex);
         return;
       }
-      if (w === 'gun') {
-        this.cool = 0.9;
-        this._spawnShot(4, 520, 1.35, 0, gunTex);
+      if (w === 'bow') {
+        this.cool = 0.55;
+        this._spawnShot(2, 480, 1.25, 0, bowTex || gunTex);
         return;
       }
+      /* dart 飞镖：三发散射，默认可打死小怪/鳄 */
       if (w === 'dart') {
         this.cool = 0.4;
         this._spawnShot(1, 340, 0.85, -70, dartTex);
@@ -1124,6 +1205,73 @@
         return;
       }
       if (this.throws.length < 3) this._spawnShot(1, 280, 1.2, 0, shurikenTex);
+    },
+    _inWater: function () {
+      var c = Math.floor(this.px / T);
+      return !this._solidAt(c) && this.py < this.gy + 28;
+    },
+    _ignite: function () {
+      if ((this.burnT || 0) > 0) return;
+      this.burnT = 5;
+      this.burnShake = 0;
+      this.burnDir = 0;
+      var tip = $('msg');
+      if (tip) tip.textContent = '着火了！左右快晃或踩进水灭火';
+      playSfx('fire');
+    },
+    _extinguish: function (why) {
+      if ((this.burnT || 0) <= 0) return;
+      this.burnT = 0;
+      this.burnShake = 0;
+      this.burnDir = 0;
+      if (this.ninja) this.ninja.setColor(cc.color(255, 255, 255));
+      var tip = $('msg');
+      if (tip) tip.textContent = why || '灭火成功！';
+      playSfx('coin');
+    },
+    _tickBurn: function (dt) {
+      if ((this.burnT || 0) <= 0) {
+        if (this.ninja) this.ninja.setColor(cc.color(255, 255, 255));
+        return;
+      }
+      /* 踩水灭火优先 */
+      if (this._inWater()) {
+        this._extinguish('💦 踩水灭火成功！');
+        return;
+      }
+      var d = 0;
+      if (inp.left && !inp.right) d = -1;
+      else if (inp.right && !inp.left) d = 1;
+      if (d && this.burnDir && d !== this.burnDir) this.burnShake = (this.burnShake | 0) + 1;
+      if (d) this.burnDir = d;
+      if ((this.burnShake | 0) >= 5) {
+        this._extinguish('左右快晃灭火成功！没有掉血');
+        return;
+      }
+      this.burnT = Math.max(0, this.burnT - dt);
+      if (this.ninja) {
+        var pulse = 180 + Math.floor((Math.sin(Date.now() / 80) * 0.5 + 0.5) * 75);
+        this.ninja.setColor(cc.color(255, pulse, 80));
+      }
+      if (this.burnT > 0) return;
+      /* 烧满：扣血一次，火停 */
+      this.burnShake = 0;
+      this.burnDir = 0;
+      var fire = (level && level.traps && level.traps.fire) || {};
+      var dmgF = Math.max(1, +fire.damage || 1);
+      this.hp -= dmgF;
+      this.invuln = Math.max(this.invuln, 0.6);
+      applyNinjaFrame(this.ninja, this.palette, 'knock_0');
+      playSfx('hurt');
+      updHUD(this.hp, this.coins);
+      var tip = $('msg');
+      if (tip) tip.textContent = '火烧满了 -' + dmgF + '血';
+      if (this.hp <= 0) {
+        this.hp = 0; this.dead = true; this.playing = false;
+        markDeath();
+        stopBgm(); startBgm('fail');
+        showResult(false, 0, this.coins);
+      }
     },
     _groundYAt: function (px) {
       var c = Math.floor(px / T);
@@ -1165,6 +1313,7 @@
           this.slowT -= dt;
           if (this.fog) this.fog.setOpacity(Math.max(0, Math.floor(this.slowT / 1.6 * 110)));
         } else if (this.fog) this.fog.setOpacity(0);
+        this._tickBurn(dt);
         if (inp.throwPressed) {
           inp.throwPressed = false;
           this._attack();
@@ -1185,7 +1334,8 @@
           this.grounded = true;
           if (!wasGrounded) playSfx('land');
         } else if (gY < -1000 && this.py < this.gy - 80) {
-          /* fell in pit */
+          /* fell in pit / swamp water */
+          if ((this.burnT || 0) > 0) this._extinguish('💦 踩水灭火成功！');
           if (this.invuln <= 0) {
             this.hp -= 1;
             this.invuln = 1.0;
@@ -1197,7 +1347,7 @@
             if (this.hp <= 0) {
               this.hp = 0; this.dead = true; this.playing = false;
               stopBgm(); startBgm('fail');
-              showResult(false, 0, this.coins);
+              markDeath(); showResult(false, 0, this.coins);
             }
           }
         } else {
@@ -1220,6 +1370,9 @@
           this.invuln -= dt;
           this.ninja.setOpacity((Math.floor(this.invuln * 20) % 2) ? 90 : 255);
         } else this.ninja.setOpacity(255);
+
+        /* 落地后再次判水灭火（_tickBurn 在位移前） */
+        if ((this.burnT || 0) > 0 && this._inWater()) this._extinguish('💦 踩水灭火成功！');
 
         /* traps */
         var spk = level.traps.spike || {};
@@ -1254,7 +1407,7 @@
                 if (this.hp <= 0) {
                   this.hp = 0; this.dead = true; this.playing = false;
                   stopBgm(); startBgm('fail');
-                  showResult(false, 0, this.coins);
+                  markDeath(); showResult(false, 0, this.coins);
                 }
               }
             }
@@ -1267,17 +1420,24 @@
             var key = kind + ':' + i + ':' + Math.floor(elapsed / I);
             if (near && !this.hitKeys[key]) {
               this.hitKeys[key] = 1;
-              this.hp -= (kind === 'fire' ? dmgF : dmgS);
-              this.invuln = 1.0;
-              applyNinjaFrame(this.ninja, this.palette, 'knock_0');
-              playSfx(kind === 'fire' ? 'fire' : 'spike');
-              playSfx('hurt');
-              updHUD(this.hp, this.coins);
-              if (this.hp <= 0) {
-                this.hp = 0; this.dead = true; this.playing = false;
-                stopBgm(); startBgm('fail');
-                showResult(false, 0, this.coins);
-                $('msg').textContent = '掉光了 · 点重来';
+              if (kind === 'fire') {
+                /* c28: 着火 → 晃/踩水灭；烧满才扣血 */
+                this._ignite();
+                this.invuln = 0.35;
+              } else {
+                this.hp -= dmgS;
+                this.invuln = 1.0;
+                applyNinjaFrame(this.ninja, this.palette, 'knock_0');
+                playSfx('spike');
+                playSfx('hurt');
+                updHUD(this.hp, this.coins);
+                if (this.hp <= 0) {
+                  this.hp = 0; this.dead = true; this.playing = false;
+                  markDeath();
+                  stopBgm(); startBgm('fail');
+                  showResult(false, 0, this.coins);
+                  $('msg').textContent = '掉光了 · 点重来';
+                }
               }
             }
           }
@@ -1289,8 +1449,10 @@
           cn.sp.setPosition(cn.x, this.gy + T * 0.85 + Math.sin(now * 5 + i) * 4);
           if (Math.abs(this.px - cn.x) < T * 0.7 && this.py < this.gy + DRAW_H) {
             cn.got = true; cn.sp.setVisible(false);
-            this.coins += cn.star ? 0 : 1;
-            if (!cn.star) this.score = (this.score | 0) + SCORE.coin;
+            if (!cn.star) {
+              this._earn(1);
+              this.score = (this.score | 0) + SCORE.coin;
+            }
             if (cn.star) this.invuln = Math.max(this.invuln, 3);
             playSfx('coin');
             updHUD(this.hp, this.coins);
@@ -1315,7 +1477,7 @@
             if (this.hp <= 0) {
               this.hp = 0; this.dead = true; this.playing = false;
               stopBgm(); startBgm('fail');
-              showResult(false, 0, this.coins);
+              markDeath(); showResult(false, 0, this.coins);
             }
           }
         }
@@ -1335,7 +1497,7 @@
               updHUD(this.hp, this.coins);
               if (this.hp <= 0) {
                 this.hp = 0; this.dead = true; this.playing = false;
-                showResult(false, 0, this.coins);
+                markDeath(); showResult(false, 0, this.coins);
               }
             }
           }
@@ -1358,7 +1520,7 @@
           th.x += th.vx * dt;
           th.y += (th.vy || 0) * dt;
           th.sp.setPosition(th.x, th.y);
-          th.sp.setRotation(th.sp.getRotation() + dt * (this.weapon === 'gun' ? 0 : 720));
+          th.sp.setRotation(th.sp.getRotation() + dt * (this.weapon === 'bow' || this.weapon === 'gun' ? 0 : 720));
           if ((th.dmg || 0) > 0 && this._hurtAt(th.x, th.y, T * 1.1, th.dmg)) th.life = 0;
           if (th.life <= 0) {
             th.sp.removeFromParent();
@@ -1739,6 +1901,8 @@
           dartTex = buildShotTex('#d5dde6', 14, 6);
           gunTex = buildShotTex('#ffd166', 10, 10);
           bladeTex = buildShotTex('#f4f7fb', 36, 14);
+          bowTex = buildShotTex('#e8c27a', 22, 5); /* 箭矢 */
+          hammerTex = buildShotTex('#c5ced8', 30, 14); /* 锤子挥击 */
 
           var started = false;
           function goPlay() {
