@@ -1,7 +1,7 @@
 /**
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·自制关
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
- * c34: 键盘武器仅 KeyL（去掉 F/J；无 R 武器键；触控 btnL/btnR 仍左右走，投靠 btnT）。
+ * c35: 死亡自动复活（−50积分或免活3次/关；用尽才失败重玩）。was c34: 键盘武器仅 KeyL。
  * c33: 走路手脚自然摆动 — 程序化 opposite arm/leg（旧 walk_* PNG 近同姿态仅飘围巾）；WBNinjaWalk。
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
  * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。
@@ -701,6 +701,11 @@
   }
   /** Run score is separate from wallet coins. */
   var SCORE = { coin: 10, slime: 50, boss: 200, hp: 100, clear: 150 };
+  /** Auto-revive: score cost ≈ one slime; else 3 free chances per level run. */
+  var REVIVE_COST = 50;
+  var FREE_REVIVES_MAX = 3;
+  var REVIVE_DELAY = 2.5;
+  var REVIVE_INVULN = 1.5;
 
   function updHUD(hp, coins) {
     var left = Math.max(0, hp);
@@ -717,7 +722,10 @@
     var c = $('coins');
     if (c) c.textContent = '🪙 ' + coins;
     var sc = $('score');
-    if (sc && sceneRef) sc.textContent = '积分 ' + (sceneRef.score | 0);
+    if (sc && sceneRef) {
+      var freeL = (sceneRef.freeRevivesLeft != null) ? (sceneRef.freeRevivesLeft | 0) : FREE_REVIVES_MAX;
+      sc.textContent = '积分 ' + (sceneRef.score | 0) + ' · 免活' + freeL;
+    }
     var we = $('weapon');
     if (we && sceneRef) {
       var id = sceneRef.weapon;
@@ -740,11 +748,11 @@
     }
   }
   function hideResult() { var r = $('result'); if (r) r.classList.remove('show', 'win', 'fail'); }
-  function showResult(win, hp, coins) {
+  function showResult(win, hp, coins, failTitle) {
     var r = $('result'); if (!r) return;
     r.classList.add('show');
     r.classList.add(win ? 'win' : 'fail');
-    $('resultBig').textContent = win ? '🎉 过关！' : '😵 再试一次';
+    $('resultBig').textContent = win ? '🎉 过关！' : (failTitle || '😵 再试一次');
     $('resultBig').style.color = win ? '#9ff0a8' : '#ffb4b4';
     var sc = (sceneRef && (sceneRef.score | 0)) || 0;
     var deaths = sessionDeaths | 0;
@@ -754,7 +762,8 @@
       '<span class="stat-row">🪙 金币 <b style="color:#ffe7a0">' + (coins | 0) + '</b></span>' +
       '<span class="stat-row">💀 死亡 <b style="color:#ffb4b4">' + deaths + '</b></span>' +
       '<span class="stat-row">🏁 通关 <b style="color:' + (win ? '#9ff0a8' : '#ffb4b4') + '">' + cleared + '</b></span>' +
-      '<span class="sub-hint">积分 ' + sc + (hp != null ? ' · 剩' + hp + '❤' : '') + '</span>';
+      '<span class="sub-hint">积分 ' + sc + (hp != null ? ' · 剩' + hp + '❤' : '') +
+      (win ? '' : ' · 免活已用完') + '</span>';
     writeLastScore(sc);
   }
   function markDeath() {
@@ -828,6 +837,11 @@
       this.playing = false;
       this.won = false;
       this.dead = false;
+      this.revivePending = false;
+      this.reviveWait = 0;
+      this.freeRevivesLeft = FREE_REVIVES_MAX;
+      this.lastSafeX = 0;
+      this.lastSafeY = 0;
       this.hp = MAX_HP;
       this.coins = 0;
       this.invuln = 0;
@@ -1167,6 +1181,11 @@
       this.playing = true;
       this.won = false;
       this.dead = false;
+      this.revivePending = false;
+      this.reviveWait = 0;
+      this.freeRevivesLeft = FREE_REVIVES_MAX;
+      this.lastSafeX = this.px;
+      this.lastSafeY = this.py;
       this.t0 = Date.now() / 1000;
       this.hitKeys = {};
       this.throws.forEach(function (t) { if (t.sp) t.sp.removeFromParent(); });
@@ -1325,7 +1344,122 @@
       }
       if (this.throws.length < 3) this._spawnShot(1, 280, 1.2, 0, shurikenTex);
     },
-    _inWater: function () {
+    _clearBurnSilent: function () {
+      this.burnT = 0;
+      this.burnShake = 0;
+      this.burnDir = 0;
+      if (this.ninja) this.ninja.setColor(cc.color(255, 255, 255));
+      if (this.burnFx) this.burnFx.setVisible(false);
+    },
+    /** Death → countdown auto-revive (score or free), else force level replay. */
+    _killPlayer: function (why) {
+      if (this.dead || this.revivePending || this.won) return;
+      this.hp = 0;
+      this.dead = true;
+      this.playing = false;
+      this.vx = 0;
+      this.vy = 0;
+      markDeath();
+      this._clearBurnSilent();
+      applyNinjaFrame(this.ninja, this.palette, 'knock_0');
+      playSfx('hurt');
+      updHUD(this.hp, this.coins);
+      var sc = this.score | 0;
+      var canScore = sc >= REVIVE_COST;
+      var canFree = (this.freeRevivesLeft | 0) > 0;
+      if (canScore || canFree) {
+        this.revivePending = true;
+        this.reviveWait = REVIVE_DELAY;
+        hideResult();
+        stopBgm();
+        startBgm('fail');
+        var tip = $('msg');
+        var plan = canScore
+          ? ('−' + REVIVE_COST + '积分')
+          : ('免活剩' + (this.freeRevivesLeft | 0));
+        if (tip) tip.textContent = (why || '倒下了') + ' · ' + Math.ceil(REVIVE_DELAY) + '秒后复活（' + plan + '）';
+        return;
+      }
+      this.revivePending = false;
+      stopBgm();
+      startBgm('fail');
+      showResult(false, 0, this.coins, '😵 免活用完 · 重玩本关');
+      var tip2 = $('msg');
+      if (tip2) tip2.textContent = '积分不足且免活用完 · 点重来本关';
+    },
+    _tickRevive: function (dt) {
+      if (!this.revivePending) return;
+      this.reviveWait = Math.max(0, (this.reviveWait || 0) - dt);
+      var tip = $('msg');
+      var sc = this.score | 0;
+      var plan = sc >= REVIVE_COST
+        ? ('−' + REVIVE_COST + '积分')
+        : ('免活剩' + (this.freeRevivesLeft | 0));
+      if (tip) {
+        var sec = Math.max(1, Math.ceil(this.reviveWait));
+        if (this.reviveWait <= 0) sec = 0;
+        tip.textContent = sec > 0
+          ? ('倒下了 · ' + sec + '秒后复活（' + plan + '）')
+          : ('正在复活（' + plan + '）…');
+      }
+      if (this.reviveWait > 0) return;
+      this._doRevive();
+    },
+    _doRevive: function () {
+      this.revivePending = false;
+      var sc = this.score | 0;
+      var tip = $('msg');
+      var note = '';
+      if (sc >= REVIVE_COST) {
+        this.score = sc - REVIVE_COST;
+        note = '复活 −' + REVIVE_COST + '积分';
+      } else if ((this.freeRevivesLeft | 0) > 0) {
+        this.freeRevivesLeft = (this.freeRevivesLeft | 0) - 1;
+        note = '免费复活 · 还剩' + (this.freeRevivesLeft | 0) + '次';
+      } else {
+        stopBgm();
+        startBgm('fail');
+        showResult(false, 0, this.coins, '😵 免活用完 · 重玩本关');
+        if (tip) tip.textContent = '积分不足且免活用完 · 点重来本关';
+        return;
+      }
+      var sx = (typeof this.lastSafeX === 'number' && this.lastSafeX > 0)
+        ? this.lastSafeX
+        : (level.spawnC * T + T * 0.5);
+      var sy = (typeof this.lastSafeY === 'number' && this.lastSafeY > -100)
+        ? this.lastSafeY
+        : this.gy;
+      /* Prefer solid under lastSafeX */
+      if (this._groundYAt(sx) < -1000) {
+        sx = level.spawnC * T + T * 0.5;
+        sy = this.gy;
+      } else {
+        sy = this._groundYAt(sx);
+      }
+      this.px = sx;
+      this.py = sy;
+      this.vx = 0;
+      this.vy = 0;
+      this.grounded = true;
+      this.hp = MAX_HP;
+      this.dead = false;
+      this.playing = true;
+      this.invuln = REVIVE_INVULN;
+      this._clearBurnSilent();
+      this.ninja.setPosition(this.px, this.py);
+      this.ninja.setOpacity(255);
+      applyNinjaFrame(this.ninja, this.palette, 'idle');
+      this.camX = Math.max(0, this.px - W * camBias());
+      this.world.setPosition(-this.camX, 0);
+      this._layoutBg(this.camX);
+      hideResult();
+      updHUD(this.hp, this.coins);
+      stopBgm();
+      startBgm(resolvedBgmId || 'explore');
+      if (tip) tip.textContent = note + ' · 免活' + (this.freeRevivesLeft | 0);
+      playSfx('coin');
+    },
+        _inWater: function () {
       var c = Math.floor(this.px / T);
       return !this._solidAt(c) && this.py < this.gy + 28;
     },
@@ -1394,12 +1528,7 @@
       updHUD(this.hp, this.coins);
       var tip = $('msg');
       if (tip) tip.textContent = '火烧满了 -' + dmgF + '血';
-      if (this.hp <= 0) {
-        this.hp = 0; this.dead = true; this.playing = false;
-        markDeath();
-        stopBgm(); startBgm('fail');
-        showResult(false, 0, this.coins);
-      }
+      if (this.hp <= 0) this._killPlayer('火烧倒了');
     },
     _groundYAt: function (px) {
       var c = Math.floor(px / T);
@@ -1408,8 +1537,11 @@
     },
     update: function (dt) {
       try {
-        if (!this.playing) return;
         if (dt > 0.05) dt = 0.05;
+        if (!this.playing) {
+          if (this.revivePending) this._tickRevive(dt);
+          return;
+        }
         var now = Date.now() / 1000;
         var elapsed = now - this.t0;
         var i;
@@ -1460,6 +1592,8 @@
           this.py = gY;
           this.vy = 0;
           this.grounded = true;
+          this.lastSafeX = this.px;
+          this.lastSafeY = this.py;
           if (!wasGrounded) playSfx('land');
         } else if (gY < -1000 && this.py < this.gy - 80) {
           /* fell in pit / swamp water */
@@ -1472,11 +1606,7 @@
             this.vy = 0;
             playSfx('hurt');
             updHUD(this.hp, this.coins);
-            if (this.hp <= 0) {
-              this.hp = 0; this.dead = true; this.playing = false;
-              stopBgm(); startBgm('fail');
-              markDeath(); showResult(false, 0, this.coins);
-            }
+            if (this.hp <= 0) this._killPlayer('掉进坑了');
           }
         } else {
           this.grounded = false;
@@ -1543,11 +1673,7 @@
                 applyNinjaFrame(this.ninja, this.palette, 'knock_0');
                 playSfx('hurt');
                 updHUD(this.hp, this.coins);
-                if (this.hp <= 0) {
-                  this.hp = 0; this.dead = true; this.playing = false;
-                  stopBgm(); startBgm('fail');
-                  markDeath(); showResult(false, 0, this.coins);
-                }
+                if (this.hp <= 0) this._killPlayer('撞岩石了');
               }
             }
             continue;
@@ -1570,13 +1696,7 @@
                 playSfx('spike');
                 playSfx('hurt');
                 updHUD(this.hp, this.coins);
-                if (this.hp <= 0) {
-                  this.hp = 0; this.dead = true; this.playing = false;
-                  markDeath();
-                  stopBgm(); startBgm('fail');
-                  showResult(false, 0, this.coins);
-                  $('msg').textContent = '掉光了 · 点重来';
-                }
+                if (this.hp <= 0) this._killPlayer('踩到刺了');
               }
             }
           }
@@ -1619,11 +1739,7 @@
             applyNinjaFrame(this.ninja, this.palette, 'knock_0');
             playSfx('hurt');
             updHUD(this.hp, this.coins);
-            if (this.hp <= 0) {
-              this.hp = 0; this.dead = true; this.playing = false;
-              stopBgm(); startBgm('fail');
-              markDeath(); showResult(false, 0, this.coins);
-            }
+            if (this.hp <= 0) this._killPlayer('被鳄王撞倒');
           }
         }
 
@@ -1648,10 +1764,7 @@
               this.invuln = 0.8;
               applyNinjaFrame(this.ninja, this.palette, 'knock_0');
               updHUD(this.hp, this.coins);
-              if (this.hp <= 0) {
-                this.hp = 0; this.dead = true; this.playing = false;
-                markDeath(); showResult(false, 0, this.coins);
-              }
+              if (this.hp <= 0) this._killPlayer('被小怪撞倒');
             }
           }
         }
