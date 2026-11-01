@@ -51,6 +51,7 @@
 
 已经做上的（wb7）：
 
+- **手机壳 16:9 槽**：`.phone-bezel .canvas-slot` 用 `aspect-ratio:16/9` 居中，避免竖屏槽 + SHOW_ALL 上下大块空金边；电脑壳同比锁定命中区。
 - **画布必须留在壳内**：禁止 `position:fixed` 相对视口居中；`#Cocos2dGameContainer` 与 `#gameCanvas` 都 `absolute` 在 `.canvas-slot` 里。`placeCanvas` 移动的是容器（Lite 在手机上可能挂到 `body`），不是只挪 canvas。
 - 分辨率策略：`EQUAL_TO_FRAME + SHOW_ALL`，`cc.view._frame` 钉到当前槽；`fitCanvasInSlot` 用槽的 client 宽高写回容器/画布，避免 CSS `width/height:100%!important` 与命中区错位。
 - 手机壳：顶栏 chip 可换行、不缠字；顶栏步骤按钮左移收窄，**喇叭**与④错开；电脑壳金边槽与 16:9 命中区对齐。
