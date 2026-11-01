@@ -1,7 +1,7 @@
 /** AI办学小屋 · 课程3 · 可视化关卡工坊 (deep editor). Same save key as tonight. */
 /**
  * 可视化工坊 · 与今晚工作台共用 xygo-custom-level v1.2。
- * ldt24: 去玩→c37 踩踏 · was ldt23: 去玩→c36 着火持续掉血 · was ldt22: 去玩→c35 死亡复活 · was ldt21: 去玩→c34 键盘L武器 · was ldt20: 去玩→c33 走路摆臂 · was ldt19: 去玩→c31 竖屏底栏完整 · was ldt18→c30 · was vw54 手机壳二级 band · vw53 闸门藏二级 · vw52 P2 · vw51 壳。
+ * ldt25: 去玩→c38 匹配不闪C红 · was ldt24: 去玩→c37 踩踏 · was ldt23: 去玩→c36 着火 · was ldt22: 去玩→c35 复活 · was ldt21: 去玩→c34 键盘L · was ldt20: 去玩→c33 摆臂 · was ldt19: 去玩→c31 · was ldt18→c30 · was vw54/vw53/vw52/vw51。
  */
 (function () {
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
@@ -1231,14 +1231,14 @@
       button(this, '回关卡', isPhoneShell() ? 90 : 110, 30, isPhoneShell() ? 100 : 130, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show((WB.ui.ldStep | 0) || 2); }); });
       button(this, '联机游玩', isPhoneShell() ? 300 : 360, 32, isPhoneShell() ? 140 : 160, isPhoneShell() ? 48 : 48, GOLD, INK, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c37&net=1';
+        location.href = 'custom-play.html?v=c38&net=1';
       });
       button(this, '去听选', isPhoneShell() ? 520 : 560, 32, isPhoneShell() ? 120 : 140, isPhoneShell() ? 48 : 46, NAVY, WHITE, function () {
         later(function () { show(5); });
       });
       button(this, '去玩这一关', isPhoneShell() ? 760 : 800, 32, isPhoneShell() ? 200 : 200, isPhoneShell() ? 50 : 48, GREEN, WHITE, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c37';
+        location.href = 'custom-play.html?v=c38';
       });
       this._t = 0;
       this.scheduleUpdate();
@@ -1373,7 +1373,7 @@
         '去⑥听选', function () { later(function () { show(5); }); },
         '去玩第9关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c37';
+          location.href = 'custom-play.html?v=c38';
         }
       );
       return true;
@@ -1456,7 +1456,7 @@
         '打开喇叭', function () { try { if (window.VW && VW.openMusic) VW.openMusic(); } catch (e) {} },
         '去玩这一关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c37';
+          location.href = 'custom-play.html?v=c38';
         }
       );
       return true;

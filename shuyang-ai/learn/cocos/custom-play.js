@@ -1,6 +1,7 @@
 /**
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·自制关
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
+ * c38: 匹配中不再闪「C 红」— 开房路径立刻乐观锁 Host→A绿；id 占用改 Guest→B蓝；跳过 netRole=null 的中间态（PeerJS open 前 ~3s）。
  * c37: 踩踏伤害 — 下落踩中小怪一脚秒杀(2)、鳄王每次1约三踩；成功踩踏不伤自己并小反弹；侧面贴身仍伤玩家。
  * c36: 着火持续掉血；走路不能灭火（仅踩水/烧完灭）；去掉左右晃灭火。
  * c35: 死亡自动复活（−50积分或免活3次/关；用尽才失败重玩）。was c34: 键盘武器仅 KeyL。
@@ -14,9 +15,9 @@
  * c28: 明天玩关三件可测 — ①武器弓/锤/飞镖（默飞镖可切换）②水面无陷阱 ③着火踩水灭火（保留左右晃）；结算屏三数。
  * c27: short - load cocos in body (not head): mobile _initSys needs document.body or appendChild null aborts engine before Layer.
  * c39: first interactive frame fast — critical idle+dirt+grass then runScene; night BG deferred; 2.5s hard cap; PeerJS local.
- * c38: net host/guest chip always matches visible cast (fix stale 「C 红」 on green host).
- * c37: shorten dirt bed (gy≈H*0.28, min 72) for phone landscape play space.
- * c36: do not gate runScene on tint cache; tint via data-URL; swamp canvas bed (fix c35 blank navy).
+ * c38also: net host/guest chip always matches visible cast once role known (applyRoleVisuals + updHUD → netLockedPalette).
+ * c37dirt: shorten dirt bed (gy≈H*0.28, min 72) for phone landscape play space.
+ * c36tint: do not gate runScene on tint cache; tint via data-URL; swamp canvas bed (fix c35 blank navy).
  *
  * RULE_BANK（本关不塞，只记库）:
  * - 藤蔓爬：可攀藤蔓上下，另关再开
@@ -2005,7 +2006,10 @@
     netPanel(true, '正在匹配队友（PeerJS）…');
     netBanner('匹配中…', false);
     netCode = netRoomId();
-    netRole = null; netLinked = false;
+    netLinked = false;
+    /* c38: try-host path — lock Host/A绿 immediately. Do NOT null netRole (that flashed solo C红 ~3s while PeerJS open). */
+    netRole = 'host';
+    applyRoleVisuals();
     try { if (netPeer) netPeer.destroy(); } catch (e) {}
     /* Try host first on this minute's room id */
     netPeer = new Peer(netCode, NET_PEER_OPTS);
@@ -2021,7 +2025,7 @@
     netPeer.on('connection', function (conn) { netWireConn(conn); });
     netPeer.on('error', function (err) {
       if (hosted) return;
-      /* id taken → join as guest */
+      /* id taken → join as guest; flip chip to B蓝 as soon as role is known */
       try { netPeer.destroy(); } catch (e2) {}
       netRole = 'guest';
       applyRoleVisuals();
