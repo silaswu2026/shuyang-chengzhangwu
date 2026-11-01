@@ -668,6 +668,133 @@
     return texFromCanvas(c);
   }
 
+  function buildSpring() {
+    var c = canvas(64, 64), g = c.getContext('2d');
+    g.strokeStyle = '#c5d0dc';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(32, 58);
+    var i;
+    for (i = 1; i <= 8; i++) g.lineTo(32 + (i % 2 ? -10 : 10), 58 - i * 5);
+    g.stroke();
+    g.fillStyle = '#b9c4d0';
+    g.strokeStyle = '#8a97a6';
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(32, 58);
+    for (i = 1; i <= 8; i++) g.lineTo(32 + (i % 2 ? -7 : 7), 58 - i * 5);
+    g.stroke();
+    g.fillStyle = '#e23b3b';
+    roundPath(g, 16, 8, 32, 12, 4);
+    g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.45)';
+    g.fillRect(20, 10, 10, 3);
+    return texFromCanvas(c);
+  }
+  function buildMist() {
+    var c = canvas(64, 64), g = c.getContext('2d');
+    var gr = g.createLinearGradient(0, 8, 0, 60);
+    gr.addColorStop(0, 'rgba(170,110,210,0.15)');
+    gr.addColorStop(0.5, 'rgba(130,60,180,0.55)');
+    gr.addColorStop(1, 'rgba(80,30,120,0.25)');
+    g.fillStyle = gr;
+    g.beginPath();
+    g.ellipse(32, 40, 26, 18, 0, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = 'rgba(220,180,255,0.55)';
+    [[18, 34, 8], [32, 28, 10], [46, 38, 7], [28, 46, 9]].forEach(function (p) {
+      g.beginPath();
+      g.ellipse(p[0], p[1], p[2], p[2] * 0.7, 0, 0, Math.PI * 2);
+      g.fill();
+    });
+    return texFromCanvas(c);
+  }
+  function buildRock() {
+    var c = canvas(64, 64), g = c.getContext('2d');
+    g.fillStyle = 'rgba(0,0,0,0.25)';
+    g.beginPath();
+    g.ellipse(32, 56, 18, 5, 0, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#6d6358';
+    g.beginPath();
+    g.moveTo(12, 52);
+    g.lineTo(18, 28);
+    g.lineTo(32, 18);
+    g.lineTo(48, 30);
+    g.lineTo(52, 52);
+    g.closePath();
+    g.fill();
+    g.fillStyle = 'rgba(255,220,160,0.35)';
+    g.beginPath();
+    g.moveTo(22, 40);
+    g.lineTo(30, 22);
+    g.lineTo(36, 36);
+    g.closePath();
+    g.fill();
+    g.strokeStyle = '#3e3830';
+    g.lineWidth = 1.5;
+    g.beginPath();
+    g.moveTo(12, 52);
+    g.lineTo(18, 28);
+    g.lineTo(32, 18);
+    g.lineTo(48, 30);
+    g.lineTo(52, 52);
+    g.stroke();
+    return texFromCanvas(c);
+  }
+  function buildDartIcon() {
+    var c = canvas(64, 64), g = c.getContext('2d');
+    var i;
+    for (i = 0; i < 3; i++) {
+      g.save();
+      g.translate(18 + i * 12, 46 - i * 6);
+      g.rotate(-0.7);
+      g.fillStyle = '#d5dde6';
+      g.fillRect(0, 0, 28, 4);
+      g.fillStyle = '#e23b3b';
+      g.beginPath();
+      g.moveTo(28, -3);
+      g.lineTo(38, 2);
+      g.lineTo(28, 7);
+      g.fill();
+      g.restore();
+    }
+    return texFromCanvas(c);
+  }
+  function buildBladeIcon() {
+    var c = canvas(64, 64), g = c.getContext('2d');
+    g.fillStyle = '#8a5a32';
+    g.fillRect(10, 40, 16, 8);
+    var gr = g.createLinearGradient(16, 44, 52, 12);
+    gr.addColorStop(0, '#f4f7fb');
+    gr.addColorStop(1, '#9aa8b8');
+    g.fillStyle = gr;
+    g.beginPath();
+    g.moveTo(22, 42);
+    g.quadraticCurveTo(48, 36, 52, 10);
+    g.quadraticCurveTo(36, 28, 18, 36);
+    g.closePath();
+    g.fill();
+    g.strokeStyle = '#5c6a7a';
+    g.stroke();
+    return texFromCanvas(c);
+  }
+  function buildGunIcon() {
+    var c = canvas(64, 64), g = c.getContext('2d');
+    g.fillStyle = '#3a4250';
+    roundPath(g, 8, 26, 40, 12, 3);
+    g.fill();
+    g.fillStyle = '#5c6778';
+    g.fillRect(14, 22, 22, 6);
+    g.fillStyle = '#2a303a';
+    g.fillRect(18, 38, 8, 12);
+    g.fillStyle = '#ffd166';
+    g.beginPath();
+    g.arc(46, 30, 3, 0, Math.PI * 2);
+    g.fill();
+    return texFromCanvas(c);
+  }
+
   function build() {
     tex.sky = buildSky();
     tex.night = buildNight();
@@ -690,6 +817,12 @@
     tex.worm = buildWorm();
     tex.hook = buildHook();
     tex.hookMark = buildHookMark();
+    tex.spring = buildSpring();
+    tex.mist = buildMist();
+    tex.rock = buildRock();
+    tex.dart = buildDartIcon();
+    tex.blade = buildBladeIcon();
+    tex.gun = buildGunIcon();
     tex.heart = buildHeart();
     tex.pad = buildPad();
     tex.shield = buildShield();

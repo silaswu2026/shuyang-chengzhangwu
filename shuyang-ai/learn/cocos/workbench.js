@@ -507,17 +507,18 @@
       var gy = EDIT.gy;
       this._sky = ART.dressSky(this, gy + 6);
       ART.addGround(this, EDIT.L, gy, STORE.MC * EDIT.cw, 4, 2);
-      words(this, '摆一小关 · 放刺或火 · 调每几秒 · 跑一次', 390, 466, 18, '#1a2744', 8);
+      words(this, '摆一小关 · 放陷阱 · 调频率 · 跑一次', 360, 470, 16, '#1a2744', 8);
       var self = this;
-      var tools = [['spike', '地刺'], ['fire', '火'], ['coin', '金币'], ['del', '擦掉']];
+      var tools = [['spike', '地刺'], ['fire', '火'], ['spring', '弹簧'], ['mist', '迷雾'], ['rock', '岩石'], ['coin', '金币'], ['del', '擦掉']];
       tools.forEach(function (t, i) {
         var on = WB.data.tool === t[0];
-        button(self, t[1], 110 + i * 150, 418, 136, 38, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+        button(self, t[1], 58 + i * 102, 430, 96, 32, on ? GOLD : NAVY, on ? INK : WHITE, function () {
           WB.data.tool = t[0];
-          if (t[0] === 'spike' || t[0] === 'fire') WB.data.sel = t[0];
+          if (t[0] !== 'coin' && t[0] !== 'del') WB.data.sel = t[0];
           later(function () { show(2); });
         });
       });
+      this._shop();
       this.paramRow = new cc.Node();
       this.addChild(this.paramRow, 31);
       this._params();
@@ -591,18 +592,44 @@
       this.scheduleUpdate();
       return true;
     },
+    _shop: function () {
+      var wal = WB.data.wallet;
+      var self = this;
+      words(this, '金币 ' + (wal.coins | 0), 70, 386, 15, '#7a4e00', 8);
+      ['dart', 'blade', 'gun'].forEach(function (id, i) {
+        var spec = STORE.WEAPONS[id];
+        var owned = wal.weapons.indexOf(id) >= 0;
+        var on = wal.equipped === id;
+        var label = on ? (spec.name + ' 使用中') : (owned ? (spec.name + ' 装备') : (spec.name + ' ' + spec.price));
+        button(self, label, 210 + i * 150, 386, 140, 30, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+          var res = STORE.buy(WB.data, id);
+          WB.ui.flash = res.flash || '';
+          if (res.ok) STORE.save(localStorage, WB.data);
+          later(function () { show(2); });
+        });
+      });
+    },
     _params: function () {
       var sel = WB.data.sel;
       var self = this;
+      var hint = {
+        spring: '弹簧：踩上去会弹起来',
+        mist: '迷雾：走进去会变慢',
+        rock: '岩石：撞上去会轻伤'
+      };
+      if (hint[sel]) {
+        words(this.paramRow, hint[sel], 220, 348, 15, '#1a2744', 1);
+        return;
+      }
       if (sel !== 'spike' && sel !== 'fire') {
-        words(this.paramRow, '点一个刺或火，再选 1、3、5 秒', 360, 372, 15, '#1a2744', 1);
+        words(this.paramRow, '点一个刺或火，再选 1、3、5 秒', 250, 348, 15, '#1a2744', 1);
         return;
       }
       var cur = sel === 'fire' ? WB.data.mp.fire.dur : WB.data.mp.spike.interval;
-      words(this.paramRow, sel === 'fire' ? '火停多久' : '刺每几秒冒一次', 150, 372, 15, '#1a2744', 1);
+      words(this.paramRow, sel === 'fire' ? '火停多久' : '刺每几秒冒一次', 120, 348, 15, '#1a2744', 1);
       [1, 3, 5].forEach(function (v, i) {
         var on = cur === v;
-        button(self.paramRow, v + '秒', 300 + i * 100, 372, 88, 34, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+        button(self.paramRow, v + '秒', 280 + i * 96, 348, 86, 32, on ? GOLD : NAVY, on ? INK : WHITE, function () {
           if (STORE.setNum(WB.data, v)) STORE.save(localStorage, WB.data);
           later(function () { show(2); });
         });
@@ -634,11 +661,11 @@
           sp.setAnchorPoint(0.5, 0);
           sp.setScale(0.82);
           mk.addChild(sp, 1);
-        } else if (k === 'coin') {
-          sp = new cc.Sprite(ART.tex.coin);
+        } else if (k === 'coin' || k === 'spring' || k === 'mist' || k === 'rock') {
+          sp = new cc.Sprite(ART.tex[k]);
           sp.setAnchorPoint(0.5, 0);
-          sp.setScale(0.62);
-          sp.setPosition(0, 10);
+          sp.setScale(k === 'mist' ? 0.7 : 0.62);
+          sp.setPosition(0, k === 'coin' ? 10 : 0);
           mk.addChild(sp, 1);
         }
       }
@@ -720,11 +747,11 @@
           sp.setPosition(px, gy);
           this.addChild(sp, 8);
           placed++;
-        } else if (k === 'coin') {
-          sp = new cc.Sprite(ART.tex.coin);
+        } else if (k === 'coin' || k === 'spring' || k === 'mist' || k === 'rock') {
+          sp = new cc.Sprite(ART.tex[k]);
           sp.setAnchorPoint(0.5, 0);
-          sp.setScale(0.4);
-          sp.setPosition(px, gy + 8);
+          sp.setScale(0.42);
+          sp.setPosition(px, gy + (k === 'coin' ? 8 : 0));
           this.addChild(sp, 8);
           placed++;
         }
@@ -763,7 +790,7 @@
       button(this, '回摆关', 160, 32, 170, 44, NAVY, WHITE, function () { later(function () { show(2); }); });
       button(this, '去玩这一关', 740, 32, 250, 48, GREEN, WHITE, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c27';
+        location.href = 'custom-play.html?v=c28';
       });
       this._t = 0;
       this.scheduleUpdate();
