@@ -113,6 +113,8 @@
         }
       },
       wallet: blankWallet(),
+      music: '',
+      likes: 0,
       audio: blankAudio(),
       lastScore: 0,
       by: '',
