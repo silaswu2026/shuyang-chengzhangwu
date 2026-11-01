@@ -57,7 +57,7 @@
     sceneName: '',
     data: null,
     shell: readShellPref(),
-    ui: { step: 0, look: 0, running: false, runT0: 0, previewDone: false, flash: '', freqDone: false, audioOpen: false },
+    ui: { step: 0, look: 0, running: false, runT0: 0, previewDone: false, flash: '', freqDone: false, audioOpen: false, gatePassed: false, gatePending: 1, gateQ: 0, gatePicks: null, gateFlash: '' },
     layout: {},
     setShell: function (mode) {
       if (mode !== 'phone' && mode !== 'desktop') return;
@@ -174,6 +174,85 @@
 
   function later(fn) { setTimeout(fn, 0); }
 
+
+  /* ---------- 觉察前置闸门（进 ②③④ 前） ---------- */
+  var DESIGN_STEPS = { 1: 1, 2: 1, 3: 1 }; /* 频率/摆关/装备；切片3 合并前挂这三步 */
+  var GATE_QS = [
+    {
+      q: '什么样的关卡最难？',
+      opts: [
+        { id: 'a', t: '很多陷阱挤在一起，反应很短', ok: true },
+        { id: 'b', t: '只有一个金币', ok: false },
+        { id: 'c', t: '很长但不危险', ok: false }
+      ],
+      hint: '难＝压力大（密刺+短反应），不是地图长。'
+    },
+    {
+      q: '什么样的玩法算中间？',
+      opts: [
+        { id: 'a', t: '全平地，没什么互动', ok: false },
+        { id: 'b', t: '少量刺，间隔还能跑过去', ok: true },
+        { id: 'c', t: '一碰到就秒杀的 Boss', ok: false }
+      ],
+      hint: '中间＝有一点要想，但还能过。'
+    },
+    {
+      q: '什么样的关卡最复杂？',
+      opts: [
+        { id: 'a', t: '一种刺翻来覆去', ok: false },
+        { id: 'b', t: '火+雾+弹跳+宝箱组合', ok: true },
+        { id: 'c', t: '空关，什么都没有', ok: false }
+      ],
+      hint: '复杂＝元素种类多；复杂不一定最难。'
+    }
+  ];
+
+  function isDesignStep(step) {
+    return !!DESIGN_STEPS[step | 0];
+  }
+
+  function readSkipGate() {
+    try {
+      var q = new URL(location.href).searchParams;
+      if (q.get('skipGate') === '1') return true;
+    } catch (e0) {}
+    try {
+      if (/(?:^|[?&])skipGate=1(?:&|$)/.test(location.search || '')) return true;
+    } catch (e1) {}
+    return false;
+  }
+
+  function gateOk() {
+    if (WB.ui && WB.ui.gatePassed) return true;
+    if (readSkipGate()) {
+      WB.ui.gatePassed = true;
+      try { sessionStorage.setItem('wb-gate-passed', '1'); } catch (eS) {}
+      return true;
+    }
+    try {
+      if (sessionStorage.getItem('wb-gate-passed') === '1') {
+        WB.ui.gatePassed = true;
+        return true;
+      }
+    } catch (eR) {}
+    return false;
+  }
+
+  function markGatePassed() {
+    WB.ui.gatePassed = true;
+    try { sessionStorage.setItem('wb-gate-passed', '1'); } catch (eM) {}
+  }
+
+  function runGateScene() {
+    WB.ui.running = false;
+    try { if (window.VW && VW.closeDrawers) VW.closeDrawers(); } catch (eC) {}
+    if (typeof closeAudioDrawer === 'function') {
+      try { closeAudioDrawer(); } catch (eA) {}
+    }
+    cc.director.runScene(new GateScene());
+  }
+
+
   function syncStepUrl(step) {
     try {
       var u = new URL(location.href);
@@ -185,6 +264,17 @@
 
   function show(step) {
     step = Math.max(0, Math.min(5, step | 0));
+    if (isDesignStep(step) && !gateOk()) {
+      WB.ui.gatePending = step;
+      if (WB.ui.gateQ == null) WB.ui.gateQ = 0;
+      WB.ui.running = false;
+      if (typeof closeAudioDrawer === 'function') {
+        try { closeAudioDrawer(); } catch (eA0) {}
+      }
+      syncStepUrl(step);
+      runGateScene();
+      return;
+    }
     WB.ui.step = step;
     WB.ui.running = false;
     if (step !== 5) WB.ui.audioOpen = false;
@@ -194,6 +284,7 @@
     var scenes = [LookScene, FreqScene, EditScene, EquipScene, ReflectScene, AudioScene];
     cc.director.runScene(new scenes[step]());
   }
+
 
 
   function ensureAudio() {
@@ -1312,6 +1403,89 @@
       return true;
     }
   });
+
+
+  /* ---------- 觉察前置闸门场景 ---------- */
+  var GateLayer = cc.Layer.extend({
+    ctor: function () {
+      this._super();
+      WB.sceneName = 'gate';
+      var pending = WB.ui.gatePending;
+      if (pending == null || !isDesignStep(pending)) pending = 1;
+      WB.ui.gatePending = pending;
+      addChrome(this, pending);
+      ART.fill(this, ART.tex.night, 0);
+
+      var phone = isPhoneShell();
+      var land = false;
+      try { land = window.innerWidth > window.innerHeight && window.innerHeight < 520; } catch (eL) {}
+      var qi = WB.ui.gateQ | 0;
+      if (qi < 0) qi = 0;
+      if (qi >= GATE_QS.length) qi = GATE_QS.length - 1;
+      WB.ui.gateQ = qi;
+      var spec = GATE_QS[qi];
+      var picks = WB.ui.gatePicks || (WB.ui.gatePicks = [null, null, null]);
+
+      words(this, '小宇：伍澍暘，先想清楚，再动手摆关', W / 2, phone && land ? 470 : 478, phone ? 16 : 20, '#ffe7a0', 8);
+      words(this, '觉察前置 · 第 ' + (qi + 1) + ' / ' + GATE_QS.length + ' 问 · 答对才能进关卡设计', W / 2, phone && land ? 442 : 448, phone ? 12 : 14, '#c9c3ef', 8);
+
+      ART.panel(this, W / 2, phone && land ? 270 : 280, phone ? 900 : 860, phone && land ? 250 : 280, ccColor(18, 26, 58), 235, 2, 18);
+      ART.frame(this, W / 2, phone && land ? 270 : 280, phone ? 900 : 860, phone && land ? 250 : 280, cc.color(255, 224, 122), 120, 3, 18);
+
+      words(this, spec.q, W / 2, phone && land ? 360 : 380, phone ? 18 : 22, '#ffffff', 8);
+
+      var self = this;
+      var baseY = phone && land ? 300 : 310;
+      spec.opts.forEach(function (opt, i) {
+        var on = picks[qi] === opt.id;
+        var bg = NAVY;
+        var fg = WHITE;
+        if (on && opt.ok) { bg = GREEN; fg = WHITE; }
+        else if (on && !opt.ok) { bg = ccColor(180, 72, 72); fg = WHITE; }
+        button(self, opt.t, W / 2, baseY - i * (phone && land ? 48 : 56), phone ? 720 : 640, phone && land ? 42 : 48, bg, fg, function () {
+          picks[qi] = opt.id;
+          WB.ui.gatePicks = picks;
+          if (opt.ok) {
+            WB.ui.gateFlash = '小宇：对，就是这样。';
+            if (qi >= GATE_QS.length - 1) {
+              markGatePassed();
+              WB.ui.gateFlash = '小宇：想清楚了，进关卡设计吧。';
+              later(function () { show(WB.ui.gatePending | 0); });
+              return;
+            }
+            later(function () {
+              WB.ui.gateQ = qi + 1;
+              WB.ui.gateFlash = '小宇：下一问。';
+              runGateScene();
+            });
+          } else {
+            WB.ui.gateFlash = '小宇：再看一眼——' + spec.hint;
+            later(function () { runGateScene(); });
+          }
+        });
+      });
+
+      var flash = WB.ui.gateFlash || '点一张最合适的答案；错了可以再选。';
+      words(this, flash, W / 2, phone && land ? 130 : 140, phone ? 13 : 15, '#9ff0a8', 8);
+
+      button(this, '回看图', phone ? 110 : 130, 30, phone ? 120 : 140, phone ? 40 : 44, NAVY, WHITE, function () {
+        later(function () { show(0); });
+      });
+      button(this, '再想想', phone ? 320 : 360, 30, phone ? 120 : 140, phone ? 40 : 44, NAVY, WHITE, function () {
+        picks[qi] = null;
+        WB.ui.gatePicks = picks;
+        WB.ui.gateFlash = '小宇：不着急，慢慢想。';
+        later(function () { runGateScene(); });
+      });
+      button(this, '去玩后觉察', phone ? 760 : 800, 30, phone ? 180 : 200, phone ? 40 : 44, NAVY, WHITE, function () {
+        later(function () { show(4); });
+      });
+      return true;
+    }
+  });
+
+  var GateScene = cc.Scene.extend({ onEnter: function () { this._super(); this.addChild(new GateLayer()); } });
+
 
   var LookScene = cc.Scene.extend({ onEnter: function () { this._super(); this.addChild(new LookLayer()); } });
   var FreqScene = cc.Scene.extend({ onEnter: function () { this._super(); this.addChild(new FreqLayer()); } });

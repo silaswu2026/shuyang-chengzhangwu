@@ -106,9 +106,9 @@
 - 正式名锁：伍澍暘 · 小宇。
 
 ### 今日通话设计总册（2026-11-01）
-- 状态：**Silas 已放行实现**；切片按 IMPLEMENTATION-PLAN；切片1 看图已推。
+- 状态：**Silas 已放行实现**；切片按 IMPLEMENTATION-PLAN；切片1 看图已推；**切片2 觉察前置闸已推（vw48/wb79）**。
 - 总册：[`docs/TODAY-CALL-DESIGN-2026-11-01.md`](docs/TODAY-CALL-DESIGN-2026-11-01.md)（醒目标题：**待 Silas 确认：并 vs 不并**；默认不并）。
-- 觉察前置：[`docs/AWARENESS-GATE-BEFORE-DESIGN.md`](docs/AWARENESS-GATE-BEFORE-DESIGN.md)。
+- 觉察前置：[`docs/AWARENESS-GATE-BEFORE-DESIGN.md`](docs/AWARENESS-GATE-BEFORE-DESIGN.md) · **已落地方案 A**：进 ②③④ 前三问，答对才进；⑤玩后觉察保留；`?skipGate=1` 仅调试。
 - 试玩换壳：[`docs/PLAYTEST-SHELL-PARITY.md`](docs/PLAYTEST-SHELL-PARITY.md)（只换壳，PeerJS/核心不动）。
 - ⑥角色走路/砍击 SFX：[`docs/MUSIC-LEVEL-BIND-UI.md`](docs/MUSIC-LEVEL-BIND-UI.md) §9b。
 - ~~确认前禁止改 LookScene~~ → 切片1 已改 LookScene；摆关/听选/L3 仍等后续切片。
@@ -116,6 +116,10 @@
 已经做上的（c37 · 2026-11-01）：
 
 - **试玩泥土带压矮（手机横屏）**：`custom-play` 草线 `gy≈H*0.28`（原 ~0.42），最小夹紧 72（原 110）；矮横屏下棕色土带不再占约半屏，天空/可走层多留空间；坑/草帽/忍者落地仍跟 `this.gy`。正式名 **伍澍暘** / 助手 **小宇**。
+
+已经做上的（vw48 / wb79 · 2026-11-01）：
+
+- **觉察前置闸门（方案 A）**：点进 ②频率 / ③摆关 / ④装备（含看图末跳转、深链 `?step=1..3`）前先过三问（最难 / 中间 / 最复杂）；须答对（可重试、鼓励反馈）；本会话 sessionStorage 记过闸；⑤玩后觉察保留。正式名 **伍澍暘** / 助手 **小宇**。
 
 已经做上的（vw46 / wb77 · 2026-11-01）：
 
