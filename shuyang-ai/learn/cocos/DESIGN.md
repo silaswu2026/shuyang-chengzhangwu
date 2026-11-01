@@ -103,6 +103,15 @@
 - 全文：[`docs/LEVEL-STEPS-234-REDESIGN.md`](docs/LEVEL-STEPS-234-REDESIGN.md)（短链 [`docs/LEVEL-DESIGN-234.md`](docs/LEVEL-DESIGN-234.md)）。
 - 要点：维度调研；②跑一次；③「设计关卡」列=摆放+单关设置；陷阱六类属性草案；奖励三档 TBD；④钱包不吞回③；口述附录。
 - 正式名锁：伍澍暘 · 小宇。
+
+### 今日通话设计总册（2026-11-01）
+- 状态：**设计授权已开 · 全部待 Silas 确认**；**未改代码**。
+- 总册：[`docs/TODAY-CALL-DESIGN-2026-11-01.md`](docs/TODAY-CALL-DESIGN-2026-11-01.md)（醒目标题：**待 Silas 确认：并 vs 不并**；默认不并）。
+- 觉察前置：[`docs/AWARENESS-GATE-BEFORE-DESIGN.md`](docs/AWARENESS-GATE-BEFORE-DESIGN.md)。
+- 试玩换壳：[`docs/PLAYTEST-SHELL-PARITY.md`](docs/PLAYTEST-SHELL-PARITY.md)（只换壳，PeerJS/核心不动）。
+- ⑥角色走路/砍击 SFX：[`docs/MUSIC-LEVEL-BIND-UI.md`](docs/MUSIC-LEVEL-BIND-UI.md) §9b。
+- 确认前禁止改 LookScene / 摆关 / 听选 / L3。
+
 已经做上的（c37 · 2026-11-01）：
 
 - **试玩泥土带压矮（手机横屏）**：`custom-play` 草线 `gy≈H*0.28`（原 ~0.42），最小夹紧 72（原 110）；矮横屏下棕色土带不再占约半屏，天空/可走层多留空间；坑/草帽/忍者落地仍跟 `this.gy`。正式名 **伍澍暘** / 助手 **小宇**。
