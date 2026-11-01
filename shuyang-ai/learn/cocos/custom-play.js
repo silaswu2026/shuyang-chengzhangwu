@@ -11,6 +11,7 @@
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
  * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。
  * c42: 默认关保底可见线圈弹簧垫（ensureSprings）+ 贴图更醒目；保留 c32 power=1300；P2 HUD 去「沼泽」壳话。
+ * c46: D7-3 — 同窗两标签真连：乐观 Host 不再挡 BroadcastChannel；host 脉冲重发 bc-offer；guest 发 bc-want；PeerJS ICE 同机常挂时走同机兜底。保留 c45「正在连接」仍 A绿、仅真连上才 B蓝。
  * c45: D7 — 「发现房间，正在连接…」期间仍 A绿；guest peer 自身 open 不算客人确立；仅 conn.open（已连上房主）或 BC 同机 guest 确立后才 B蓝。保留 c44 海军冷开。
  * c44: 冷开真凶 — `_addNightBg` 整屏棕 LayerColor(90,58,36) 在 canopy 未到前当稳态；改海军 fallback；地面 bed 高度压到草线（不再 gy+2T 盖树）；匹配中 id 占用改 Guest 时延后 B蓝 chip 到 guest peer open（「匹配中」仍 A绿）。
  * c43: P2 — ?net=1 立刻乐观锁 Host→A绿（撤掉匹配前 600ms 仍读本地红皮窗口）；冷开安全床/清屏改海军蓝，避免整屏棕底闪。
@@ -2184,13 +2185,57 @@
     ] }
   };
   var netRole = null, netPeer = null, netConn = null, netLinked = false, netCode = '';
-  var netGuestPending = false; /* c45: true until guest truly linked (conn.open / BC) — chip stays A绿 through 「正在连接」 */
+  var netGuestPending = false; /* c45/c46: true until guest truly linked (conn.open / BC) — chip stays A绿 through 「正在连接」 */
+  var netHostConfirmed = false; /* c46: true only after Peer open as host — optimistic host must NOT block BC */
+  var netBcPulse = null; /* c46: rebroadcast bc-offer while waiting (same-tab PeerJS ICE often hangs) */
   var netTransport = null, netBcSession = '', netBC = null, netP2 = null;
   try { netBC = new BroadcastChannel('sycocos-coop-v1'); } catch (eN) { netBC = null; }
 
   function netRoomId() {
     var slot = Math.floor(Date.now() / 60000) % 1000;
     return NET_PREFIX + '-c-' + slot;
+  }
+  function netStopBcPulse() {
+    if (netBcPulse) { try { clearInterval(netBcPulse); } catch (eP) {} netBcPulse = null; }
+  }
+  function netPostBcOffer() {
+    if (!netBC || !netCode) return;
+    if (!netBcSession) netBcSession = 's' + Date.now();
+    try { netBC.postMessage({ t: 'bc-offer', session: netBcSession, id: netCode }); } catch (eO) {}
+  }
+  function netStartBcPulse() {
+    netStopBcPulse();
+    netPostBcOffer();
+    netBcPulse = setInterval(function () {
+      if (!netHostConfirmed || netLinked || netRole !== 'host') { netStopBcPulse(); return; }
+      netPostBcOffer();
+    }, 1200);
+  }
+  function netPostBcWant() {
+    if (!netBC) return;
+    try { netBC.postMessage({ t: 'bc-want', id: netCode || netRoomId() }); } catch (eW) {}
+  }
+  function netAcceptBcGuest(msg) {
+    /* Demote optimistic/failed-host to same-machine guest. Keep A绿 until here; then B蓝. */
+    netStopBcPulse();
+    netHostConfirmed = false;
+    netTransport = 'bc';
+    netBcSession = (msg && msg.session) || netBcSession || ('s' + Date.now());
+    netCode = (msg && msg.id) || netCode;
+    netRole = 'guest';
+    netLinked = true;
+    netGuestPending = false;
+    try { if (netPeer) netPeer.destroy(); } catch (eD) {}
+    netPeer = null;
+    applyRoleVisuals();
+    netBanner('已连上·同机', true);
+    if (netSoft) {
+      netPanel(false);
+      netBanner('联机中 · 同机玩家B', true);
+    } else {
+      netPanel(true, '已准备！等房主点「开始游戏」');
+    }
+    netSend({ t: 'bc-ok', session: netBcSession });
   }
   function netBanner(t, ok) {
     var b = $('netBanner');
@@ -2263,15 +2308,20 @@
         updHUD(sceneRef.hp, sceneRef.coins);
       }
     }
-    if (msg.t === 'bc-offer' && !netLinked && netRole !== 'host') {
-      netTransport = 'bc'; netBcSession = msg.session; netCode = msg.id || netCode;
-      netRole = 'guest'; netLinked = true; netGuestPending = false;
-      applyRoleVisuals();
-      netBanner('已连上·同机', true);
-      netPanel(true, '已准备！等房主点「开始游戏」');
-      netSend({ t: 'bc-ok', session: netBcSession });
+    /* c46: guest asks → confirmed host re-offers (fixes missed one-shot after optimistic Host) */
+    if (msg.t === 'bc-want' && netHostConfirmed && netRole === 'host' && !netLinked) {
+      netPostBcOffer();
+      return;
+    }
+    /* c46: accept BC offer unless we already confirmed as PeerJS host.
+     * Optimistic netRole=host (c38/c43 chip) must NOT ignore same-machine offers —
+     * PeerJS ICE between two tabs in one browser often never reaches conn.open. */
+    if (msg.t === 'bc-offer' && !netLinked && !netHostConfirmed) {
+      netAcceptBcGuest(msg);
+      return;
     }
     if (msg.t === 'bc-ok' && netRole === 'host' && !netLinked) {
+      netStopBcPulse();
       netTransport = 'bc'; netBcSession = msg.session || netBcSession;
       netLinked = true;
       netBanner('玩家B已加入·同机', true);
@@ -2280,6 +2330,7 @@
         netBanner('联机中 · 同机房主', true);
         netSend({ t: 'hello', role: 'host' });
         netSend({ t: 'go' });
+        spawnNetP2(sceneRef);
       } else {
         netPanel(true, '队友已到！点「开始游戏」');
         netSend({ t: 'hello', role: 'host' });
@@ -2289,6 +2340,7 @@
   function netWireConn(conn) {
     netConn = conn;
     conn.on('open', function () {
+      netStopBcPulse();
       netLinked = true; netTransport = 'peer';
       /* c45: guest role confirmed only when peer data channel opens — not earlier guest peer id open */
       if (netRole === 'guest') {
@@ -2314,50 +2366,70 @@
     if (typeof Peer === 'undefined') {
       netPanel(true, 'PeerJS 未加载，用同页 BroadcastChannel 试同机…');
       netRole = 'host'; netCode = netRoomId(); netGuestPending = false;
+      netHostConfirmed = true;
       netBcSession = 's' + Date.now();
       applyRoleVisuals();
-      if (netBC) netBC.postMessage({ t: 'bc-offer', session: netBcSession, id: netCode });
+      netStartBcPulse();
       return;
     }
     netPanel(true, '正在匹配队友（PeerJS）…');
     netBanner('匹配中…', false);
     netCode = netRoomId();
     netLinked = false;
+    netHostConfirmed = false;
+    netStopBcPulse();
     /* c38: try-host path — lock Host/A绿 immediately. Do NOT null netRole (that flashed solo C红 ~3s while PeerJS open). */
     netRole = 'host';
     netGuestPending = false;
     applyRoleVisuals();
+    /* c46: ask any waiting same-origin host to re-offer before/while we race Peer id */
+    netPostBcWant();
     try { if (netPeer) netPeer.destroy(); } catch (e) {}
     /* Try host first on this minute's room id */
     netPeer = new Peer(netCode, NET_PEER_OPTS);
     var hosted = false;
     netPeer.on('open', function (id) {
+      if (netLinked && netTransport === 'bc') return; /* already same-machine guest */
       hosted = true; netRole = 'host'; netCode = id; netGuestPending = false;
+      netHostConfirmed = true;
       applyRoleVisuals();
       netPanel(true, netSoft ? '开房成功 · 单人可继续，队友稍后可加入' : '开房成功 · 等另一位也点「联机游玩」');
       netBanner('房主 · ' + id.slice(-6), false);
       netBcSession = 's' + Date.now();
-      if (netBC) netBC.postMessage({ t: 'bc-offer', session: netBcSession, id: netCode });
+      netStartBcPulse();
     });
     netPeer.on('connection', function (conn) { netWireConn(conn); });
     netPeer.on('error', function (err) {
-      if (hosted) return;
+      if (hosted || netLinked) return;
       /* id taken → join as guest; c45: keep A绿 through 「匹配中」/「正在连接」 until conn.open */
       try { netPeer.destroy(); } catch (e2) {}
+      netHostConfirmed = false;
       netRole = 'guest';
       netGuestPending = true;
       applyRoleVisuals(); /* still A绿 while pending */
+      netPostBcWant(); /* c46: host may have already fired one-shot offer — ask again */
       netPeer = new Peer(NET_PEER_OPTS);
       netPeer.on('open', function () {
+        if (netLinked) return; /* BC may have linked while Peer opened */
         /* guest peer got an id — still connecting to host; do NOT clear pending / do NOT B蓝 yet */
         applyRoleVisuals(); /* still A绿 */
         netPanel(true, '发现房间，正在连接…');
         netBanner('发现房间，正在连接…', false);
+        netPostBcWant();
         var c = netPeer.connect(netCode, { reliable: true });
         netWireConn(c);
+        /* Same-browser PeerJS ICE often never opens — BC pulse/want is the real same-tab path.
+         * If still pending after ~8s, keep A绿 and show honest hint (do not fake B蓝). */
+        setTimeout(function () {
+          if (netLinked || netRole !== 'guest') return;
+          netPostBcWant();
+          netBanner('仍在连接…同机可开两标签/两窗口；跨设备用系统浏览器', false);
+        }, 8000);
       });
       netPeer.on('error', function () {
-        netPanel(true, '匹配失败，可重试或同机开两页');
+        if (netLinked) return;
+        netPostBcWant();
+        netPanel(true, '匹配失败，可重试；同机请开两个标签页（BroadcastChannel 兜底）');
       });
     });
   }
@@ -2383,7 +2455,8 @@
       }
       netBanner('', false);
       try { if (netPeer) netPeer.destroy(); } catch (e) {}
-      netRole = null; netLinked = false; netGuestPending = false;
+      netStopBcPulse();
+      netRole = null; netLinked = false; netGuestPending = false; netHostConfirmed = false;
       applyRoleVisuals();
     };
     var start = $('netStart');
@@ -2456,6 +2529,7 @@
          * Old 600ms setTimeout left netRole=null → HUD flashed C红 ~0.6–0.9s. */
         netRole = 'host';
         netGuestPending = false;
+        netHostConfirmed = false; /* c46: optimistic only — still accept BC offer */
         applyRoleVisuals();
         netBanner('联机邀请中（可继续单人）·点「联机游玩」看房间', false);
         setTimeout(function () {
