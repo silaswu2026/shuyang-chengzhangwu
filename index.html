@@ -53,6 +53,8 @@ h1{margin:0;font-size:clamp(22px,6vw,34px);font-weight:800;line-height:1.25;
 .course .meta{flex:1; min-width:0}
 .course .meta .tag{font-size:11px;font-weight:800;color:var(--gold);letter-spacing:.06em}
 .course.today .meta .tag{color:var(--green)}
+.course.soon{opacity:.72; pointer-events:none; cursor:default}
+.course.soon .chev{opacity:.45}
 .course .meta h2{margin:2px 0 0;font-size:16px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .course .chev{flex:none;color:var(--gold);font-weight:900;opacity:.85}
 
@@ -85,6 +87,10 @@ h1{margin:0;font-size:clamp(22px,6vw,34px);font-weight:800;line-height:1.25;
   .more{max-width:980px; padding:8px 18px 0}
   .more details{padding:14px 18px}
   .family img{width:72px;height:72px}
+}
+
+@media (min-width:900px){
+  .courses{grid-template-columns:repeat(4,1fr)}
 }
 
 /* Phone landscape (~844×390): keep 今晚主课 (course 3) above the fold */
@@ -137,6 +143,67 @@ h1{margin:0;font-size:clamp(22px,6vw,34px);font-weight:800;line-height:1.25;
       <span class="meta"><span class="tag">预告</span><h2>螺丝拆拆乐</h2></span>
       <span class="chev" aria-hidden="true">→</span>
     </a>
+    <!-- home courses: 16 tiles incl placeholders -->
+    <a class="course soon" href="#" aria-disabled="true" tabindex="-1">
+      <span class="n">5</span>
+      <span class="meta"><span class="tag">预告</span><h2>课程占位 5</h2></span>
+      <span class="chev" aria-hidden="true">→</span>
+    </a>
+    <a class="course soon" href="#" aria-disabled="true" tabindex="-1">
+      <span class="n">6</span>
+      <span class="meta"><span class="tag">预告</span><h2>课程占位 6</h2></span>
+      <span class="chev" aria-hidden="true">→</span>
+    </a>
+    <a class="course soon" href="#" aria-disabled="true" tabindex="-1">
+      <span class="n">7</span>
+      <span class="meta"><span class="tag">预告</span><h2>课程占位 7</h2></span>
+      <span class="chev" aria-hidden="true">→</span>
+    </a>
+    <a class="course soon" href="#" aria-disabled="true" tabindex="-1">
+      <span class="n">8</span>
+      <span class="meta"><span class="tag">预告</span><h2>课程占位 8</h2></span>
+      <span class="chev" aria-hidden="true">→</span>
+    </a>
+    <a class="course soon" href="#" aria-disabled="true" tabindex="-1">
+      <span class="n">9</span>
+      <span class="meta"><span class="tag">预告</span><h2>课程占位 9</h2></span>
+      <span class="chev" aria-hidden="true">→</span>
+    </a>
+    <a class="course soon" href="#" aria-disabled="true" tabindex="-1">
+      <span class="n">10</span>
+      <span class="meta"><span class="tag">预告</span><h2>课程占位 10</h2></span>
+      <span class="chev" aria-hidden="true">→</span>
+    </a>
+    <a class="course soon" href="#" aria-disabled="true" tabindex="-1">
+      <span class="n">11</span>
+      <span class="meta"><span class="tag">预告</span><h2>课程占位 11</h2></span>
+      <span class="chev" aria-hidden="true">→</span>
+    </a>
+    <a class="course soon" href="#" aria-disabled="true" tabindex="-1">
+      <span class="n">12</span>
+      <span class="meta"><span class="tag">预告</span><h2>课程占位 12</h2></span>
+      <span class="chev" aria-hidden="true">→</span>
+    </a>
+    <a class="course soon" href="#" aria-disabled="true" tabindex="-1">
+      <span class="n">13</span>
+      <span class="meta"><span class="tag">预告</span><h2>课程占位 13</h2></span>
+      <span class="chev" aria-hidden="true">→</span>
+    </a>
+    <a class="course soon" href="#" aria-disabled="true" tabindex="-1">
+      <span class="n">14</span>
+      <span class="meta"><span class="tag">预告</span><h2>课程占位 14</h2></span>
+      <span class="chev" aria-hidden="true">→</span>
+    </a>
+    <a class="course soon" href="#" aria-disabled="true" tabindex="-1">
+      <span class="n">15</span>
+      <span class="meta"><span class="tag">预告</span><h2>课程占位 15</h2></span>
+      <span class="chev" aria-hidden="true">→</span>
+    </a>
+    <a class="course soon" href="#" aria-disabled="true" tabindex="-1">
+      <span class="n">16</span>
+      <span class="meta"><span class="tag">预告</span><h2>课程占位 16</h2></span>
+      <span class="chev" aria-hidden="true">→</span>
+    </a>
   </nav>
 
   <section class="more">
@@ -148,7 +215,7 @@ h1{margin:0;font-size:clamp(22px,6vw,34px);font-weight:800;line-height:1.25;
         <figure><img src="shuyang-ai/avatars/xiaoyu.jpg" alt="小宇"><figcaption>小宇</figcaption></figure>
         <figure><img src="shuyang-ai/avatars/pengpeng.jpg" alt="伍澍暘"><figcaption>伍澍暘</figcaption></figure>
       </div>
-      <p class="desc">海军蓝 · 金 · 绿一家风（与工坊同色板）。四门课一起长大；课程 4 螺丝拆拆乐 / 猜猜乐是以后的 3D，不当首页焦点。</p>
+      <p class="desc">海军蓝 · 金 · 绿一家风（与工坊同色板）。前四门课可点；5–16 为预告占位，文案以后可换。课程 4 螺丝拆拆乐 / 猜猜乐是以后的 3D，不当首页焦点。</p>
       <p class="links">
         <a href="shuyang-ai/learn/cocos/workbench.html?lesson=tonight">今晚基础台（备用）</a>
         <a href="shuyang-ai/learn/cocos/custom-play.html">试玩自定义关</a>
