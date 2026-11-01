@@ -14,6 +14,9 @@
 正式名：**伍澍暘**（禁五树杨/伍树杨当正式名）；助手：**小宇**。  
 主验设备含 **手机横屏**。
 
+风格/角色/联网硬标准见 [PRODUCT.md §8](./PRODUCT.md)（统一视觉、仅绿红蓝忍者、PeerJS 不换栈、联网局与 Cocos 同族）。
+
+
 
 这份文档跟着 `cursor/tonight-cocos-illustration-acb7`（PR #14）走。设计变了就改这里，和代码一起提交。对照页 `shuyang-ai/learn/level-design.html?path=tonight` 保持不动。GitHub Pages 看 **main**；今晚切片推完 PR 分支后也推 main（允许 WIP）。
 
