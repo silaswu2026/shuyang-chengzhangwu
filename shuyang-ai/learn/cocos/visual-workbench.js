@@ -1065,7 +1065,7 @@
         '打开喇叭', function () { try { if (window.VW && VW.openMusic) VW.openMusic(); } catch (e) {} },
         '去玩这一关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c36';
+          location.href = 'custom-play.html?v=c37';
         }
       );
       return true;
