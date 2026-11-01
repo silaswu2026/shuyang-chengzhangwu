@@ -126,26 +126,28 @@ HUD 显示「积分」。规则：
 
 ## 音乐
 
-方向是听和选。可视化工坊抽屉里有三段占位曲名；音频文件未入库时静音占位，选中仍写入存档 `music` 字段。
+方向是听和选。可视化工坊抽屉与基础台喇叭共用 `wb-audio.js` 四心情 BGM（explore / tense / win / fail），写入存档 `audio.bgmId`（`music` 字段仍可并存作别名）。
 
 ## 社交和点赞
 
 关卡不公开。可视化工坊的点赞只记本机（`vw-likes`），给自己打气；陪伴文案在抽屉里。
 
-## 先听后选 · 音频（WIP）
+## 先听后选 · 音频
 
-右上角 **喇叭** 打开抽屉（不是第五步）。选 BGM、试听并开关 SFX；写入 `xygo-custom-level` v1.2 的 `audio` 字段，不改钱包 / tiles。可视化工坊 `music` / `likes` 仍可并存。
+右上角 **喇叭** 打开抽屉（不是第五步）。选 BGM、试听并开关 SFX；写入 `xygo-custom-level` v1.2 的 `audio` 字段，不改钱包 / tiles。可视化工坊 `music` / `likes` 仍可并存。抽屉底部展示授权署名。
 
-- BGM 四心情：`explore` / `tense` / `win` / `fail`（占位 wav：`audio/bgm/`）。
-- SFX：`walk` `jump` `land` `spike` `fire` `spring` `coin` `hurt` `hit`（`audio/sfx/`）。点一下先听并开关。
-- 播放：`wb-audio.js`（`cc.audioEngine`，失败则 HTMLAudio）。
+- BGM 四心情：`explore` / `tense` / `win` / `fail`（`audio/bgm/` · Kevin MacLeod · CC BY 3.0）。
+- SFX：`walk` `jump` `land` `spike` `fire` `spring` `coin` `hurt` `hit`（`audio/sfx/` · Kenney · CC0）。点一下先听并开关。
+- 播放：`wb-audio.js`（`cc.audioEngine`，失败则 HTMLAudio）。路径相对本目录 `audio/`。
 - 试玩 `custom-play` 读同一存档开 BGM，并在跳/落/陷阱/币/受伤/击中处播 SFX；失败切 `fail`，过关切 `win`。
+- 署名：`WBAudio.CREDITS`；明细见 [`audio/SOURCES.md`](audio/SOURCES.md)。**禁止 Mixkit 音乐进游戏。**
+- 武器价格见上文钱包表（dart 15 / blade 35 / gun 60），与 `WBStore.WEAPONS` 同源。
 
 ## 还开着的口
 
-- 真音频入库后替换占位 wav
 - 摆关 / 觉察继续收成「画布在中间、控件在画布外」
 - 基础台 `workbench.html` 是否跟进紧凑条（课程 2 可保持横排）
+- 更长 BGM 环或分区淡入（当前为授权短 clip）
 
 
 ## 人名
@@ -153,4 +155,4 @@ HUD 显示「积分」。规则：
 
 
 ### 音效素材来源
-占位蜂鸣已替换为有授权素材，详见 [`audio/SOURCES.md`](audio/SOURCES.md)（Kevin MacLeod CC BY 3.0 + Kenney CC0）。
+有授权素材已入库，详见 [`audio/SOURCES.md`](audio/SOURCES.md)（Kevin MacLeod CC BY 3.0 + Kenney CC0）。喇叭抽屉展示同一署名。
