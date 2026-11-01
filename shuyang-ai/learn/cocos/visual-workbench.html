@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN" translate="no" class="notranslate">
+<head>
+<meta charset="utf-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0f1230">
+<meta name="wb-build" content="vw1">
+<title>AI办学小屋 · 课程3 · 可视化关卡工坊</title>
+<style>
+:root{
+  --navy:#0f1230; --navy2:#161b3d; --gold:#ffe07a; --gold2:#e6b422;
+  --green:#3ecf6a; --ink:#f4f0ff; --muted:#a8a0c8; --stroke:rgba(255,224,122,.32);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
+  font-family:"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;color:var(--ink)}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(900px 480px at 50% 0%,#24306a 0%,var(--navy) 60%,#080a1c 100%)}
+#shell{position:relative;width:min(100vw,1100px);height:min(100vh,720px);display:flex;
+  align-items:center;justify-content:center;gap:10px;padding:8px}
+#shell.phone .phone-bezel{display:flex}
+#shell.desktop .phone-bezel{display:none}
+.phone-bezel{display:none;width:min(96vw,420px);height:min(92vh,760px);border-radius:36px;
+  padding:14px 10px 18px;background:linear-gradient(160deg,#1c2348,#0a0d22);
+  border:2px solid var(--stroke);box-shadow:0 18px 40px rgba(0,0,0,.45);flex-direction:column}
+.phone-notch{height:18px;margin:0 auto 6px;width:38%;border-radius:0 0 12px 12px;background:#05070fcc}
+.canvas-slot{position:relative;flex:1;min-height:0;border-radius:16px;overflow:hidden;
+  background:#0f1230;border:1px solid rgba(255,224,122,.2)}
+#shell.desktop .canvas-slot{width:min(96vw,960px);height:min(88vh,540px);border-radius:18px;
+  box-shadow:0 16px 40px rgba(0,0,0,.4);border:1px solid var(--stroke)}
+#gameCanvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block;
+  background:#0f1230;touch-action:none}
+#boot{display:none;position:absolute;inset:0;z-index:5;align-items:center;justify-content:center;
+  text-align:center;font-size:17px;font-weight:800;color:#ffe7a0;background:#05070fcc;padding:16px}
+#boot.show{display:flex}#boot.err{display:flex;color:#ffb4b4}
+#rail{position:fixed;right:10px;top:50%;transform:translateY(-50%);z-index:20;
+  display:flex;flex-direction:column;gap:8px}
+.rail-btn{width:52px;height:52px;border-radius:16px;border:1px solid var(--stroke);
+  background:linear-gradient(180deg,var(--navy2),#10142c);color:var(--gold);font-size:20px;
+  cursor:pointer;box-shadow:0 8px 18px rgba(0,0,0,.35)}
+.rail-btn:active{transform:scale(.96)}
+#topbar{position:fixed;left:0;right:0;top:0;z-index:15;display:flex;align-items:center;
+  justify-content:space-between;gap:8px;padding:8px 12px;pointer-events:none}
+#topbar > *{pointer-events:auto}
+.chip{background:rgba(15,18,48,.88);border:1px solid var(--stroke);border-radius:999px;
+  padding:6px 12px;font-size:12px;font-weight:800;color:var(--gold);backdrop-filter:blur(6px)}
+.chip a{color:var(--green);margin-left:8px}
+.shell-toggle{display:flex;gap:6px}
+.shell-toggle button{border:1px solid var(--stroke);background:var(--navy2);color:var(--ink);
+  border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer}
+.shell-toggle button.on{background:var(--green);color:#062014;border-color:transparent}
+.drawer-mask{position:fixed;inset:0;background:rgba(5,7,15,.55);z-index:40;display:none}
+.drawer-mask.open{display:block}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(360px,92vw);z-index:50;
+  background:linear-gradient(180deg,#1a2148,#0f1230);border-left:1px solid var(--stroke);
+  transform:translateX(105%);transition:transform .22s ease;padding:18px 16px 24px;
+  overflow:auto;box-shadow:-12px 0 32px rgba(0,0,0,.4)}
+.drawer.open{transform:translateX(0)}
+.drawer h3{margin:0 0 6px;color:var(--gold);font-size:18px}
+.drawer .hint{color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 14px}
+.drawer .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.drawer button.item{flex:1 1 46%;min-width:120px;border-radius:12px;border:1px solid var(--stroke);
+  background:#161b3d;color:var(--ink);padding:12px 10px;font-weight:800;cursor:pointer;text-align:left}
+.drawer button.item.on{border-color:var(--gold2);background:#24306a}
+.drawer button.item .price{color:var(--gold);font-size:12px;display:block;margin-top:4px}
+.drawer .close{position:absolute;top:12px;right:12px;border:0;background:transparent;
+  color:var(--muted);font-size:22px;cursor:pointer}
+.wallet{font-size:14px;font-weight:800;color:var(--gold);margin-bottom:12px}
+.like-row{display:flex;align-items:center;gap:10px;margin-top:8px}
+.like-row button{border:0;border-radius:999px;padding:10px 16px;font-weight:800;cursor:pointer;
+  background:linear-gradient(90deg,#2aa85a,#3ecf6a);color:#062014}
+.companion{display:flex;gap:10px;align-items:center;margin-top:12px;padding:12px;border-radius:14px;
+  background:rgba(255,224,122,.08);border:1px solid var(--stroke)}
+.companion img,.companion .face{width:48px;height:48px;border-radius:50%;background:#24306a;
+  display:grid;place-items:center;font-size:24px}
+@media (max-width:720px){
+  #rail{right:6px;gap:6px}
+  .rail-btn{width:46px;height:46px;border-radius:14px;font-size:18px}
+  #shell.desktop .canvas-slot{width:100vw;height:auto;aspect-ratio:16/9;max-height:70vh}
+}
+</style>
+<script>document.ccConfig={debugMode:0,frameRate:60,id:"gameCanvas",renderMode:1,showFPS:false};</script>
+</head>
+<body>
+<div id="topbar">
+  <div class="chip">🏡 AI办学小屋 · 课程3 · 今晚深度编辑器
+    <a href="../../../index.html">回小屋</a>
+  </div>
+  <div class="shell-toggle" id="shellToggle">
+    <button type="button" data-shell="desktop" class="on">电脑壳</button>
+    <button type="button" data-shell="phone">手机壳</button>
+  </div>
+</div>
+
+<div id="stage">
+  <div id="shell" class="desktop">
+    <div class="phone-bezel">
+      <div class="phone-notch"></div>
+      <div class="canvas-slot">
+        <canvas id="gameCanvas" width="960" height="540"></canvas>
+        <div id="boot" class="show">正在打开可视化工坊…</div>
+      </div>
+    </div>
+    <div class="canvas-slot" id="desktopSlot">
+      <!-- canvas moves here in desktop mode via JS -->
+    </div>
+  </div>
+</div>
+
+<div id="rail">
+  <button class="rail-btn" id="btnShop" title="武器商店">🗡️</button>
+  <button class="rail-btn" id="btnMusic" title="音乐 · 先听后选">🎵</button>
+  <button class="rail-btn" id="btnBuddy" title="点赞与陪伴">💛</button>
+</div>
+
+<div class="drawer-mask" id="drawerMask"></div>
+
+<aside class="drawer" id="drawerShop" aria-label="武器商店">
+  <button class="close" data-close type="button">×</button>
+  <h3>武器商店</h3>
+  <p class="hint">金币买武器，再装备。试玩里花掉这把武器打怪。存档仍是 xygo-custom-level v1.2。</p>
+  <div class="wallet" id="shopWallet">金币 0</div>
+  <div class="row" id="shopList"></div>
+</aside>
+
+<aside class="drawer" id="drawerMusic" aria-label="音乐">
+  <button class="close" data-close type="button">×</button>
+  <h3>音乐 · 先听后选</h3>
+  <p class="hint">听一小段，再配到关上。不是完整编曲台。音频文件还没入库时用静音占位。</p>
+  <div class="row" id="musicList"></div>
+  <p class="hint" id="musicPick">还没选曲</p>
+</aside>
+
+<aside class="drawer" id="drawerBuddy" aria-label="点赞与陪伴">
+  <button class="close" data-close type="button">×</button>
+  <h3>点赞与陪伴</h3>
+  <p class="hint">本机关卡不公开。点赞只记在本机，给自己打气；爸爸妈妈头像在顶栏陪伴。</p>
+  <div class="like-row">
+    <button type="button" id="btnLike">💛 给这关点赞</button>
+    <span id="likeCount">0</span>
+  </div>
+  <div class="companion">
+    <div class="face">🥷</div>
+    <div>
+      <div style="font-weight:800">小雨在练摆关</div>
+      <div class="hint" style="margin:4px 0 0">爸爸妈妈在顶栏看着你。</div>
+    </div>
+  </div>
+</aside>
+
+<script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
+<script src="wb-store.js?v=vw1"></script>
+<script src="wb-art.js?v=vw1"></script>
+<script src="visual-workbench.js?v=vw1"></script>
+<script>
+(function () {
+  var shell = document.getElementById('shell');
+  var canvas = document.getElementById('gameCanvas');
+  var boot = document.getElementById('boot');
+  var phoneSlot = shell.querySelector('.phone-bezel .canvas-slot');
+  var deskSlot = document.getElementById('desktopSlot');
+
+  function placeCanvas(mode) {
+    shell.className = mode;
+    var slot = mode === 'phone' ? phoneSlot : deskSlot;
+    if (canvas.parentNode !== slot) {
+      slot.appendChild(canvas);
+      slot.appendChild(boot);
+    }
+    deskSlot.style.display = mode === 'desktop' ? 'block' : 'none';
+    try { localStorage.setItem('vw-shell', mode); } catch (e) {}
+    document.querySelectorAll('#shellToggle button').forEach(function (b) {
+      b.classList.toggle('on', b.getAttribute('data-shell') === mode);
+    });
+    if (window.cc && cc.view && cc.view._resizeEvent) {
+      try { window.dispatchEvent(new Event('resize')); } catch (e2) {}
+    }
+  }
+  var saved = 'desktop';
+  try { saved = localStorage.getItem('vw-shell') || 'desktop'; } catch (e) {}
+  placeCanvas(saved === 'phone' ? 'phone' : 'desktop');
+  document.getElementById('shellToggle').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button[data-shell]');
+    if (!b) return;
+    placeCanvas(b.getAttribute('data-shell'));
+  });
+
+  var mask = document.getElementById('drawerMask');
+  var drawers = {
+    shop: document.getElementById('drawerShop'),
+    music: document.getElementById('drawerMusic'),
+    buddy: document.getElementById('drawerBuddy')
+  };
+  function closeAll() {
+    mask.classList.remove('open');
+    Object.keys(drawers).forEach(function (k) { drawers[k].classList.remove('open'); });
+  }
+  function openDrawer(name) {
+    closeAll();
+    mask.classList.add('open');
+    drawers[name].classList.add('open');
+    if (name === 'shop' && window.VW && VW.refreshShop) VW.refreshShop();
+    if (name === 'music' && window.VW && VW.refreshMusic) VW.refreshMusic();
+    if (name === 'buddy' && window.VW && VW.refreshBuddy) VW.refreshBuddy();
+  }
+  document.getElementById('btnShop').onclick = function () { openDrawer('shop'); };
+  document.getElementById('btnMusic').onclick = function () { openDrawer('music'); };
+  document.getElementById('btnBuddy').onclick = function () { openDrawer('buddy'); };
+  mask.onclick = closeAll;
+  document.querySelectorAll('.drawer [data-close]').forEach(function (b) {
+    b.onclick = closeAll;
+  });
+
+  window.VW = window.VW || {};
+  VW.closeDrawers = closeAll;
+  VW.openShop = function () { openDrawer('shop'); };
+  VW.openMusic = function () { openDrawer('music'); };
+  VW._openMusicDrawer = function () { openDrawer('music'); };
+})();
+</script>
+</body>
+</html>

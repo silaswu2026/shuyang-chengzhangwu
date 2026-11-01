@@ -46,7 +46,9 @@
       selX: -1,
       map: blankMap(),
       mp: defaultMp(),
-      wallet: blankWallet()
+      wallet: blankWallet(),
+      music: '',
+      likes: 0
     };
   }
 
@@ -155,6 +157,8 @@
         s.wallet.equipped = wal.equipped;
       }
     }
+    if (typeof raw.music === 'string') s.music = raw.music;
+    if (typeof raw.likes === 'number' && raw.likes >= 0) s.likes = raw.likes | 0;
     for (var i = 0; i < MC; i++) {
       if (s.map[i] === 'spike' || s.map[i] === 'fire') {
         s.sel = s.map[i];
@@ -231,6 +235,8 @@
       weapons: state.wallet.weapons.slice(),
       equipped: state.wallet.equipped || null
     };
+    d.music = state.music || '';
+    d.likes = state.likes | 0;
     d.savedAt = new Date().toISOString();
     d.by = prev.by || '伍澍暘';
     storage.setItem(KEY, JSON.stringify(d));
@@ -302,6 +308,35 @@
     return true;
   }
 
+
+  function defaultRhythmMap() {
+    var m = blankMap();
+    m[2] = 'coin';
+    m[5] = 'spike';
+    m[8] = 'coin';
+    return m;
+  }
+
+  function mapIsEmpty(map) {
+    if (!map || map.length !== MC) return true;
+    for (var i = 0; i < MC; i++) if (map[i]) return false;
+    return true;
+  }
+
+  /** Seed old tonight rhythm when there is no saved map. */
+  function ensureDefaultMap(state) {
+    if (!state) return state;
+    if (mapIsEmpty(state.map)) {
+      state.map = defaultRhythmMap();
+      state.interval = 3;
+      state.mp.spike.interval = 3;
+      state.tool = 'spike';
+      state.sel = 'spike';
+      state.selX = 5;
+    }
+    return state;
+  }
+
   root.WBStore = {
     KEY: KEY,
     ROWS: ROWS,
@@ -322,6 +357,8 @@
     isPlaceable: isPlaceable,
     WEAPONS: WEAPONS,
     grantCoins: grantCoins,
-    buy: buy
+    buy: buy,
+    ensureDefaultMap: ensureDefaultMap,
+    defaultRhythmMap: defaultRhythmMap
   };
 })(typeof window !== 'undefined' ? window : this);
