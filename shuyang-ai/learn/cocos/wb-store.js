@@ -17,6 +17,7 @@
     return m;
   }
 
+
   function defaultMp() {
     return {
       spike: { interval: 3, up: 1, damage: 1 },
