@@ -1,3 +1,16 @@
+## 2026-11-02 · 关卡编辑器课纲与方案（文档先行）
+
+**范围**：明天课只教关卡编辑器（伍澍暘自选）；不回顾旧四段、不讲系列关卡/联网。  
+**文档**：
+- 课纲 [`docs/COURSE-2026-11-02-LEVEL-EDITOR.md`](./docs/COURSE-2026-11-02-LEVEL-EDITOR.md)
+- 完整方案（五问+MVP+整合，**确认前不写代码**）[`docs/LEVEL-EDITOR-PLAN-2026-11-02.md`](./docs/LEVEL-EDITOR-PLAN-2026-11-02.md)
+- 教学双轨体系（日课共学 + 第三方课件）[`docs/TEACHING-SYSTEM-FOR-THIRD-PARTIES.md`](./docs/TEACHING-SYSTEM-FOR-THIRD-PARTIES.md)
+- 当日壳数据 `classroom/course-today.json`（version le2）
+
+**铁律**：正式名 **伍澍暘** / 助手 **小宇**；自定义关与正式 1–8 隔离。
+
+---
+
 ## 2026-11-01 · 手机仍微糊（c51）
 
 **现象**：伍澍暘反馈 `custom-play?v=c50` 真机仍软糊；c50 的 `min(3,dpr)` 已在 Pages 生效。
