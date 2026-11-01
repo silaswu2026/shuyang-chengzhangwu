@@ -103,10 +103,17 @@
 | 摆关陷阱 | 短筹码 | 横滑短筹码 + 武器店 | ✅ |
 | 脚栏 | 上一步/下一步 | 拇指优先三键（含跑一次） | ✅ 手机优先 |
 | 觉察 | 问句+去玩 | 问句+**去玩**+**联机游玩** | ✅ |
-| 试玩 HUD | xy-go 风格沼泽 | `custom-play` 夜林沼泽（有意跟 xy-go） | ⚠️ 与工坊 navy 壳不同属玩法页 |
+| 试玩 HUD | xy-go 风格沼泽 | `custom-play` 顶栏/血条/联机卡改 navy·金·绿（brand-tokens）；舞台仍 canopy-night 同族 | ✅ 主路径 chrome 已收；备路见下 |
 | 旧页入口 | 仍可打开对照 | 首页课程3只进新工坊；试玩「回工坊」不再回旧页 | ✅ 旧页保留只作对照 |
 
 还薄的：觉察页画布层次、关卡升级壳、频率页控件与旧「画布外标题」像素级对齐。
+
+## 主控三忍者（PRODUCT §8.2）
+
+可控皮肤 **只许** 绿 / 红 / 蓝（`xy-go/sprites/green/` 底图 + canvas color-tint；肖像 `xy-go/ninjas/ninja-{green,blue,red}.jpg`）。
+- `custom-play`：单人选色（`#castPick` / `?skin=` / `localStorage sycocos-skin`）；联机锁定 Host=绿、Guest=蓝；禁第四主角；`tex.head` 等插画不是玩家皮。
+- 工坊演示跑图目前默认绿忍者（三色子集，合格）；不引入绿色小人头像当主控。
+- 备路 `xy-go` 本身已有三色 tint；仍标过渡（见上表）。
 
 ## 联网 / 联机在哪
 
@@ -116,7 +123,7 @@
 | --- | --- | --- |
 | 课程试玩联机（主） | `shuyang-ai/learn/cocos/custom-play.html`（`?net=1` **单人先开打**） | 玩今晚存档关；`?net=1` 只软邀请（顶栏/横幅匹配，**不**弹「等另一位」挡关）；点「联机游玩」才开房间卡；实现在 `custom-play.js` |
 | 工坊露出 | `visual-workbench` 顶栏「联机」+ 右轨 🤝；`workbench` 顶栏「联机」；④步「联机游玩」 | 只跳进上面的真路径，不假匹配 |
-| 完整公园联网 | `xy-go/`（`?custom=1` 自制关） | 首页「联机游玩」；同 PeerJS 家族 |
+| 完整公园联网（**过渡备路**） | `xy-go/`（`?custom=1` 自制关） | 同 PeerJS 家族；**沼泽 HUD 皮未并回办学小屋**——主验收以 `custom-play` 为准；漂移记 P1 直到并回 |
 | 旧副本 | `xy-net/` · `xiaoyu-play/` · `xiao-yu/` | 同源旧包，**不作为课程3主入口** |
 
 没有自建房间服务器：靠 PeerJS 公共信令。微信内置浏览器常拦 WebRTC——页面已提示用系统浏览器。不要做「假在线」动画。
