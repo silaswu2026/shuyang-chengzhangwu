@@ -141,6 +141,8 @@
       map: map,
       mp: defaultMp(),
       wallet: blankWallet(),
+      music: '',
+      likes: 0,
       audio: blankAudio(),
       lastScore: 0
     };
@@ -251,6 +253,8 @@
         s.wallet.equipped = wal.equipped;
       }
     }
+    if (typeof raw.music === 'string') s.music = raw.music;
+    if (typeof raw.likes === 'number' && raw.likes >= 0) s.likes = raw.likes | 0;
     s.audio = normalizeAudio(raw.audio);
     if (typeof raw.lastScore === 'number' && raw.lastScore >= 0) s.lastScore = raw.lastScore | 0;
     for (var i = 0; i < MC; i++) {
@@ -329,6 +333,8 @@
       weapons: state.wallet.weapons.slice(),
       equipped: state.wallet.equipped || null
     };
+    d.music = state.music || '';
+    d.likes = state.likes | 0;
     d.audio = normalizeAudio(state.audio || (prev && prev.audio));
     d.lastScore = (state.lastScore | 0);
     d.presetId = prev.presetId || 'tonight-waves-v1';
@@ -403,6 +409,36 @@
     return true;
   }
 
+
+  function mapIsEmpty(map) {
+    if (!map || map.length !== MC) return true;
+    for (var i = 0; i < MC; i++) if (map[i]) return false;
+    return true;
+  }
+
+  /** @deprecated use defaultMineMap; kept for visual-workbench callers. */
+  function defaultRhythmMap() {
+    return defaultMineMap();
+  }
+
+  /** Seed tonight-waves-v1 when there is no saved map. */
+  function ensureDefaultMap(state) {
+    if (!state) return state;
+    if (mapIsEmpty(state.map)) {
+      state.map = defaultMineMap();
+      state.interval = 3;
+      state.mp.spike.interval = 3;
+      state.tool = 'spike';
+      state.sel = 'spike';
+      state.selX = 3;
+      if (state.lastScore == null) state.lastScore = 0;
+      if (!state.audio) state.audio = blankAudio();
+      if (state.music == null) state.music = '';
+      if (state.likes == null) state.likes = 0;
+    }
+    return state;
+  }
+
   root.WBStore = {
     KEY: KEY,
     ROWS: ROWS,
@@ -424,6 +460,8 @@
     WEAPONS: WEAPONS,
     grantCoins: grantCoins,
     buy: buy,
+    ensureDefaultMap: ensureDefaultMap,
+    defaultRhythmMap: defaultRhythmMap,
     defaultMineMap: defaultMineMap,
     defaultTraps: defaultTraps,
     buildDefaultSave: buildDefaultSave,

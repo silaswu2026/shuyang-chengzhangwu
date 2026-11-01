@@ -1,18 +1,17 @@
 /**
  * 学习工作台 · 今晚四步（看图、频率、摆关、觉察）。
  * 画面按旧课件今晚路径的插画来拼：天空、远山、草皮、水面、钩子、鱼，
- * 道具用 wb-art 小图。全是 Cocos 节点，不是整页截图。
- * 存档 localStorage xygo-custom-level v1.2。试玩 custom-play.html。
- * wb5: boot failsafe · 摆关画布壳 · 压缩陷阱条 · 更大忍者 · 真滑条 · 手机/桌面壳。
+ * 道具用 ld-art 的小图。全是 Cocos 节点，不是整页截图。
+ * 存档是 localStorage xygo-custom-level v1.2（wallet + audio）。试玩仍走 custom-play.html。
  */
 (function () {
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
   var SP = '../../../xy-go/sprites/green/';
   var AV = ['../../avatars/xiaoyu.jpg', '../../avatars/dad-wuxin.jpg', '../../avatars/mom-chunyan.jpg'];
   var STEPS = ['① 看图一句', '② 频率', '③ 设计一小关', '④ 玩完'];
-  var STEPS_PHONE = ['①', '②', '③', '④'];
   var STORE = window.WBStore;
   var ART = window.WBArt;
+  var AUDIO = window.WBAudio;
   var DUR = 12;
   var PAD = [2, 4, 6, 9];
   var NAVY = ccColor(59, 69, 144);
@@ -22,17 +21,11 @@
   var WHITE = ccColor(255, 255, 255);
   var CREAM = ccColor(232, 244, 255);
 
-  function isPhoneShell() {
-    try {
-      return window.innerWidth < 720 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || '');
-    } catch (e) { return false; }
-  }
-
   var WB = window.WB = {
     ready: false,
     sceneName: '',
     data: null,
-    ui: { step: 0, look: 0, running: false, runT0: 0, previewDone: false, flash: '', freqDone: false },
+    ui: { step: 0, look: 0, running: false, runT0: 0, previewDone: false, flash: '', freqDone: false, audioOpen: false },
     layout: {}
   };
 
@@ -40,10 +33,6 @@
   function $(id) { return document.getElementById(id); }
 
   function bootMsg(m, err) {
-    if (window.__wbClearBoot) {
-      window.__wbClearBoot(m || '', !!err);
-      if (!m && !err) return;
-    }
     var b = $('boot');
     if (!b) return;
     b.textContent = m || '';
@@ -150,6 +139,82 @@
     cc.director.runScene(new scenes[step]());
   }
 
+
+  function ensureAudio() {
+    if (!AUDIO) return null;
+    if (!WB.data.audio) WB.data.audio = AUDIO.blankAudio();
+    AUDIO.apply(WB.data.audio);
+    return WB.data.audio;
+  }
+
+  function persistAudio() {
+    ensureAudio();
+    WB.data.audio = AUDIO.get();
+    STORE.save(localStorage, WB.data);
+  }
+
+  function closeAudioDrawer() {
+    WB.ui.audioOpen = false;
+  }
+
+  /** Top-right speaker drawer: BGM list + SFX grid. Not a fifth lesson step. */
+  function addAudioChrome(layer, step) {
+    if (!AUDIO) return;
+    ensureAudio();
+    var selfStep = step;
+    button(layer, '喇叭', 800, H - 26, 64, 34, WB.ui.audioOpen ? GOLD : NAVY, WB.ui.audioOpen ? INK : WHITE, function () {
+      AUDIO.unlock();
+      WB.ui.audioOpen = !WB.ui.audioOpen;
+      later(function () { show(selfStep); });
+    });
+    if (!WB.ui.audioOpen) return;
+
+    var panel = new cc.Node();
+    panel.setPosition(0, 0);
+    layer.addChild(panel, 40);
+    ART.panel(panel, W / 2, H / 2 - 10, 520, 420, ccColor(12, 18, 40), 245, 0, 18);
+    ART.frame(panel, W / 2, H / 2 - 10, 520, 420, cc.color(255, 224, 122), 180, 1, 18);
+    words(panel, '先听后选 · 音乐', W / 2, H / 2 + 180, 20, '#ffe07a', 2);
+    words(panel, '挑一首背景乐，点音效试听；选用会写进这一关', W / 2, H / 2 + 152, 13, '#c9c3ef', 2);
+
+    var audio = AUDIO.get();
+    AUDIO.BGM.forEach(function (b, i) {
+      var on = audio.bgmId === b.id;
+      var y = H / 2 + 110 - i * 42;
+      button(panel, (on ? '✓ ' : '听 ') + b.name, W / 2 - 90, y, 200, 34, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+        AUDIO.setBgm(b.id);
+        persistAudio();
+        later(function () { show(selfStep); });
+      });
+      button(panel, '选用', W / 2 + 110, y, 90, 34, GREEN, WHITE, function () {
+        AUDIO.setBgm(b.id);
+        persistAudio();
+        WB.ui.flash = '已选用：' + b.name;
+        later(function () { show(selfStep); });
+      });
+    });
+
+    words(panel, '音效：点一下先听并开关', W / 2, H / 2 - 70, 14, '#ffe7a0', 2);
+    AUDIO.SFX.forEach(function (s, i) {
+      var col = i % 3;
+      var row = (i / 3) | 0;
+      var x = W / 2 - 160 + col * 160;
+      var y = H / 2 - 110 - row * 42;
+      var on = audio.sfx[s.id] !== false;
+      button(panel, (on ? '开 ' : '关 ') + s.name, x, y, 140, 34, on ? NAVY : ccColor(60, 60, 80), WHITE, function () {
+        AUDIO.playSfx(s.id, true);
+        AUDIO.toggleSfx(s.id, !on);
+        persistAudio();
+        later(function () { show(selfStep); });
+      });
+    });
+
+    button(panel, '关闭', W / 2, H / 2 - 200, 140, 40, NAVY, WHITE, function () {
+      closeAudioDrawer();
+      later(function () { show(selfStep); });
+    });
+  }
+
   function addChrome(layer, step) {
     ART.fill(layer, ART.tex.night, 0);
     plate(layer, 0, 0, W, FOOT, ccColor(15, 18, 48, 242), 18);
@@ -180,17 +245,14 @@
         }, 50);
       }
     });
-    var phone = isPhoneShell();
-    var labels = phone ? STEPS_PHONE : STEPS;
-    var centers = phone ? [140, 300, 480, 660] : [168, 352, 560, 748];
-    var bw = phone ? 88 : 156;
-    labels.forEach(function (name, i) {
+    var centers = [168, 352, 560, 748];
+    STEPS.forEach(function (name, i) {
       var on = i === step;
-      var wBtn = phone ? bw : (i === 2 ? 176 : 156);
-      button(layer, name, centers[i], H - 26, wBtn, phone ? 40 : 34, on ? GREEN : NAVY, WHITE, function () {
+      button(layer, name, centers[i], H - 26, i === 2 ? 176 : 156, 34, on ? GREEN : NAVY, WHITE, function () {
         later(function () { show(i); });
       });
     });
+    addAudioChrome(layer, step);
   }
 
   function addNinja(parent, x, y, h, z) {
@@ -286,7 +348,7 @@
       ART.panel(this.meta, 250, 332, 430, 108, ccColor(8, 16, 32), 200, 0, 16);
       ART.frame(this.meta, 250, 332, 430, 108, cc.color(255, 224, 122), 160, 1, 16);
       ART.place(this.meta, ART.tex.pad, 78, 332, { h: 64, z: 2 });
-      addNinja(this.meta, 160, 286, 108, 3);
+      addNinja(this.meta, 160, 286, 84, 3);
       words(this.meta, '进游戏＝被钓上钩', 330, 332, 22, '#9ff0a8', 4);
       this.meta.setVisible(false);
       this._hooked = false;
@@ -332,7 +394,7 @@
         words(this, line, 740, 332 - i * 52, 20, '#c8ffd0', 6);
       }, this);
       ART.place(this, ART.tex.blob, 480, 162, { h: 18, z: 16, opacity: 140 });
-      this.hero = addNinja(this, 480, 168, 168, 17);
+      this.hero = addNinja(this, 480, 168, 150, 17);
       ART.panel(this, W / 2, 100, 520, 40, ccColor(0, 0, 0), 140, 7, 14);
       words(this, '什么时候停，我自己决定', W / 2, 100, 22, '#ffe07a', 8);
     },
@@ -401,60 +463,15 @@
       this._sky = ART.dressSky(this, gy + 4, box);
       ART.addGround(this, box.x, gy, box.w - 150, 3, 1);
       var self = this;
-      words(this, '每', 118, 436, 18, '#ffe7a0', 8);
-      button(this, '－', 168, 436, 44, 34, NAVY, WHITE, function () {
+      words(this, '每', 250, 430, 18, '#ffe7a0', 8);
+      button(this, '－', 310, 430, 52, 36, NAVY, WHITE, function () {
         STORE.setIntervalValue(WB.data, WB.data.interval - 1);
       });
-      this.num = words(this, String(WB.data.interval), 230, 438, 32, '#ffe07a', 8);
-      button(this, '＋', 292, 436, 44, 34, NAVY, WHITE, function () {
+      button(this, '＋', 500, 430, 52, 36, NAVY, WHITE, function () {
         STORE.setIntervalValue(WB.data, WB.data.interval + 1);
       });
-      words(this, '秒冒一次刺', 400, 436, 15, '#ffe7a0', 8);
-      /* Real drag slider (旧今晚页) — 1..5 秒 */
-      this._slider = { x0: 500, x1: 860, y: 436, w: 360 };
-      ART.panel(this, (500 + 860) / 2, 436, 360, 10, ccColor(30, 40, 80), 220, 6, 6);
-      ART.frame(this, (500 + 860) / 2, 436, 360, 10, cc.color(110, 200, 255), 160, 7, 6);
-      this.knob = new cc.Node();
-      this.knob.setPosition(500, 436);
-      this.addChild(this.knob, 10);
-      ART.panel(this.knob, 0, 0, 28, 28, GOLD, 255, 0, 14);
-      ART.frame(this.knob, 0, 0, 28, 28, cc.color(255, 255, 255), 200, 1, 14);
-      var selfSlider = this;
-      function knobXFor(iv) {
-        var t0 = (Math.max(1, Math.min(5, iv)) - 1) / 4;
-        return selfSlider._slider.x0 + t0 * (selfSlider._slider.x1 - selfSlider._slider.x0);
-      }
-      this._placeKnob = function () {
-        selfSlider.knob.setPosition(knobXFor(WB.data.interval), 436);
-      };
-      this._placeKnob();
-      var track = new cc.Node();
-      track.setAnchorPoint(0, 0);
-      track.setContentSize(380, 44);
-      track.setPosition(480, 414);
-      this.addChild(track, 32);
-      cc.eventManager.addListener(cc.EventListener.create({
-        event: cc.EventListener.TOUCH_ONE_BY_ONE,
-        swallowTouches: true,
-        onTouchBegan: function (touch, event) {
-          var loc = event.getCurrentTarget().convertToNodeSpace(touch.getLocation());
-          if (!cc.rectContainsPoint(cc.rect(0, 0, 380, 44), loc)) return false;
-          var nx = selfSlider._slider.x0 + loc.x - 20;
-          var t0 = (nx - selfSlider._slider.x0) / (selfSlider._slider.x1 - selfSlider._slider.x0);
-          STORE.setIntervalValue(WB.data, Math.round(t0 * 4) + 1);
-          selfSlider._placeKnob();
-          return true;
-        },
-        onTouchMoved: function (touch, event) {
-          var loc = event.getCurrentTarget().convertToNodeSpace(touch.getLocation());
-          var nx = selfSlider._slider.x0 + loc.x - 20;
-          var t0 = (nx - selfSlider._slider.x0) / (selfSlider._slider.x1 - selfSlider._slider.x0);
-          STORE.setIntervalValue(WB.data, Math.round(Math.max(0, Math.min(1, t0)) * 4) + 1);
-          selfSlider._placeKnob();
-        }
-      }), track);
-      WB.layout.freqPlus = { x: 292, y: 436 };
-      WB.layout.freqMinus = { x: 168, y: 436 };
+      this.num = words(this, String(WB.data.interval), 400, 432, 36, '#ffe07a', 8);
+      words(this, '秒冒一次刺', 600, 430, 16, '#ffe7a0', 8);
       this.L = box.x + 8;
       this.cw = (box.w - 170) / 12;
       this.secs = [];
@@ -485,7 +502,7 @@
         this.marks.push(words(this, '', px, gy + 64, 16, '#ffffff', 9));
         base._px = px;
       }
-      this.ninja = addNinja(this, this.L, gy, 112);
+      this.ninja = addNinja(this, this.L, gy, 78);
       this.countLab = words(this, '', box.x + box.w - 70, gy + 150, 26, '#ffe07a', 8);
       this.hitLab = words(this, '', box.x + box.w - 70, gy + 70, 28, '#ff6b6b', 8);
       ART.place(this, ART.tex.heart, box.x + box.w - 70, gy + 36, { h: 22, z: 8 });
@@ -514,6 +531,8 @@
         self._applyHook();
       });
       button(this, '去摆关', 820, 32, 160, 44, NAVY, WHITE, function () { later(function () { show(2); }); });
+      WB.layout.freqPlus = { x: 500, y: 430 };
+      WB.layout.freqMinus = { x: 310, y: 430 };
       WB.layout.freqRun = { x: 470, y: 32 };
       this._t = 0;
       this.scheduleUpdate();
@@ -530,7 +549,6 @@
       driftClouds(this._sky, this._t);
       var I = WB.data.interval;
       reword(this.num, String(I));
-      if (this._placeKnob) this._placeKnob();
       var n = STORE.fCnt(I), lose = STORE.fHit(I);
       reword(this.countLab, n + ' 次');
       reword(this.hitLab, '-' + lose);
@@ -571,28 +589,21 @@
   });
 
   /* ---------- 摆关 ---------- */
-  var EDIT = { L: 28, cw: 58, gy: 148 };
+  var EDIT = { L: 14, cw: 62, gy: 156 };
   var EditLayer = cc.Layer.extend({
     ctor: function () {
       this._super();
       WB.sceneName = 'edit';
       addChrome(this, 2);
-      var box = { x: 14, y: 112, w: 760, h: 268 };
-      this._box = box;
       var gy = EDIT.gy;
-      ART.frame(this, box.x + box.w / 2, box.y + box.h / 2, box.w + 8, box.h + 8, cc.color(110, 200, 255), 200, 1, 16);
-      this._sky = ART.dressSky(this, gy + 6, box);
+      this._sky = ART.dressSky(this, gy + 6);
       ART.addGround(this, EDIT.L, gy, STORE.MC * EDIT.cw, 4, 2);
-      words(this, '🛠️ 摆一小关 · 放陷阱 · 调数字 · 跑一次', W / 2, 470, 16, '#ffe07a', 8);
+      words(this, '摆一小关 · 放陷阱 · 调频率 · 跑一次', 360, 470, 16, '#1a2744', 8);
       var self = this;
-      /* Compressed trap chip bar (7 tools fit without crowding) */
-      var tools = [['spike', '刺'], ['fire', '火'], ['spring', '弹'], ['mist', '雾'], ['rock', '石'], ['coin', '币'], ['del', '擦']];
-      var chipW = isPhoneShell() ? 64 : 72;
-      var gap = isPhoneShell() ? 68 : 78;
-      var startX = 48;
+      var tools = [['spike', '地刺'], ['fire', '火'], ['spring', '弹簧'], ['mist', '迷雾'], ['rock', '岩石'], ['coin', '金币'], ['del', '擦掉']];
       tools.forEach(function (t, i) {
         var on = WB.data.tool === t[0];
-        button(self, t[1], startX + i * gap, 428, chipW, 28, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+        button(self, t[1], 58 + i * 102, 430, 96, 32, on ? GOLD : NAVY, on ? INK : WHITE, function () {
           WB.data.tool = t[0];
           if (t[0] !== 'coin' && t[0] !== 'del') WB.data.sel = t[0];
           later(function () { show(2); });
@@ -605,7 +616,7 @@
       var bands = [[0, 3, ccColor(78, 168, 92, 70), '教'], [3, 7, ccColor(230, 194, 0, 70), '练'], [7, 10, ccColor(226, 121, 59, 70), '变'], [10, 12, ccColor(226, 59, 59, 70), '考']];
       bands.forEach(function (b) {
         plate(self, EDIT.L + b[0] * EDIT.cw, gy + 8, (b[1] - b[0]) * EDIT.cw, 92, b[2], 3);
-        words(self, b[3], EDIT.L + b[0] * EDIT.cw + 16, gy + 86, 14, '#1a2744', 7);  /* keep on band */
+        words(self, b[3], EDIT.L + b[0] * EDIT.cw + 16, gy + 86, 14, '#1a2744', 7);
       });
       plate(this, EDIT.L, gy + 8, STORE.SAFE0 * EDIT.cw, 92, ccColor(159, 240, 168, 50), 4);
       words(this, '出生', EDIT.L + 28, gy + 64, 13, '#145c28', 7);
@@ -643,7 +654,7 @@
           return true;
         }
       }), grid);
-      this.ninja = addNinja(this, EDIT.L + 28, gy, 120);
+      this.ninja = addNinja(this, EDIT.L + 28, gy, 92);
       this.card = ART.panel(this, 872, 250, 160, 300, cc.color(78, 201, 107), 255, 10, 16);
       words(this, '一共掉', 872, 372, 16, '#1b1b2a', 11);
       this.sumLab = words(this, '', 872, 336, 28, '#1b1b2a', 11);
@@ -675,13 +686,13 @@
     _shop: function () {
       var wal = WB.data.wallet;
       var self = this;
-      words(this, '金币 ' + (wal.coins | 0), 70, 390, 14, '#ffe7a0', 8);
+      words(this, '金币 ' + (wal.coins | 0), 70, 386, 15, '#7a4e00', 8);
       ['dart', 'blade', 'gun'].forEach(function (id, i) {
         var spec = STORE.WEAPONS[id];
         var owned = wal.weapons.indexOf(id) >= 0;
         var on = wal.equipped === id;
         var label = on ? (spec.name + ' 使用中') : (owned ? (spec.name + ' 装备') : (spec.name + ' ' + spec.price));
-        button(self, label, 210 + i * 148, 390, 136, 28, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+        button(self, label, 210 + i * 150, 386, 140, 30, on ? GOLD : NAVY, on ? INK : WHITE, function () {
           var res = STORE.buy(WB.data, id);
           WB.ui.flash = res.flash || '';
           if (res.ok) STORE.save(localStorage, WB.data);
@@ -698,18 +709,18 @@
         rock: '岩石：撞上去会轻伤'
       };
       if (hint[sel]) {
-        words(this.paramRow, hint[sel], 220, 352, 14, '#ffe7a0', 1);
+        words(this.paramRow, hint[sel], 220, 348, 15, '#1a2744', 1);
         return;
       }
       if (sel !== 'spike' && sel !== 'fire') {
-        words(this.paramRow, '点一个刺或火，再选 1、3、5 秒', 250, 352, 14, '#ffe7a0', 1);
+        words(this.paramRow, '点一个刺或火，再选 1、3、5 秒', 250, 348, 15, '#1a2744', 1);
         return;
       }
       var cur = sel === 'fire' ? WB.data.mp.fire.dur : WB.data.mp.spike.interval;
-      words(this.paramRow, sel === 'fire' ? '火停多久' : '刺每几秒冒一次', 120, 352, 14, '#ffe7a0', 1);
+      words(this.paramRow, sel === 'fire' ? '火停多久' : '刺每几秒冒一次', 120, 348, 15, '#1a2744', 1);
       [1, 3, 5].forEach(function (v, i) {
         var on = cur === v;
-        button(self.paramRow, v + '秒', 280 + i * 96, 352, 80, 28, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+        button(self.paramRow, v + '秒', 280 + i * 96, 348, 86, 32, on ? GOLD : NAVY, on ? INK : WHITE, function () {
           if (STORE.setNum(WB.data, v)) STORE.save(localStorage, WB.data);
           later(function () { show(2); });
         });
@@ -839,7 +850,7 @@
           words(this, hearts[x] ? ('-' + hearts[x]) : '过', px, gy + 58, 12, hearts[x] ? '#ff8a8a' : '#9ff0a8', 9);
         }
       }
-      this.mini = addNinja(this, L + cw * 0.7, gy, 110, 10);
+      this.mini = addNinja(this, L + cw * 0.7, gy, 52, 10);
       if (!placed) words(this, '还没摆东西', 250, 330, 16, '#ffffff', 9);
       ART.place(this, ART.tex.heart, 168, 168, { h: 26, z: 8 });
       words(this, '一共预计掉 ' + tot + '❤', 280, 168, 18, '#ffb4b4', 8);
@@ -931,10 +942,9 @@
         ].concat(AV);
         var left = res.length;
         var dirtImg = null, grassImg = null;
-        var booted = false;
-        function finishBoot() {
-          if (booted) return;
-          booted = true;
+        function tick() {
+          left--;
+          if (left > 0) return;
           try { ART.bakeGround(dirtImg, grassImg); } catch (eG) {}
           if (lesson !== 'tonight') {
             var layer = new cc.Layer();
@@ -954,18 +964,6 @@
           WB.show = show;
           bootMsg('');
         }
-        function tick() {
-          left--;
-          if (left > 0) return;
-          finishBoot();
-        }
-        /* Sticky-boot failsafe: never leave 「正在打开课件…」 forever */
-        setTimeout(function () {
-          if (!booted) {
-            left = 0;
-            finishBoot();
-          }
-        }, 7000);
         res.forEach(function (src) {
           var img = new Image();
           img.onload = function () {

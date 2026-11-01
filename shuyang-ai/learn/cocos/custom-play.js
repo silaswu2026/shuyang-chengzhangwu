@@ -22,6 +22,33 @@
   var EXP = 6;
   var PAD = 6;
   var MAX_HP = 6;
+  var AUDIO = window.WBAudio || null;
+  var audioCfg = null;
+  function loadAudioCfg() {
+    audioCfg = { bgmId: 'explore', sfx: {} };
+    if (AUDIO) audioCfg = AUDIO.blankAudio();
+    try {
+      var raw = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (raw && raw.audio) {
+        if (AUDIO) audioCfg = AUDIO.normalize(raw.audio);
+        else audioCfg = raw.audio;
+      }
+    } catch (e) {}
+    if (AUDIO) AUDIO.apply(audioCfg);
+    return audioCfg;
+  }
+  function playSfx(id) {
+    if (!AUDIO) return;
+    AUDIO.playSfx(id, false);
+  }
+  function startBgm(mood) {
+    if (!AUDIO) return;
+    var id = mood || (audioCfg && audioCfg.bgmId) || 'explore';
+    AUDIO.playBgm(id, true);
+  }
+  function stopBgm() {
+    if (AUDIO && AUDIO.stopBgm) AUDIO.stopBgm();
+  }
   /* Unified for H+V: ~13 tiles tall → character ≈ 15% screen (xy-go desktop feel). */
   var TILES_VIS = 13;
   var W = 520, H = TILES_VIS * T;
@@ -654,6 +681,8 @@
     },
     _build: function () {
       level = loadLevel();
+      loadAudioCfg();
+      startBgm();
       this.worldW = level.cols * T;
       /* Grass ~42% up — thick dirt bed fills bottom (kills 18% black band under controls). */
       this.gy = Math.round(H * 0.42);
@@ -844,6 +873,7 @@
       if (this.boss && this.boss.alive && this.boss.hurtT <= 0 && Math.abs(x - this.bossSp.getPositionX()) < reach && Math.abs(y - (this.boss.y + 28)) < reach) {
         this.boss.hp -= dmg;
         this.boss.hurtT = 0.35;
+        playSfx('hit');
         if (this.boss.hp <= 0) {
           this.boss.alive = false;
           this.bossSp.setVisible(false);
@@ -863,6 +893,7 @@
           if (Math.abs(x - cr.x) < reach && Math.abs(y - (this.gy + 16)) < reach) {
             cr.hp -= dmg;
             cr.hurtT = 0.25;
+            playSfx('hit');
             if (cr.hp <= 0) {
               cr.alive = false;
               cr.sp.setVisible(false);
@@ -940,6 +971,7 @@
           this.vy = 680; /* ≈ xy-go JUMP_V — 3-tile pit jumpable */
           this.grounded = false;
           this.ninja.setTexture(SP + 'jump_0.png');
+          playSfx('jump');
         }
         inp.jumpPressed = false;
 
@@ -961,10 +993,12 @@
         if (this.px > this.worldW - T * 0.5) this.px = this.worldW - T * 0.5;
 
         var gY = this._groundYAt(this.px);
+        var wasGrounded = this.grounded;
         if (this.py <= gY && this.vy <= 0 && gY > -1000) {
           this.py = gY;
           this.vy = 0;
           this.grounded = true;
+          if (!wasGrounded) playSfx('land');
         } else if (gY < -1000 && this.py < this.gy - 80) {
           /* fell in pit */
           if (this.invuln <= 0) {
@@ -973,9 +1007,11 @@
             this.px = Math.max(T, this.px - T * 3);
             this.py = this.gy + 10;
             this.vy = 0;
+            playSfx('hurt');
             updHUD(this.hp, this.coins);
             if (this.hp <= 0) {
               this.hp = 0; this.dead = true; this.playing = false;
+              stopBgm(); startBgm('fail');
               showResult(false, 0, this.coins);
             }
           }
@@ -993,6 +1029,7 @@
           if (this.frameT > 0.1) { this.frameT = 0; this.frame = (this.frame + 1) % 4; }
           this.ninja.setTexture(this.walk[this.frame]);
         } else this.ninja.setTexture(SP + 'idle.png');
+        if (AUDIO) AUDIO.footstep(dt, Math.abs(this.vx) > 20, this.grounded);
 
         if (this.invuln > 0) {
           this.invuln -= dt;
@@ -1018,6 +1055,7 @@
               this.vy = 860;
               this.grounded = false;
               this.ninja.setTexture(SP + 'jump_0.png');
+              playSfx('spring');
             } else if (kind === 'mist' && touch) {
               this.slowT = 1.6;
             } else if (kind === 'rock' && touch && this.py < this.gy + 28) {
@@ -1026,9 +1064,11 @@
                 this.hp -= 1;
                 this.invuln = 0.8;
                 this.ninja.setTexture(SP + 'knock_0.png');
+                playSfx('hurt');
                 updHUD(this.hp, this.coins);
                 if (this.hp <= 0) {
                   this.hp = 0; this.dead = true; this.playing = false;
+                  stopBgm(); startBgm('fail');
                   showResult(false, 0, this.coins);
                 }
               }
@@ -1045,9 +1085,12 @@
               this.hp -= (kind === 'fire' ? dmgF : dmgS);
               this.invuln = 1.0;
               this.ninja.setTexture(SP + 'knock_0.png');
+              playSfx(kind === 'fire' ? 'fire' : 'spike');
+              playSfx('hurt');
               updHUD(this.hp, this.coins);
               if (this.hp <= 0) {
                 this.hp = 0; this.dead = true; this.playing = false;
+                stopBgm(); startBgm('fail');
                 showResult(false, 0, this.coins);
                 $('msg').textContent = '掉光了 · 点重来';
               }
@@ -1064,6 +1107,7 @@
             this.coins += cn.star ? 0 : 1;
             if (!cn.star) this.score = (this.score | 0) + SCORE.coin;
             if (cn.star) this.invuln = Math.max(this.invuln, 3);
+            playSfx('coin');
             updHUD(this.hp, this.coins);
           }
         }
@@ -1081,9 +1125,11 @@
             this.invuln = 1.0;
             this.vx = (this.px < bx ? -1 : 1) * 120;
             this.ninja.setTexture(SP + 'knock_0.png');
+            playSfx('hurt');
             updHUD(this.hp, this.coins);
             if (this.hp <= 0) {
               this.hp = 0; this.dead = true; this.playing = false;
+              stopBgm(); startBgm('fail');
               showResult(false, 0, this.coins);
             }
           }
@@ -1138,6 +1184,7 @@
         if (!this.won && this.px >= this.goalX - T * 0.4 && (!this.boss || !this.boss.alive)) {
           this.won = true; this.playing = false;
           this.score = (this.score | 0) + SCORE.clear + SCORE.hp * Math.max(0, this.hp | 0);
+          stopBgm(); startBgm('win');
           showResult(true, this.hp, this.coins);
           $('msg').textContent = '到旗了！积分 ' + (this.score | 0);
         } else if (!this.won && this.px >= this.goalX - T * 0.4 && this.boss && this.boss.alive) {

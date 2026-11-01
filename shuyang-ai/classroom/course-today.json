@@ -1,36 +1,43 @@
 {
-  "id": "skeleton-3d-bones",
-  "date": "2026-10-29",
-  "version": "mc23",
-  "theme": "3D 骨头人：骨头 → 方块 → 贴皮",
-  "overview": "今天一起看清游戏里的立体小人：里面先有骨头，再拼方块，最后贴上皮肤。还能拖小太阳，看光和影子怎么变。",
-  "speakOverview": "芃芃你好！今天我们学立体小人。先看骨头架，再拼大方块，再贴皮肤。最后拖一拖小太阳，看看光和影子。准备好了吗？我们开始！",
-  "phoneBrief": "今日课题（电话小雨必跟）：3D骨头人。弧线=骨头→大块方块/MC颗粒→每面贴皮+拖小太阳看光影。不要另开冒险月 Day 号；以本文件 steps 为准。教室右栏与 iframe 同步本 JSON。",
-  "adventureMonthNote": "对齐冒险月第2周「立体能转」主题；教室共学用 learn/skeleton.html 专课（比 Day10/11 更深的骨头→贴皮），不以 course.js DAYS[n] 自动换日。",
-  "iframe": "../learn/skeleton.html?v=mc23",
+  "id": "tonight-level-design",
+  "date": "2026-11-01",
+  "version": "hub1-vw1",
+  "theme": "关卡设计：看图 · 频率 · 摆关 · 觉察",
+  "overview": "今天是第 3 课。一起做关卡：看清上钩、调陷阱频率、摆一小关、玩完说感觉。还有武器商店和先听后选的音效方向。",
+  "speakOverview": "芃芃你好！今天是第 3 课，关卡设计。我们看图、调频率、摆关、玩完再说一句感觉。准备好了吗？我们开始！",
+  "phoneBrief": "今日课题：课程3可视化关卡工坊。主入口 visual-workbench.html。旧基础台 workbench.html；对照 level-design.html?path=tonight。两维：关卡升级 + 音乐音效先听后选。",
+  "adventureMonthNote": "对应 kid.js 第三课「道具和关卡是怎么设计的」；首页课程卡第 3 点。不以 course.js DAYS[n] 自动换日。",
+  "iframe": "../learn/cocos/visual-workbench.html",
   "essence": [
-    "骨头",
-    "方块/MC颗粒",
-    "贴皮+小太阳"
+    "上钩与自己决定停",
+    "频率旋钮",
+    "摆关+武器经济",
+    "觉察"
   ],
   "steps": [
     {
       "n": 1,
-      "title": "只看骨头",
-      "speak": "第一步：只看骨头。里面先有一副会动的骨头架。你用手指拖一拖，转一转看。",
-      "skelStep": 1
+      "title": "看图",
+      "speak": "第一步：看图。上钩是什么意思？自己决定什么时候停。",
+      "skelStep": null
     },
     {
       "n": 2,
-      "title": "方块拼起来",
-      "speak": "第二步：大块方块人。模型就是很多大颗粒拼起来的，像积木一样。",
-      "skelStep": 2
+      "title": "频率",
+      "speak": "第二步：调频率。地刺每几秒冒一次，跑一次，看看哪一点在钓你。",
+      "skelStep": null
     },
     {
       "n": 3,
-      "title": "贴皮和小太阳",
-      "speak": "第三步：每个方块贴上皮，再拖小太阳，看看光和影子怎么变。想对比材质，可以点材质按钮。",
-      "skelStep": 4
+      "title": "摆关",
+      "speak": "第三步：摆一小关。放陷阱、调数字、跑一次；商店也在这里。",
+      "skelStep": null
+    },
+    {
+      "n": 4,
+      "title": "觉察",
+      "speak": "第四步：玩完问一句，和预计一样吗？再去玩这一关。",
+      "skelStep": null
     }
   ]
 }
