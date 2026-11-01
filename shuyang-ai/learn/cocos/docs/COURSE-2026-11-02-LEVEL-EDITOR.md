@@ -3,7 +3,7 @@
 - 学员：**伍澍暘**（正式名锁：**伍澍暘**）· 助手：**小宇**
 - 日期：2026-11-02 · 时间盒约 **40–50 分钟** · 手机横屏约 **844×390**
 - 选题：三个课题里伍澍暘选了 **关卡编辑器**；**本课只教编辑器**，不回顾角色背景 / 序列帧 / 道具陷阱奖励 / 入迷，也不讲「一系列关卡」「联网原理」
-- 方案全文（待 Silas 确认后再写代码）：[`LEVEL-EDITOR-PLAN-2026-11-02.md`](./LEVEL-EDITOR-PLAN-2026-11-02.md)
+- 方案全文（Silas 已确认，MVP 已落地 c52 / ldt33 / ls3）：[`LEVEL-EDITOR-PLAN-2026-11-02.md`](./LEVEL-EDITOR-PLAN-2026-11-02.md)
 - 壳建议：`visual-workbench` 编辑器叙事；试玩 `custom-play`；选关 `level-select`「我的关」入口
 
 ---
@@ -122,8 +122,8 @@
 
 ## 与方案 / 代码的关系
 
-- **今天（文档日）**：只出大纲 + [`LEVEL-EDITOR-PLAN-2026-11-02.md`](./LEVEL-EDITOR-PLAN-2026-11-02.md)，**等 Silas 确认后再改代码**。  
-- **明天动手**：在现有 `visual-workbench` 摆关壳 + `custom-play` + `xygo-custom-level` v1.2 上延伸「我的关」名册；不新开引擎。  
+- **代码**：`visual-workbench?v=ldt33` 摆关页即第七、八步（不重做十步 UI）；试玩 `custom-play?v=c52&level=9`；名册 `xygo-my-levels`。  
+- 壳仍是现有工坊 + `xygo-custom-level` v1.2（只加字段）；不新开引擎。  
 - 风格锁：海军蓝·金·绿；可玩角色仅绿/红/蓝忍者。
 
 *成长屋课件 · 推 GitHub 后以本文件为准。*

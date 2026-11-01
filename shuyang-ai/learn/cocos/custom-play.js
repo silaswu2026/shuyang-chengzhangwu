@@ -11,6 +11,7 @@
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
  * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。
  * c42: 默认关保底可见线圈弹簧垫（ensureSprings）+ 贴图更醒目；保留 c32 power=1300；P2 HUD 去「沼泽」壳话。
+ * c52: 我的第 1 关。起点/终点写入 v1.2 的 editor 字段；有起点或终点或 myLevelId 时按摆放跑（不补火/弹簧/沼/断坑），到达所摆终点即过关。第 9 关不写 sycocos-level-progress。
  * c51: 手机仍微糊 — c50 的 min(3,dpr) 已上线；横屏 `.canvas-slot` 的 border-radius+overflow:hidden 让移动 Safari/Chrome 把 WebGL 画布合成到低分图层（桌面不明显）。去掉槽圆角裁切；`_setupContainer` 一次写满 DPR 缓冲（不再先 2× 再改）。不改玩法/联机。
  * c50: 手机微糊 — 页 DPR≈3 时 Cocos `_setupContainer`/`ensureRetinaBuffer` 仍 min(2,dpr)→画布仅 2×CSS，浏览器再放大约 1.5× 发软。改为缓冲对齐 min(3,dpr)，并同步 `cc.view._devicePixelRatio`；桌面 dpr≤2 不变。不改玩法/联机。
  * c49: 真机仍见「小颗粒滑屏」— c48 Retina 保留；主因是 14 颗 4×4 硬边 LayerColor 萤火虫横向快漂 + 亚像素 cam 卷像素泥土。改为软光晕萤火虫（手机/DPR≥2 更少更淡更慢）、世界层 camX 取整、fitStage 后复核 retina 缓冲。不改玩法/联机。
@@ -269,7 +270,8 @@
   }
   var PLAY_LEVEL_ID = parsePlayLevelId(); /* ?level=1..9；缺省第9「我的关卡」 */
   function markLevelProgress(kind) {
-    /* kind: 'tried' | 'completed' — ls2 选关闸用 */
+    /* kind: 'tried' | 'completed' — 仅正式 1–8。第9「我的关」不写入本键。 */
+    if (!(PLAY_LEVEL_ID >= 1 && PLAY_LEVEL_ID <= 8)) return;
     try {
       var raw = JSON.parse(localStorage.getItem(PROG_KEY) || '{}') || {};
       if (!raw.tried || typeof raw.tried !== 'object') raw.tried = {};
@@ -622,16 +624,26 @@
     }
     var items = [];
     var HAZARD = { spike: 1, fire: 1, rock: 1, mist: 1, spring: 1, electric: 1, groove: 1 };
+    var authoredStart = null;
+    var authoredGoal = null;
     tiles.forEach(function (tt) {
       if (!tt || tt.type === 'g' || tt.type === 'p') return;
+      if (tt.type === 'start') { authoredStart = tt.x | 0; return; }
+      if (tt.type === 'goal') { authoredGoal = tt.x | 0; return; }
       if ((tt.y | 0) >= DR - 1) return;
       /* c28: 水面无陷阱 — 断坑/水格不刷刺火等（金币/旗仍可） */
       if (HAZARD[tt.type] && groundCols[tt.x | 0] === false) return;
       items.push({ type: tt.type, c: gx(tt.x | 0), designX: tt.x | 0 });
     });
+    if (d.editor && typeof d.editor === 'object') {
+      if (authoredStart == null && typeof d.editor.startX === 'number') authoredStart = d.editor.startX | 0;
+      if (authoredGoal == null && typeof d.editor.goalX === 'number') authoredGoal = d.editor.goalX | 0;
+    }
+    /* 孩子摆过起点/终点，或已存进「我的第 1 关」：跑道跟画布，不偷偷补零件。旧档无这些字段则保持原保底。 */
+    var authored = authoredStart != null || authoredGoal != null || !!(d.myLevelId);
     /* 断坑：若完全没有，在变/考交界补一个，不挡安全出生与前两波 */
     var holeN = groundCols.filter(function (g) { return !g; }).length;
-    if (holeN === 0 && DC >= 8) {
+    if (!authored && holeN === 0 && DC >= 8) {
       groundCols[Math.min(DC - 1, Math.max(6, Math.floor(DC * 0.75)))] = false;
     }
     /* 断坑后二次过滤：确保水面上无刺/火等 */
@@ -656,6 +668,7 @@
 
     /* c29: 沼泽关保底可踩火源（设计台未摆火/被水面过滤光时补 2 处实地点火） */
     (function ensureSwampFires() {
+      if (authored) return;
       var fireN = 0;
       var i;
       for (i = 0; i < items.length; i++) {
@@ -693,6 +706,7 @@
 
     /* c42: 保底可见线圈弹簧垫（旧档/自改关可能删掉 spring；火/沼已有 ensure，弹簧此前缺失导致 C13 无法验收） */
     (function ensureSprings() {
+      if (authored) return;
       var springN = 0;
       var i;
       for (i = 0; i < items.length; i++) {
@@ -739,6 +753,7 @@
 
     /* c41: 沼泽关保底两处可踩沼泽（旧 mist 紫圈 → 泥水外观；减速玩法不变） */
     (function ensureSwampMists() {
+      if (authored) return;
       var mistN = 0;
       var i;
       for (i = 0; i < items.length; i++) {
@@ -778,8 +793,14 @@
     var bossC = Math.min(cols - 8, designEnd + 10);
     var goalC = Math.min(cols - 5, bossC + 12);
     var flagC = Math.max(designEnd + 2, bossC - 6);
+    var authoredGoalOn = authoredGoal != null && authoredGoal >= 0 && authoredGoal < DC;
+    var spawnC = (authoredStart != null && authoredStart >= 0 && authoredStart < DC) ? gx(authoredStart) : 2;
+    if (authoredGoalOn) {
+      goalC = gx(authoredGoal);
+      flagC = goalC;
+    }
     var hasFlag = items.some(function (it) { return it.type === 'flag'; });
-    if (!hasFlag) items.push({ type: 'flag', c: flagC, designX: -1 });
+    if (!hasFlag && !authoredGoalOn) items.push({ type: 'flag', c: flagC, designX: -1 });
 
     return {
       version: d.version || '1.2',
@@ -789,9 +810,11 @@
       by: d.by || '',
       hook_seen: d.hook_seen || d.reflectHook || '',
       vs_expect: d.vs_expect || d.reflectExpect || '',
-      spawnC: 2,
+      spawnC: spawnC,
       goalC: goalC,
       bossC: bossC,
+      authoredGoal: authoredGoalOn,
+      myLevelTitle: (typeof d.myLevelTitle === 'string') ? d.myLevelTitle : '',
       wallet: readWallet(d.wallet),
       lastScore: (typeof d.lastScore === 'number' && d.lastScore >= 0) ? (d.lastScore | 0) : 0,
       presetId: d.presetId || ''
@@ -1665,7 +1688,10 @@
       applyNinjaFrame(this.ninja, this.palette, 'idle');
 
       var lvEl = $('lvlChip');
-      if (lvEl) lvEl.textContent = '第9关 我的关卡';
+      if (lvEl) {
+        if (PLAY_LEVEL_ID >= 1 && PLAY_LEVEL_ID <= 8) lvEl.textContent = '第9关 我的关卡';
+        else lvEl.textContent = level.myLevelTitle || '第9关 我的关卡';
+      }
       var iv = (level.traps.spike && +level.traps.spike.interval) || 3;
       $('msg').textContent = (level.by ? level.by + ' · ' : '') + '自制关·踩火会着火·踩水/等时间灭火·锤可砸可投 · Q切武器';
     },
@@ -2451,14 +2477,16 @@
           }
         }
 
-        if (!this.won && this.px >= this.goalX - T * 0.4 && (!this.boss || !this.boss.alive)) {
+        var reachedGoal = this.px >= this.goalX - T * 0.4;
+        var goalClear = level.authoredGoal || !this.boss || !this.boss.alive;
+        if (!this.won && reachedGoal && goalClear) {
           this.won = true; this.playing = false;
           this.score = (this.score | 0) + SCORE.clear + SCORE.hp * Math.max(0, this.hp | 0);
           stopBgm(); startBgm('win');
           showResult(true, this.hp, this.coins);
           startVictoryFx();
-          $('msg').textContent = '到旗了！积分 ' + (this.score | 0);
-        } else if (!this.won && this.px >= this.goalX - T * 0.4 && this.boss && this.boss.alive) {
+          $('msg').textContent = (level.authoredGoal ? '到终点了！积分 ' : '到旗了！积分 ') + (this.score | 0);
+        } else if (!this.won && reachedGoal && this.boss && this.boss.alive && !level.authoredGoal) {
           $('msg').textContent = '先投中鳄王再冲旗！';
         }
 
@@ -2835,7 +2863,7 @@
     window.addEventListener('error', function (e) { bootErr(e.message || String(e)); });
     bindControls();
     netBindUI(); /* c16: was defined but never called — 联机按钮无 handler */
-    markLevelProgress('tried'); /* ls2: 进试玩页即算试过该关 */
+    markLevelProgress('tried'); /* 1–8 记试过；第9我的关在 markLevelProgress 内直接返回 */
     try {
       var q = new URLSearchParams(location.search || '');
       if (q.get('net') === '1') {

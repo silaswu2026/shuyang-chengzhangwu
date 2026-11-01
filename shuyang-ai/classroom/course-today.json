@@ -5,9 +5,9 @@
   "theme": "关卡编辑器从零：认工具 · 摆零件 · 试玩 · 存我的关",
   "overview": "明天第 4 课只教关卡编辑器（伍澍暘自选）。不回顾角色背景/序列帧/道具陷阱奖励/入迷；不讲一系列关卡与联网。从零：玩vs造 → 三连效果 → 三面板 → 零件 → 摆存 → 再打开。",
   "speakOverview": "伍澍暘你好！今天只学关卡编辑器：认工具、摆零件、试玩、把关存成自己的。别的课题以后再开。",
-  "phoneBrief": "2026-11-02 课件：关卡编辑器从零。大纲 COURSE-2026-11-02-LEVEL-EDITOR.md；方案 LEVEL-EDITOR-PLAN-2026-11-02.md（待 Silas 确认后再写代码）。十步皆编辑器。横屏约844×390。",
+  "phoneBrief": "2026-11-02 课件：关卡编辑器从零。工坊 ldt33 摆关页即第七、八步（零件架/画布/试玩·保存）。试玩 c52。选关 ls3 第9读名册 xygo-my-levels。横屏约844×390。",
   "adventureMonthNote": "Silas 收窄：明日仅编辑器。正式名伍澍暘；助手小宇。双轨：日课共学 + 课件产品化见 TEACHING-SYSTEM-FOR-THIRD-PARTIES.md。",
-  "iframe": "../learn/cocos/visual-workbench.html",
+  "iframe": "../learn/cocos/visual-workbench.html?v=ldt33&step=2",
   "doc": "../learn/cocos/docs/COURSE-2026-11-02-LEVEL-EDITOR.md",
   "planDoc": "../learn/cocos/docs/LEVEL-EDITOR-PLAN-2026-11-02.md",
   "essence": [
@@ -34,6 +34,6 @@
     { "n": 9, "title": "钩子自检", "speak": "第九步：勾惊喜和停点。", "skelStep": null },
     { "n": 10, "title": "收束预告", "speak": "第十步：下次加深编辑器；别的课题以后开。", "skelStep": null }
   ],
-  "waitForConfirm": true,
-  "confirmNote": "等 Silas 确认 LEVEL-EDITOR-PLAN 后再改 workbench/custom-play 代码。"
+  "waitForConfirm": false,
+  "confirmNote": "Silas 已确认 LEVEL-EDITOR-PLAN。MVP 已落地：c52 / ldt33 / ls3；名册 xygo-my-levels。十步旁白仍以本文件为准，工坊不重做十步 UI。"
 }

@@ -6,10 +6,22 @@
  * Default runway: tonight-waves-v1 (safe start, four waves, all traps).
  * ldt31 / §8: placeable 电凹大箱; coin 5/15/30; practice 110; spring OK in SAFE0;
  *   setIntervalValue syncs mp.spike (per-level overrides global).
+ * ldt33: additive editor.{startX,goalX} + myLevelId/myLevelTitle. version stays "1.2".
+ *
+ * Sync (do not merge these keys):
+ *   xygo-custom-level     current slot. Place/erase and 试玩 read/write this only.
+ *   xygo-my-levels        roster {version:1, levels:[{id,title,savedAt,doc}]}.
+ *                         「保存我的第 1 关」 deep-copies the slot into id "my-1".
+ *                         Later edits stay on the slot until the next explicit save.
+ *   sycocos-level-progress  official 1–8 tried/completed. This file never writes it.
+ * Reopen (level 9 / 玩第9关 / ?open=my1) copies roster doc "my-1" back into the slot.
  * No Cocos calls, so a node check can load this file.
  */
 (function (root) {
   var KEY = 'xygo-custom-level';
+  var MY_KEY = 'xygo-my-levels';
+  var MY_ID = 'my-1';
+  var MY_TITLE = '我的第 1 关';
   var ROWS = 4;
   var MC = 12;
   var SAFE0 = 2;
@@ -185,7 +197,9 @@
       likes: 0,
       audio: blankAudio(),
       levelAudio: blankLevelAudio(),
-      lastScore: 0
+      lastScore: 0,
+      myLevelId: '',
+      myLevelTitle: ''
     };
   }
 
@@ -199,9 +213,11 @@
       || k === 'electric' || k === 'groove';
   }
   function isReward(k) { return k === 'coin' || k === 'coinBig' || k === 'chest' || k === 'shield'; }
+  function isMarker(k) { return k === 'start' || k === 'goal'; }
   function isPlaceable(k) {
     return k === 'spike' || k === 'fire' || k === 'coin' || k === 'coinBig' || k === 'chest'
-      || k === 'spring' || k === 'mist' || k === 'rock' || k === 'electric' || k === 'groove';
+      || k === 'spring' || k === 'mist' || k === 'rock' || k === 'electric' || k === 'groove'
+      || k === 'start' || k === 'goal';
   }
   function coinValue(k) { return COIN_VALUES[k] || 0; }
 
@@ -312,6 +328,9 @@
     s.audio = normalizeAudio(raw.audio);
     s.levelAudio = normalizeLevelAudio(raw.levelAudio);
     if (typeof raw.lastScore === 'number' && raw.lastScore >= 0) s.lastScore = raw.lastScore | 0;
+    s.myLevelId = (typeof raw.myLevelId === 'string') ? raw.myLevelId : '';
+    s.myLevelTitle = (typeof raw.myLevelTitle === 'string') ? raw.myLevelTitle : '';
+    normalizeMarkers(s.map);
     for (var i = 0; i < MC; i++) {
       if (s.map[i] === 'spike' || s.map[i] === 'fire' || s.map[i] === 'spring' || s.map[i] === 'mist' || s.map[i] === 'rock') {
         s.sel = s.map[i];
@@ -336,6 +355,7 @@
     var prev = {};
     try { prev = JSON.parse(storage.getItem(KEY) || '{}') || {}; } catch (e) { prev = {}; }
     if (!prev || typeof prev !== 'object') prev = {};
+    normalizeMarkers(state.map);
     var tiles = [];
     for (var x = 0; x < MC; x++) tiles.push({ x: x, y: ROWS - 1, type: 'g' });
     state.map.forEach(function (k, i) { if (k) tiles.push({ x: i, y: ROWS - 2, type: k }); });
@@ -403,8 +423,107 @@
     d.presetId = prev.presetId || 'tonight-waves-v1';
     d.savedAt = new Date().toISOString();
     d.by = prev.by || '伍澍暘';
+    d.editor = editorFromMap(state.map);
+    d.myLevelId = state.myLevelId || '';
+    d.myLevelTitle = state.myLevelTitle || '';
+    /* version stays 1.2 — editor / myLevel* are additive. Never touch official progress. */
+    d.version = '1.2';
     storage.setItem(KEY, JSON.stringify(d));
     return d;
+  }
+
+  /** Keep the first start and the first goal; drop duplicates. */
+  function normalizeMarkers(map) {
+    if (!map) return;
+    var seenStart = false;
+    var seenGoal = false;
+    var i;
+    for (i = 0; i < map.length; i++) {
+      if (map[i] === 'start') {
+        if (seenStart) map[i] = null;
+        else seenStart = true;
+      } else if (map[i] === 'goal') {
+        if (seenGoal) map[i] = null;
+        else seenGoal = true;
+      }
+    }
+  }
+
+  function editorFromMap(map) {
+    var startX = null;
+    var goalX = null;
+    var i;
+    for (i = 0; i < MC; i++) {
+      if (map[i] === 'start') startX = i;
+      else if (map[i] === 'goal') goalX = i;
+    }
+    return { startX: startX, goalX: goalX };
+  }
+
+  function readRoster(storage) {
+    var raw = null;
+    try { raw = JSON.parse(storage.getItem(MY_KEY) || 'null'); } catch (e) { raw = null; }
+    if (!raw || typeof raw !== 'object' || !Array.isArray(raw.levels)) {
+      return { version: 1, levels: [] };
+    }
+    return {
+      version: 1,
+      levels: raw.levels.filter(function (lv) { return lv && typeof lv === 'object'; })
+    };
+  }
+
+  function findMyFirst(roster) {
+    var levels = (roster && roster.levels) || [];
+    var i;
+    for (i = 0; i < levels.length; i++) {
+      if (levels[i] && levels[i].id === MY_ID && levels[i].doc && typeof levels[i].doc === 'object') {
+        return levels[i];
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Snapshot the current slot into roster id my-1 ("我的第 1 关").
+   * Does not write sycocos-level-progress.
+   */
+  function saveMyFirst(storage, state) {
+    state.myLevelId = MY_ID;
+    state.myLevelTitle = MY_TITLE;
+    var doc = save(storage, state);
+    var snap;
+    try { snap = JSON.parse(JSON.stringify(doc)); } catch (e) { return { ok: false }; }
+    var roster = readRoster(storage);
+    var entry = {
+      id: MY_ID,
+      title: MY_TITLE,
+      savedAt: doc.savedAt || new Date().toISOString(),
+      doc: snap
+    };
+    var i;
+    var replaced = false;
+    for (i = 0; i < roster.levels.length; i++) {
+      if (roster.levels[i] && roster.levels[i].id === MY_ID) {
+        roster.levels[i] = entry;
+        replaced = true;
+        break;
+      }
+    }
+    if (!replaced) roster.levels.unshift(entry);
+    storage.setItem(MY_KEY, JSON.stringify({ version: 1, levels: roster.levels }));
+    return { ok: true, id: MY_ID, title: MY_TITLE, savedAt: entry.savedAt };
+  }
+
+  /** Copy roster "我的第 1 关" back into the current slot. No-op if missing. */
+  function applyMyFirst(storage) {
+    var hit = findMyFirst(readRoster(storage));
+    if (!hit) return { ok: false };
+    var doc;
+    try { doc = JSON.parse(JSON.stringify(hit.doc)); } catch (e) { return { ok: false }; }
+    if (!doc || typeof doc !== 'object') return { ok: false };
+    if (!doc.version) doc.version = '1.2';
+    storage.setItem(KEY, JSON.stringify(doc));
+    return { ok: true, id: MY_ID, title: hit.title || MY_TITLE };
   }
 
   function setIntervalValue(state, n) {
@@ -426,6 +545,17 @@
       state.map[x] = null;
       if (state.selX === x) { state.selX = -1; state.sel = null; }
       return { ok: true, flash: '' };
+    }
+    /* Singular markers replace the cell (default runway is already full). */
+    if (tool === 'start' || tool === 'goal') {
+      var iMark;
+      for (iMark = 0; iMark < MC; iMark++) {
+        if (state.map[iMark] === tool) state.map[iMark] = null;
+      }
+      state.map[x] = tool;
+      state.sel = tool;
+      state.selX = x;
+      return { ok: true, flash: tool === 'start' ? '起点放好了' : '终点放好了' };
     }
     var cur = state.map[x];
     if (isTrap(cur) || isReward(cur)) {
@@ -491,7 +621,8 @@
   /** Seed tonight-waves-v1 when there is no saved map. */
   function ensureDefaultMap(state) {
     if (!state) return state;
-    if (mapIsEmpty(state.map)) {
+    /* A saved「我的第 1 关」may be sparse; do not refill it with tonight-waves. */
+    if (mapIsEmpty(state.map) && !state.myLevelId) {
       state.map = defaultMineMap();
       state.interval = 3;
       state.mp.spike.interval = 3;
@@ -511,6 +642,9 @@
 
   root.WBStore = {
     KEY: KEY,
+    MY_KEY: MY_KEY,
+    MY_ID: MY_ID,
+    MY_TITLE: MY_TITLE,
     ROWS: ROWS,
     MC: MC,
     SAFE0: SAFE0,
@@ -528,6 +662,7 @@
     isTrap: isTrap,
     isStartHazard: isStartHazard,
     isReward: isReward,
+    isMarker: isMarker,
     isPlaceable: isPlaceable,
     coinValue: coinValue,
     COIN_VALUES: COIN_VALUES,
@@ -543,6 +678,11 @@
     blankLevelAudio: blankLevelAudio,
     normalizeLevelAudio: normalizeLevelAudio,
     STARTER_COINS: STARTER_COINS,
-    ensurePracticeWallet: ensurePracticeWallet
+    ensurePracticeWallet: ensurePracticeWallet,
+    readRoster: readRoster,
+    findMyFirst: findMyFirst,
+    saveMyFirst: saveMyFirst,
+    applyMyFirst: applyMyFirst,
+    editorFromMap: editorFromMap
   };
 })(typeof window !== 'undefined' ? window : this);
