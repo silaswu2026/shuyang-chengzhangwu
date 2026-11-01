@@ -1,7 +1,7 @@
 /**
- * ldt25: 去玩→c38 匹配不闪C红 · was ldt24: 去玩→c37 踩踏 · was ldt23: 去玩→c36 着火 · was ldt22: 去玩→c35 复活 · was ldt21: 去玩→c34 键盘L · was ldt20: 去玩→c33 摆臂 · was ldt19: 去玩→c31 · was ldt18→c30 · was wb85/wb84/wb83/wb82。
+ * ldt26: 去玩→c39 冷开首帧忍者 · was ldt25: 去玩→c38 匹配不闪C红 · was ldt24: 去玩→c37 踩踏 · was ldt23: 去玩→c36 着火 · was ldt22: 去玩→c35 复活 · was ldt21: 去玩→c34 键盘L · was ldt20: 去玩→c33 摆臂 · was ldt19: 去玩→c31 · was ldt18→c30 · was wb85/wb84/wb83/wb82。
  * 学习工作台 · 四芯片；关卡设计二级摆关|设置|关联；切片4 音乐绑九关+走路/砍击。
- * 存档 localStorage xygo-custom-level v1.2（wallet + audio）。试玩 custom-play.html?v=c38。
+ * 存档 localStorage xygo-custom-level v1.2（wallet + audio）。试玩 custom-play.html?v=c39。
  * wb80: 关卡设计合并 · wb79 觉察闸 · wb78 看图三阶段。
  */
 (function () {
@@ -1372,14 +1372,14 @@
       button(this, '回关卡', isPhoneShell() ? 90 : 110, 30, isPhoneShell() ? 100 : 130, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show((WB.ui.ldStep | 0) || 2); }); });
       button(this, '联机游玩', isPhoneShell() ? 300 : 360, 32, isPhoneShell() ? 140 : 160, isPhoneShell() ? 48 : 48, GOLD, INK, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c38&net=1';
+        location.href = 'custom-play.html?v=c39&net=1';
       });
       button(this, '去听选', isPhoneShell() ? 520 : 560, 32, isPhoneShell() ? 120 : 140, isPhoneShell() ? 48 : 46, NAVY, WHITE, function () {
         later(function () { show(5); });
       });
       button(this, '去玩这一关', isPhoneShell() ? 760 : 800, 32, isPhoneShell() ? 200 : 200, isPhoneShell() ? 50 : 48, GREEN, WHITE, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c38';
+        location.href = 'custom-play.html?v=c39';
       });
       this._t = 0;
       this.scheduleUpdate();
@@ -1514,7 +1514,7 @@
         '去⑥听选', function () { later(function () { show(5); }); },
         '去玩第9关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c38';
+          location.href = 'custom-play.html?v=c39';
         }
       );
       return true;
@@ -1597,7 +1597,7 @@
         },
         '去玩这一关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c38';
+          location.href = 'custom-play.html?v=c39';
         }
       );
       return true;

@@ -14,7 +14,7 @@
  * c40: levelAudio 第9关 BGM 回退全局；走路/砍击 SFX 钩子。
  * c28: 明天玩关三件可测 — ①武器弓/锤/飞镖（默飞镖可切换）②水面无陷阱 ③着火踩水灭火（保留左右晃）；结算屏三数。
  * c27: short - load cocos in body (not head): mobile _initSys needs document.body or appendChild null aborts engine before Layer.
- * c39: first interactive frame fast — critical idle+dirt+grass then runScene; night BG deferred; 2.5s hard cap; PeerJS local.
+ * c39: cold-open ninja ASAP — boot without window.load; defer castStrip JPGs; CSS bed solid (no canopy race); preload idle; critical idle(+dirt/grass); procedural placeholder if PNG late; night BG deferred; 1.2s hard cap.
  * c38also: net host/guest chip always matches visible cast once role known (applyRoleVisuals + updHUD → netLockedPalette).
  * c37dirt: shorten dirt bed (gy≈H*0.28, min 72) for phone landscape play space.
  * c36tint: do not gate runScene on tint cache; tint via data-URL; swamp canvas bed (fix c35 blank navy).
@@ -39,6 +39,41 @@
     SP + 'knock_0.png', SP + 'jump_0.png'
   ];
   var RES = RES_CRITICAL.concat(RES_DEFERRED, [BG]);
+
+  /* c39: start idle decode at parse time (before engine / load). */
+  var earlyIdleImg = null;
+  try {
+    earlyIdleImg = new Image();
+    earlyIdleImg.decoding = 'async';
+    earlyIdleImg.src = SP + 'idle.png';
+  } catch (eEarly) { earlyIdleImg = null; }
+
+  function hydrateCastStrip() {
+    try {
+      var strip = document.getElementById('castStrip');
+      if (!strip || strip.getAttribute('data-hydrated') === '1') return;
+      strip.setAttribute('data-hydrated', '1');
+      var imgs = strip.querySelectorAll('img[data-src]');
+      for (var i = 0; i < imgs.length; i++) {
+        var im = imgs[i];
+        var ds = im.getAttribute('data-src');
+        if (ds) im.setAttribute('src', ds);
+      }
+    } catch (eH) {}
+  }
+
+  function proceduralNinjaTex(palette) {
+    try {
+      var WNW = window.WBNinjaWalk;
+      if (!WNW || !WNW.paintFrame || typeof cc === 'undefined' || !cc.Texture2D) return null;
+      var cv = WNW.paintFrame(0, palette || 'green', 0, 0);
+      if (!cv) return null;
+      var tex = new cc.Texture2D();
+      tex.initWithElement(cv);
+      tex.handleLoadedTexture();
+      return tex;
+    } catch (eP) { return null; }
+  }
 
   /* PRODUCT §8: only green/red/blue controllable skins (tint from green sheet; no 4th hero). */
   var CAST = ['green', 'blue', 'red'];
@@ -1142,6 +1177,19 @@
       this.ninja = new cc.Sprite(texFor(this.palette, 'idle'));
       this.ninja.setAnchorPoint(0.5, 0);
       var sz = this.ninja.getContentSize();
+      /* c39: if idle PNG not in cache yet, procedural pose so first paint is not empty stage. */
+      if (!sz || sz.height < 8) {
+        var ph = proceduralNinjaTex(this.palette);
+        if (ph) {
+          try {
+            this.ninja.setTexture(ph);
+            var pr = ph.getContentSize && ph.getContentSize();
+            if (pr && pr.height > 2) this.ninja.setTextureRect(cc.rect(0, 0, pr.width, pr.height));
+            sz = this.ninja.getContentSize();
+            idleTexH = (pr && pr.height) || idleTexH;
+          } catch (ePh) {}
+        }
+      }
       var texH = idleTexH;
       if (sz && sz.height > 8) texH = sz.height;
       /* Critical: never ||100 — that made desktop ninja ~2.4× too tall when contentSize was 0. */
@@ -2237,29 +2285,44 @@
                 try { cc.textureCache.addImage(src); } catch (eD) {}
               }, function () {});
             });
+            /* portraits after first playable frame — do not contend with idle on cold open */
+            setTimeout(hydrateCastStrip, 80);
           }
 
-          /* c39 hard cap: no 30s pure-brown / no-ninja wait */
+          /* c39 hard cap: phone landscape cold-open — don't sit on empty canvas under HUD */
           setTimeout(function () {
             if (!started) {
               setBootMsg('小宇：资源偏慢，先开玩…');
               goPlay();
             }
-          }, 2500);
+          }, 1200);
 
           var left = RES_CRITICAL.length;
           setBootMsg('小宇加载中…草地与忍者');
           if (!left) { goPlay(); return; }
+
+          function onCriticalOk(src, img) {
+            try { cc.textureCache.addImage(src); } catch (e1) {}
+            if (src.indexOf('idle.png') >= 0 && img && img.naturalHeight) idleTexH = img.naturalHeight;
+            left--;
+            if (left <= 0) goPlay();
+          }
+          function onCriticalBad(src) {
+            setBootMsg('小宇：有图偏慢，继续加载…');
+            left--;
+            if (left <= 0) goPlay();
+          }
+
           RES_CRITICAL.forEach(function (src) {
+            /* reuse parse-time idle if already decoded */
+            if (src.indexOf('idle.png') >= 0 && earlyIdleImg && earlyIdleImg.complete && earlyIdleImg.naturalHeight) {
+              onCriticalOk(src, earlyIdleImg);
+              return;
+            }
             preloadImage(src, function (img) {
-              try { cc.textureCache.addImage(src); } catch (e1) {}
-              if (src.indexOf('idle.png') >= 0 && img && img.naturalHeight) idleTexH = img.naturalHeight;
-              left--;
-              if (left <= 0) goPlay();
+              onCriticalOk(src, img);
             }, function () {
-              setBootMsg('小宇：有图偏慢，继续加载…');
-              left--;
-              if (left <= 0) goPlay();
+              onCriticalBad(src);
             });
           });
 
@@ -2276,11 +2339,16 @@
       try { cc.game.run('gameCanvas'); } catch (e) { bootErr('启动失败：' + e); }
     }
 
-    /* c39: start engine immediately (do not wait on canopy-night decode). */
+    /* c39: start engine immediately (no window.load; no canopy gate). */
     setBootMsg('小宇打开关卡…');
     startEngine();
   }
 
-  if (document.readyState === 'complete') boot();
-  else window.addEventListener('load', boot);
+  /* c39: never wait for window.load — castStrip JPGs + CSS assets used to delay
+   * engine start 0.9–3s while HUD+stage bed already showed (empty transparent canvas). */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
 })();

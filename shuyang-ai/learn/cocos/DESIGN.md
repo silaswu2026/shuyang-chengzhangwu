@@ -142,7 +142,7 @@
 
 已经做上的（c39 · 2026-11-01）：
 
-- **试玩首帧加速**：`custom-play` 不再等夜林大图/全套走帧才 `runScene`；先载 idle+dirt+grass（≤2.5s 硬顶）即出草线+忍者；夜林与走/跳/击帧后贴；PeerJS 改本地 `vendor/peerjs` 免 unpkg 挂死；加载中 `#msg` 诚实提示。土带仍 `gy≈H*0.28`；`?net=1` 单人优先与 c36 着色不挡开场保留。
+- **试玩冷开首帧忍者**：横屏曾测到冷开 ~0.9–3.2s 只有夜景森林+HUD、透明画布无忍者（非整屏棕底；暖刷 ~0.2s OK）。根因：`boot` 等 `window.load`，被 `#castStrip` 三张大肖像 JPG（~0.9MB）+ CSS `canopy-night` 床图拖住，期间 HTML HUD/床已可见。现：①脚本末立刻 boot（不等 load）；②肖像改 `data-src` 首帧后再灌；③CSS 床纯 `#5a3a24`（夜林仍 JS 并行后贴）；④`<link rel=preload>` idle/dirt/grass；⑤idle 解析期预载；⑥≤1.2s 硬顶开玩，idle 未到则 `WBNinjaWalk` 程序化占位。保留 critical 路径与 c38 chip / c37 踩踏 / c36 着火。正式名 **伍澍暘** / 助手 **小宇**。
 
 
 ## 旧→新画面对照（parity）
