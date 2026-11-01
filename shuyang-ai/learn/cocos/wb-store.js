@@ -1,6 +1,7 @@
 /**
- * Tonight workbench save shape. Same key and v1.1 fields as level-design.html
- * persistLevel + mSave. No Cocos calls, so a node check can load this file.
+ * Tonight workbench save. v1.2 adds wallet (coins, weapons, equipped)
+ * and still writes the v1.1 tiles / traps / mine fields.
+ * No Cocos calls, so a node check can load this file.
  */
 (function (root) {
   var KEY = 'xygo-custom-level';
@@ -21,6 +22,16 @@
     };
   }
 
+  var WEAPONS = {
+    dart: { id: 'dart', name: '飞镖', price: 15 },
+    blade: { id: 'blade', name: '砍刀', price: 35 },
+    gun: { id: 'gun', name: '枪', price: 60 }
+  };
+
+  function blankWallet() {
+    return { coins: 0, weapons: [], equipped: null };
+  }
+
   function createState() {
     return {
       interval: 3,
@@ -34,12 +45,16 @@
       sel: null,
       selX: -1,
       map: blankMap(),
-      mp: defaultMp()
+      mp: defaultMp(),
+      wallet: blankWallet()
     };
   }
 
-  function isTrap(k) { return k === 'spike' || k === 'fire'; }
+  function isTrap(k) { return k === 'spike' || k === 'fire' || k === 'rock' || k === 'mist' || k === 'spring'; }
   function isReward(k) { return k === 'coin' || k === 'shield'; }
+  function isPlaceable(k) {
+    return k === 'spike' || k === 'fire' || k === 'coin' || k === 'spring' || k === 'mist' || k === 'rock';
+  }
 
   function fCnt(I) { return Math.floor(12 / I); }
   function fHit(I) { return 5 - I; }
@@ -54,7 +69,8 @@
   function mEst(map, mp) {
     var sh = 0;
     return map.map(function (k, x) {
-      if (k === 'shield') { sh++; return 0; }
+      if (k === 'shield' || k === 'spring' || k === 'mist') { if (k === 'shield') sh++; return 0; }
+      if (k === 'rock') return 1;
       if (!isTrap(k)) return 0;
       var p = mp[k] || {};
       var n;
@@ -126,6 +142,19 @@
       if (tr.fire.damage) s.mp.fire.damage = tr.fire.damage;
       if (tr.fire.dur) s.mp.fire.dur = tr.fire.dur;
     }
+    var wal = raw.wallet;
+    if (wal && typeof wal === 'object') {
+      if (typeof wal.coins === 'number' && wal.coins >= 0) s.wallet.coins = wal.coins | 0;
+      if (Array.isArray(wal.weapons)) {
+        s.wallet.weapons = [];
+        wal.weapons.forEach(function (id) {
+          if (WEAPONS[id] && s.wallet.weapons.indexOf(id) < 0) s.wallet.weapons.push(id);
+        });
+      }
+      if (wal.equipped && WEAPONS[wal.equipped] && s.wallet.weapons.indexOf(wal.equipped) >= 0) {
+        s.wallet.equipped = wal.equipped;
+      }
+    }
     for (var i = 0; i < MC; i++) {
       if (s.map[i] === 'spike' || s.map[i] === 'fire') {
         s.sel = s.map[i];
@@ -167,11 +196,12 @@
         burn: state.mp.fire.dur
       };
     }
-    if (used.rock && prev.traps && prev.traps.rock) tr.rock = prev.traps.rock;
-    if (used.mist && prev.traps && prev.traps.mist) tr.mist = prev.traps.mist;
+    if (used.rock) tr.rock = { damage: 1 };
+    if (used.mist) tr.mist = { slow: 1.6 };
+    if (used.spring) tr.spring = { power: 820 };
     var d = {};
     Object.keys(prev).forEach(function (k) { d[k] = prev[k]; });
-    d.version = '1.1';
+    d.version = '1.2';
     d.theme = 'swamp';
     d.cols = MC;
     d.rows = ROWS;
@@ -196,6 +226,11 @@
     d.hardest = state.hardest || '';
     d.add_one = state.add_one || '';
     d.who = state.who || '小雨';
+    d.wallet = {
+      coins: state.wallet.coins | 0,
+      weapons: state.wallet.weapons.slice(),
+      equipped: state.wallet.equipped || null
+    };
     d.savedAt = new Date().toISOString();
     d.by = prev.by || '伍澍暘';
     storage.setItem(KEY, JSON.stringify(d));
@@ -228,13 +263,35 @@
     if (isTrap(tool) && x < SAFE0) {
       return { ok: false, flash: '开头要空着（像马里奥出生点）' };
     }
-    if (tool !== 'spike' && tool !== 'fire' && tool !== 'coin') {
+    if (!isPlaceable(tool)) {
       return { ok: false, flash: '' };
     }
     state.map[x] = tool;
     state.sel = tool;
     state.selX = x;
     return { ok: true, flash: '' };
+  }
+
+  function grantCoins(state, n) {
+    n = n | 0;
+    if (!state.wallet) state.wallet = blankWallet();
+    state.wallet.coins = Math.max(0, (state.wallet.coins | 0) + n);
+    return state.wallet.coins;
+  }
+
+  function buy(state, id) {
+    var spec = WEAPONS[id];
+    if (!spec) return { ok: false, flash: '' };
+    if (!state.wallet) state.wallet = blankWallet();
+    if (state.wallet.weapons.indexOf(id) >= 0) {
+      state.wallet.equipped = id;
+      return { ok: true, flash: '装备了' + spec.name, equipped: true };
+    }
+    if ((state.wallet.coins | 0) < spec.price) return { ok: false, flash: '金币不够' };
+    state.wallet.coins -= spec.price;
+    state.wallet.weapons.push(id);
+    state.wallet.equipped = id;
+    return { ok: true, flash: '买下' + spec.name };
   }
 
   function setNum(state, value) {
@@ -261,6 +318,10 @@
     fCnt: fCnt,
     fHit: fHit,
     zone: zone,
-    isTrap: isTrap
+    isTrap: isTrap,
+    isPlaceable: isPlaceable,
+    WEAPONS: WEAPONS,
+    grantCoins: grantCoins,
+    buy: buy
   };
 })(typeof window !== 'undefined' ? window : this);

@@ -28,6 +28,8 @@
 
   var sceneRef = null, spikeTex = null, fireTex = null, coinTex = null, flagTex = null;
   var starTex = null, shurikenTex = null, crocTex = null;
+  var slimeTex = null, springTex = null, mistTex = null, rockTex = null;
+  var dartTex = null, gunTex = null, bladeTex = null;
   var forestImg = null;
   var level = null, lastFitKey = '', rebuilding = false;
   var inp = { left: false, right: false, jump: false, jumpPressed: false, throwPressed: false };
@@ -249,7 +251,8 @@
       vs_expect: d.vs_expect || d.reflectExpect || '',
       spawnC: 2,
       goalC: goalC,
-      bossC: bossC
+      bossC: bossC,
+      wallet: readWallet(d.wallet)
     };
   }
 
@@ -327,6 +330,70 @@
     g.moveTo(40, 8); g.lineTo(40, 2); g.lineTo(44, 6); g.lineTo(48, 0); g.lineTo(52, 6); g.lineTo(56, 2); g.lineTo(56, 8); g.fill();
     return texFromCanvas(c);
   }
+  function buildShotTex(hex, w, h) {
+    var c = document.createElement('canvas'); c.width = w; c.height = h;
+    var g = c.getContext('2d');
+    g.fillStyle = hex;
+    g.beginPath();
+    g.ellipse(w / 2, h / 2, w / 2 - 1, h / 2 - 1, 0, 0, 7);
+    g.fill();
+    return texFromCanvas(c);
+  }
+  function buildSlimeTex() {
+    var c = document.createElement('canvas'); c.width = 48; c.height = 36;
+    var g = c.getContext('2d');
+    g.fillStyle = '#67d36a';
+    g.beginPath(); g.ellipse(24, 22, 18, 12, 0, 0, 7); g.fill();
+    g.fillStyle = '#fff';
+    g.beginPath(); g.arc(18, 18, 3, 0, 7); g.arc(30, 18, 3, 0, 7); g.fill();
+    g.fillStyle = '#17301c';
+    g.beginPath(); g.arc(19, 18, 1.4, 0, 7); g.arc(31, 18, 1.4, 0, 7); g.fill();
+    return texFromCanvas(c);
+  }
+  function buildPropTex(kind) {
+    var c = document.createElement('canvas'); c.width = 48; c.height = 48;
+    var g = c.getContext('2d');
+    if (kind === 'spring') {
+      g.strokeStyle = '#d5dde6'; g.lineWidth = 3;
+      g.beginPath(); g.moveTo(24, 44);
+      for (var i = 1; i <= 7; i++) g.lineTo(24 + (i % 2 ? -8 : 8), 44 - i * 4);
+      g.stroke();
+      g.fillStyle = '#e23b3b'; g.fillRect(10, 8, 28, 8);
+    } else if (kind === 'mist') {
+      g.fillStyle = 'rgba(150,80,190,0.55)';
+      g.beginPath(); g.ellipse(24, 28, 18, 12, 0, 0, 7); g.fill();
+      g.fillStyle = 'rgba(220,180,255,0.7)';
+      g.beginPath(); g.ellipse(16, 24, 7, 6, 0, 0, 7); g.ellipse(30, 30, 8, 6, 0, 0, 7); g.fill();
+    } else {
+      g.fillStyle = '#6d6358';
+      g.beginPath(); g.moveTo(8, 40); g.lineTo(14, 18); g.lineTo(24, 10); g.lineTo(38, 20); g.lineTo(42, 40); g.closePath(); g.fill();
+      g.fillStyle = 'rgba(255,220,160,0.4)';
+      g.beginPath(); g.moveTo(16, 28); g.lineTo(24, 14); g.lineTo(28, 26); g.closePath(); g.fill();
+    }
+    return texFromCanvas(c);
+  }
+  var WEAPON_NAMES = { dart: '飞镖', blade: '砍刀', gun: '枪' };
+  function readWallet(raw) {
+    var w = { coins: 0, weapons: [], equipped: null };
+    if (!raw || typeof raw !== 'object') return w;
+    if (typeof raw.coins === 'number' && raw.coins >= 0) w.coins = raw.coins | 0;
+    if (Array.isArray(raw.weapons)) {
+      raw.weapons.forEach(function (id) {
+        if (WEAPON_NAMES[id] && w.weapons.indexOf(id) < 0) w.weapons.push(id);
+      });
+    }
+    if (raw.equipped && WEAPON_NAMES[raw.equipped] && w.weapons.indexOf(raw.equipped) >= 0) w.equipped = raw.equipped;
+    return w;
+  }
+  function writeWallet(w) {
+    try {
+      var d = JSON.parse(localStorage.getItem(KEY) || '{}') || {};
+      if (!d || typeof d !== 'object') d = {};
+      d.version = '1.2';
+      d.wallet = { coins: w.coins | 0, weapons: (w.weapons || []).slice(), equipped: w.equipped || null };
+      localStorage.setItem(KEY, JSON.stringify(d));
+    } catch (eW) {}
+  }
 
   function updHUD(hp, coins) {
     var left = Math.max(0, hp);
@@ -338,6 +405,11 @@
     }
     var c = $('coins');
     if (c) c.textContent = '🪙 ' + coins;
+    var we = $('weapon');
+    if (we && sceneRef) {
+      var id = sceneRef.weapon;
+      we.textContent = '武器 ' + (WEAPON_NAMES[id] || '无');
+    }
     var bossBar = $('bossBar');
     if (bossBar && sceneRef && sceneRef.boss) {
       var b = sceneRef.boss;
@@ -601,6 +673,13 @@
           sp.setVisible(it.type === 'fire');
           this.world.addChild(sp, 6);
           this.traps.push({ kind: it.type, x: px, sp: sp, w: T * 0.7 });
+        } else if (it.type === 'spring' || it.type === 'mist' || it.type === 'rock') {
+          var prop = new cc.Sprite(it.type === 'spring' ? springTex : it.type === 'mist' ? mistTex : rockTex);
+          prop.setAnchorPoint(0.5, 0);
+          prop.setPosition(px, this.gy - 2);
+          prop.setScale(it.type === 'rock' ? 1.1 : 1.3);
+          this.world.addChild(prop, 6);
+          this.traps.push({ kind: it.type, x: px, sp: prop, w: T * 0.55 });
         } else if (it.type === 'coin') {
           var cn = new cc.Sprite(coinTex);
           cn.setPosition(px, this.gy + T * 0.9);
@@ -647,6 +726,29 @@
       this.world.addChild(this.bossSp, 8);
       this.bossSp.setVisible(true);
 
+      this.critters = [];
+      var spots = [level.bossC - 8, level.bossC - 4];
+      var ci;
+      for (ci = 0; ci < spots.length; ci++) {
+        var cx = Math.max(level.spawnC + 4, spots[ci]) * T + T * 0.5;
+        var body = new cc.Sprite(slimeTex);
+        body.setAnchorPoint(0.5, 0);
+        body.setPosition(cx, this.gy);
+        body.setScale(1.15);
+        this.world.addChild(body, 7);
+        this.critters.push({ x: cx, hp: 2, max: 2, alive: true, hurtT: 0, sp: body, home: cx });
+      }
+
+      this.wallet = level.wallet || readWallet(null);
+      this.walletCoins = this.wallet.coins | 0;
+      this.weapon = this.wallet.equipped;
+      this.cool = 0;
+      this.slowT = 0;
+      this.fog = new cc.LayerColor(cc.color(120, 70, 170, 255), 4000, 4000);
+      this.fog.setPosition(-500, -500);
+      this.fog.setOpacity(0);
+      this.addChild(this.fog, 40);
+
       this.ninja = new cc.Sprite(SP + 'idle.png');
       this.ninja.setAnchorPoint(0.5, 0);
       var sz = this.ninja.getContentSize();
@@ -671,7 +773,10 @@
       this.grounded = true;
       this.face = 1;
       this.hp = MAX_HP;
-      this.coins = 0;
+      this.coins = this.walletCoins || 0;
+      this.cool = 0;
+      this.slowT = 0;
+      if (this.fog) this.fog.setOpacity(0);
       this.invuln = 0;
       this.playing = true;
       this.won = false;
@@ -689,6 +794,15 @@
         this.bossSp.setOpacity(255);
         this.bossSp.setPosition(this.boss.x, this.boss.y);
       }
+      if (this.critters) {
+        this.critters.forEach(function (cr) {
+          cr.alive = true;
+          cr.hp = cr.max;
+          cr.hurtT = 0;
+          cr.x = cr.home;
+          if (cr.sp) { cr.sp.setVisible(true); cr.sp.setOpacity(255); cr.sp.setPosition(cr.home, this.gy); }
+        }, this);
+      }
       this.ninja.setPosition(this.px, this.py);
       this.ninja.setTexture(SP + 'idle.png');
       this.ninja.setOpacity(255);
@@ -697,8 +811,93 @@
       this._layoutBg(this.camX);
       hideResult();
       updHUD(this.hp, this.coins);
+      var we0 = $('weapon');
+      if (we0) we0.textContent = '武器 ' + (WEAPON_NAMES[this.weapon] || '无');
       inp.jumpPressed = false;
       inp.throwPressed = false;
+    },
+    _earn: function (n) {
+      this.coins += n;
+      this.walletCoins = this.coins;
+      this.wallet.coins = this.coins;
+      writeWallet(this.wallet);
+      updHUD(this.hp, this.coins);
+    },
+    _spawnShot: function (dmg, speed, life, vy, tex) {
+      var sp = new cc.Sprite(tex || shurikenTex);
+      var x = this.px + this.face * 20;
+      var y = this.py + DRAW_H * 0.55;
+      sp.setPosition(x, y);
+      this.world.addChild(sp, 12);
+      this.throws.push({ sp: sp, x: x, y: y, vx: this.face * speed, vy: vy || 0, life: life, dmg: dmg });
+    },
+    _hurtAt: function (x, y, reach, dmg) {
+      var i;
+      if (this.boss && this.boss.alive && this.boss.hurtT <= 0 && Math.abs(x - this.bossSp.getPositionX()) < reach && Math.abs(y - (this.boss.y + 28)) < reach) {
+        this.boss.hp -= dmg;
+        this.boss.hurtT = 0.35;
+        if (this.boss.hp <= 0) {
+          this.boss.alive = false;
+          this.bossSp.setVisible(false);
+          this._earn(8);
+          this._coinBurst(this.boss.x, this.boss.y + 40);
+          $('msg').textContent = '鳄王倒下！+8';
+          var bb = $('bossBar'); if (bb) bb.classList.remove('on');
+        }
+        updHUD(this.hp, this.coins);
+        return true;
+      }
+      if (this.critters) {
+        for (i = 0; i < this.critters.length; i++) {
+          var cr = this.critters[i];
+          if (!cr.alive || cr.hurtT > 0) continue;
+          if (Math.abs(x - cr.x) < reach && Math.abs(y - (this.gy + 16)) < reach) {
+            cr.hp -= dmg;
+            cr.hurtT = 0.25;
+            if (cr.hp <= 0) {
+              cr.alive = false;
+              cr.sp.setVisible(false);
+              this._earn(1);
+              $('msg').textContent = '小怪 +1';
+            }
+            updHUD(this.hp, this.coins);
+            return true;
+          }
+        }
+      }
+      return false;
+    },
+    _coinBurst: function (x, y) {
+      var i;
+      for (i = 0; i < 4; i++) {
+        var sp = new cc.Sprite(coinTex);
+        sp.setPosition(x + (i - 1.5) * 16, y);
+        this.world.addChild(sp, 12);
+        this.coinNodes.push({ x: x + (i - 1.5) * 18, sp: sp, got: true, pile: true, life: 0.9 });
+      }
+    },
+    _attack: function () {
+      if (this.cool > 0) return;
+      var w = this.weapon;
+      if (w === 'blade') {
+        this.cool = 0.45;
+        this._hurtAt(this.px + this.face * 36, this.py + 24, 56, 2);
+        this._spawnShot(0, 30, 0.16, 0, bladeTex);
+        return;
+      }
+      if (w === 'gun') {
+        this.cool = 0.9;
+        this._spawnShot(4, 520, 1.35, 0, gunTex);
+        return;
+      }
+      if (w === 'dart') {
+        this.cool = 0.4;
+        this._spawnShot(1, 340, 0.85, -70, dartTex);
+        this._spawnShot(1, 360, 0.9, 0, dartTex);
+        this._spawnShot(1, 340, 0.85, 70, dartTex);
+        return;
+      }
+      if (this.throws.length < 3) this._spawnShot(1, 280, 1.2, 0, shurikenTex);
     },
     _groundYAt: function (px) {
       var c = Math.floor(px / T);
@@ -722,7 +921,7 @@
           ff.n.setOpacity(90 + Math.floor((Math.sin(elapsed * 5 + i) * 0.5 + 0.5) * 140));
         }
 
-        var speed = 200; /* ≈ xy-go MOVE */
+        var speed = this.slowT > 0 ? 90 : 200; /* ≈ xy-go MOVE */
         if (inp.left && !inp.right) { this.vx = -speed; this.face = -1; }
         else if (inp.right && !inp.left) { this.vx = speed; this.face = 1; }
         else this.vx *= Math.max(0, 1 - dt * 12);
@@ -734,14 +933,14 @@
         }
         inp.jumpPressed = false;
 
+        if (this.cool > 0) this.cool -= dt;
+        if (this.slowT > 0) {
+          this.slowT -= dt;
+          if (this.fog) this.fog.setOpacity(Math.max(0, Math.floor(this.slowT / 1.6 * 110)));
+        } else if (this.fog) this.fog.setOpacity(0);
         if (inp.throwPressed) {
           inp.throwPressed = false;
-          if (this.throws.length < 3) {
-            var sh = new cc.Sprite(shurikenTex);
-            sh.setPosition(this.px + this.face * 18, this.py + DRAW_H * 0.55);
-            this.world.addChild(sh, 12);
-            this.throws.push({ sp: sh, x: this.px + this.face * 18, y: this.py + DRAW_H * 0.55, vx: this.face * 280, life: 1.2 });
-          }
+          this._attack();
         }
 
         this.vy -= 1650 * dt; /* ≈ xy-go GRAV */
@@ -802,14 +1001,38 @@
 
         for (i = 0; i < this.traps.length; i++) {
           var tr = this.traps[i];
-          var raised = tr.kind === 'fire' ? true : spikeUp;
+          var kind = tr.kind;
+          if (kind === 'spring' || kind === 'mist' || kind === 'rock') {
+            var touch = Math.abs(this.px - tr.x) < tr.w && this.py < this.gy + DRAW_H * 0.85;
+            if (kind === 'spring' && touch && this.grounded) {
+              this.vy = 860;
+              this.grounded = false;
+              this.ninja.setTexture(SP + 'jump_0.png');
+            } else if (kind === 'mist' && touch) {
+              this.slowT = 1.6;
+            } else if (kind === 'rock' && touch && this.py < this.gy + 28) {
+              this.px = tr.x + (this.px < tr.x ? -1 : 1) * (tr.w + 6);
+              if (this.invuln <= 0) {
+                this.hp -= 1;
+                this.invuln = 0.8;
+                this.ninja.setTexture(SP + 'knock_0.png');
+                updHUD(this.hp, this.coins);
+                if (this.hp <= 0) {
+                  this.hp = 0; this.dead = true; this.playing = false;
+                  showResult(false, 0, this.coins);
+                }
+              }
+            }
+            continue;
+          }
+          var raised = kind === 'fire' ? true : spikeUp;
           tr.sp.setVisible(raised);
           if (raised && this.invuln <= 0) {
             var near = Math.abs(this.px - tr.x) < tr.w && this.py < this.gy + DRAW_H * 0.7;
-            var key = tr.kind + ':' + i + ':' + Math.floor(elapsed / I);
+            var key = kind + ':' + i + ':' + Math.floor(elapsed / I);
             if (near && !this.hitKeys[key]) {
               this.hitKeys[key] = 1;
-              this.hp -= (tr.kind === 'fire' ? dmgF : dmgS);
+              this.hp -= (kind === 'fire' ? dmgF : dmgS);
               this.invuln = 1.0;
               this.ninja.setTexture(SP + 'knock_0.png');
               updHUD(this.hp, this.coins);
@@ -855,26 +1078,46 @@
           }
         }
 
-        /* shurikens */
+        if (this.critters) {
+          for (i = 0; i < this.critters.length; i++) {
+            var cr = this.critters[i];
+            if (!cr.alive) continue;
+            cr.hurtT = Math.max(0, cr.hurtT - dt);
+            cr.x += Math.sin(elapsed * 1.4 + i) * 18 * dt;
+            cr.sp.setPosition(cr.x, this.gy);
+            cr.sp.setOpacity(cr.hurtT > 0 ? 140 : 255);
+            if (this.invuln <= 0 && Math.abs(this.px - cr.x) < T * 0.7 && this.py < this.gy + DRAW_H * 0.8) {
+              this.hp -= 1;
+              this.invuln = 0.8;
+              this.ninja.setTexture(SP + 'knock_0.png');
+              updHUD(this.hp, this.coins);
+              if (this.hp <= 0) {
+                this.hp = 0; this.dead = true; this.playing = false;
+                showResult(false, 0, this.coins);
+              }
+            }
+          }
+        }
+        for (i = this.coinNodes.length - 1; i >= 0; i--) {
+          var pile = this.coinNodes[i];
+          if (!pile.pile) continue;
+          pile.life -= dt;
+          pile.sp.setPosition(pile.x, this.gy + 50 + (0.9 - pile.life) * 30);
+          if (pile.life <= 0) {
+            pile.sp.removeFromParent();
+            this.coinNodes.splice(i, 1);
+          }
+        }
+
+        /* shots */
         for (i = this.throws.length - 1; i >= 0; i--) {
           var th = this.throws[i];
           th.life -= dt;
           th.x += th.vx * dt;
+          th.y += (th.vy || 0) * dt;
           th.sp.setPosition(th.x, th.y);
-          th.sp.setRotation(th.sp.getRotation() + dt * 720);
-          var hitBoss = this.boss && this.boss.alive && Math.abs(th.x - this.bossSp.getPositionX()) < T * 1.4 && Math.abs(th.y - (this.boss.y + 30)) < 40;
-          if (hitBoss && this.boss.hurtT <= 0) {
-            this.boss.hp -= 1;
-            this.boss.hurtT = 0.4;
-            updHUD(this.hp, this.coins);
-            if (this.boss.hp <= 0) {
-              this.boss.alive = false;
-              this.bossSp.setVisible(false);
-              $('msg').textContent = '鳄王倒下！冲向旗杆';
-              var bb = $('bossBar'); if (bb) bb.classList.remove('on');
-            }
-            th.life = 0;
-          }
+          th.sp.setRotation(th.sp.getRotation() + dt * (this.weapon === 'gun' ? 0 : 720));
+          if ((th.dmg || 0) > 0 && this._hurtAt(th.x, th.y, T * 1.1, th.dmg)) th.life = 0;
           if (th.life <= 0) {
             th.sp.removeFromParent();
             this.throws.splice(i, 1);
@@ -1158,6 +1401,13 @@
           flagTex = buildFlagTex();
           shurikenTex = buildShurikenTex();
           crocTex = buildCrocTex();
+          slimeTex = buildSlimeTex();
+          springTex = buildPropTex('spring');
+          mistTex = buildPropTex('mist');
+          rockTex = buildPropTex('rock');
+          dartTex = buildShotTex('#d5dde6', 14, 6);
+          gunTex = buildShotTex('#ffd166', 10, 10);
+          bladeTex = buildShotTex('#f4f7fb', 36, 14);
           var others = RES.filter(function (s) { return s.indexOf('canopy-night') < 0; });
           var left = others.length;
           function tick() {
