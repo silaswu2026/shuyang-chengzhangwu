@@ -3,7 +3,7 @@
  * 画面按旧课件今晚路径的插画来拼：天空、远山、草皮、水面、钩子、鱼，
  * 道具用 wb-art 小图。全是 Cocos 节点，不是整页截图。
  * 存档 localStorage xygo-custom-level v1.2（wallet + audio）。试玩 custom-play.html。
- * wb7: 画布留在壳内（禁 viewport fixed）· 喇叭不挡④ · 手机顶栏不缠字 · ④步/顶栏露出联机。
+ * wb72: 手机横屏壳入框 · 顶栏六步信息架构 · 旧四场景仍可跑 · 联机入口。
  */
 (function () {
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
@@ -11,6 +11,8 @@
   var AV = ['../../avatars/xiaoyu.jpg', '../../avatars/dad-wuxin.jpg', '../../avatars/mom-chunyan.jpg'];
   var STEPS = ['① 看图一句', '② 频率', '③ 设计一小关', '④ 玩完'];
   var STEPS_PHONE = ['①', '②', '③', '④'];
+  var TIP6 = ['①看图', '②频率', '③摆关', '④装备', '⑤觉察', '⑥听选'];
+  var TIP6_PHONE = ['①', '②', '③', '④', '⑤', '⑥'];
   var STORE = window.WBStore;
   var ART = window.WBArt;
   var AUDIO = window.WBAudio;
@@ -376,15 +378,26 @@
       }
     });
     var phone = isPhoneShell();
-    var labels = phone ? STEPS_PHONE : STEPS;
-    /* leave room for 喇叭 + dad/mom avatars on the right */
-    var centers = phone ? [120, 250, 400, 550] : [150, 330, 520, 700];
-    var bw = phone ? 78 : 150;
+    var land = false;
+    try { land = window.innerWidth > window.innerHeight && window.innerHeight < 520; } catch (eL) {}
+    var labels = phone ? TIP6_PHONE : TIP6;
+    /* six tip chips; leave room for 喇叭 + dad/mom avatars on the right */
+    var centers = phone
+      ? (land ? [78, 168, 258, 348, 438, 528] : [90, 190, 290, 390, 490, 590])
+      : [95, 230, 365, 500, 640, 780];
+    var tipOn = step <= 2 ? step : 4;
     labels.forEach(function (name, i) {
-      var on = i === step;
-      var wBtn = phone ? bw : (i === 2 ? 168 : 150);
-      button(layer, name, centers[i], H - 26, wBtn, phone ? 40 : 34, on ? GREEN : NAVY, WHITE, function () {
-        later(function () { show(i); });
+      var on = i === tipOn;
+      var wBtn = phone ? (land ? 72 : 78) : (i === 2 || i === 4 ? 118 : 108);
+      button(layer, name, centers[i], H - 26, wBtn, phone ? (land ? 36 : 40) : 34, on ? GREEN : NAVY, WHITE, function () {
+        later(function () {
+          if (i <= 2) show(i);
+          else if (i === 3) show(2); /* ④装备: shop lives in 摆关 scene */
+          else if (i === 4) show(3);
+          else if (i === 5) {
+            try { if (window.WBAudio && WBAudio.openHorn) WBAudio.openHorn(); } catch (eM) {}
+          }
+        });
       });
     });
     addAudioChrome(layer, step);

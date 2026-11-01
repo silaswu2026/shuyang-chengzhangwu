@@ -5,7 +5,7 @@
 <meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0f1230">
-<meta name="wb-build" content="vw41">
+<meta name="wb-build" content="vw42">
 <title>AI办学小屋 · 课程3 · 可视化关卡工坊</title>
 <style>
 :root{
@@ -83,17 +83,45 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   background:rgba(255,224,122,.08);border:1px solid var(--stroke)}
 .companion img,.companion .face{width:48px;height:48px;border-radius:50%;background:#24306a;
   display:grid;place-items:center;font-size:24px}
+/* Portrait phone: bezel hugs 16:9 stage (no tall empty gold frame) */
+.phone-bezel{height:auto;max-height:calc(100vh - 72px)}
+.phone-bezel .canvas-slot{width:min(100%,calc((100vh - 110px) * 16 / 9));margin:0 auto;max-height:calc(100vh - 110px)}
 @media (max-width:720px){
   #stage{padding:52px 4px 4px}
-  #shell{max-height:calc(100vh - 56px);height:calc(100vh - 56px)}
-  .phone-bezel{width:min(100vw - 8px,420px);height:100%;max-height:calc(100vh - 56px);border-radius:28px;padding:10px 8px 12px}
+  #shell{max-height:calc(100vh - 56px);height:auto;min-height:0}
+  .phone-bezel{width:min(100vw - 8px,420px);height:auto;max-height:calc(100vh - 56px);border-radius:28px;padding:10px 8px 12px}
   #shell.desktop #desktopSlot{width:min(100%,calc((100vh - 120px) * 16 / 9));height:auto;aspect-ratio:16/9;
     max-height:min(70vh,calc(100vh - 120px))}
-  .phone-bezel .canvas-slot{max-height:calc(100% - 24px)}
+  .phone-bezel .canvas-slot{width:100%;max-height:calc(100vh - 100px)}
   #rail{right:6px;gap:6px}
   .rail-btn{width:46px;height:46px;border-radius:14px;font-size:18px}
   .chip{font-size:11px;padding:5px 8px;max-width:calc(100vw - 130px);border-radius:14px}
   .shell-toggle button{padding:5px 8px;font-size:11px}
+}
+/* PRODUCT main device: phone landscape ~844×390 — stage fills shell, no letterbox waste */
+@media (orientation:landscape) and (max-height:520px){
+  #stage{padding:34px 4px 4px;align-items:center}
+  #topbar{padding:2px 6px}
+  .chip{font-size:10px;padding:3px 7px;max-width:calc(100vw - 150px);border-radius:12px;gap:2px 6px}
+  .shell-toggle button{padding:4px 7px;font-size:10px}
+  #shell{width:100%;height:calc(100vh - 38px);max-height:calc(100vh - 38px)}
+  .phone-bezel{
+    flex-direction:row;align-items:center;justify-content:center;
+    width:min(100vw - 8px, calc((100vh - 42px) * 16 / 9 + 28px));
+    height:calc(100vh - 42px);max-height:calc(100vh - 42px);
+    padding:6px 10px;border-radius:22px;gap:8px
+  }
+  .phone-notch{width:8px;height:26%;margin:0;border-radius:8px;flex:0 0 8px}
+  .phone-bezel .canvas-slot{
+    flex:1 1 auto;width:auto;height:100%;max-height:100%;
+    aspect-ratio:16/9;max-width:calc(100% - 18px);margin:0
+  }
+  #shell.desktop #desktopSlot{
+    width:min(100vw - 12px, calc((100vh - 46px) * 16 / 9));
+    height:auto;max-height:calc(100vh - 46px);aspect-ratio:16/9
+  }
+  #rail{top:auto;bottom:6px;right:6px;transform:none;flex-direction:row;gap:4px}
+  .rail-btn{width:40px;height:40px;border-radius:12px;font-size:16px}
 }
 </style>
 <script>document.ccConfig={debugMode:0,frameRate:60,id:"gameCanvas",renderMode:1,showFPS:false};</script>
@@ -102,7 +130,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
 <div id="topbar">
   <div class="chip"><span>🏡 伍澍暘 · 课程3</span>
     <a href="../../../index.html">回小屋</a>
-    <a href="custom-play.html?v=c32&amp;net=1">联机</a>
+    <a href="custom-play.html?v=c33&amp;net=1">联机</a>
     <a href="../../../xy-go/?custom=1">xy-go联网</a>
   </div>
   <div class="shell-toggle" id="shellToggle">
@@ -170,7 +198,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   </div>
 </aside>
 
-<!-- vw4: honest boot if canvas never lands in the phone frame -->
+<!-- vw42: landscape phone shell + honest boot if canvas never lands in the phone frame -->
 <script>
 (function(){
   var cleared=false;
@@ -212,10 +240,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
 })();
 </script>
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
-<script src="wb-store.js?v=vw41"></script>
-<script src="wb-art.js?v=vw41"></script>
+<script src="wb-store.js?v=vw42"></script>
+<script src="wb-art.js?v=vw42"></script>
 <script src="wb-audio.js?v=wb71"></script>
-<script src="visual-workbench.js?v=vw41"></script>
+<script src="visual-workbench.js?v=vw42"></script>
 <script>
 (function () {
   var shell = document.getElementById('shell');
@@ -282,7 +310,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   }
   document.getElementById('btnNet').onclick = function () {
     try { if (window.WB && window.WB.data && window.WBStore) window.WBStore.save(localStorage, window.WB.data); } catch (e0) {}
-    location.href = 'custom-play.html?v=c32&net=1';
+    location.href = 'custom-play.html?v=c33&net=1';
   };
   document.getElementById('btnShop').onclick = function () { openDrawer('shop'); };
   document.getElementById('btnMusic').onclick = function () { openDrawer('music'); };
