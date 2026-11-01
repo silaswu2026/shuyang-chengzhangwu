@@ -1,7 +1,7 @@
 /** AI办学小屋 · 课程3 · 可视化关卡工坊 (deep editor). Same save key as tonight. */
 /**
  * 可视化工坊 · 与今晚工作台共用 xygo-custom-level v1.2。
- * vw53: 闸门藏二级条 + 关联不挤条 · vw52 P2 标题/叠字 · vw51 试玩壳 · vw50 关联+SFX · vw49 关卡设计 · vw48 闸。
+ * vw54: 手机壳二级下移独立 band · vw53 闸门藏二级 · vw52 P2 · vw51 试玩壳。
  */
 (function () {
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
@@ -373,14 +373,24 @@
     opts = opts || {};
     var forGate = !!opts.gate;
     ART.fill(layer, ART.tex.night, 0);
+    var phone = isPhoneShell();
+    var land = false;
+    try { land = window.innerWidth > window.innerHeight && window.innerHeight < 520; } catch (eL) {}
+    var onDesign = isDesignStep(step);
+    if (onDesign) WB.ui.ldStep = step | 0;
+    /* 手机壳过闸后二级三钮另开一行，勿与 ①/关卡/⑤/⑥ 同带重叠（~844×390） */
+    var twoRow = phone && onDesign && !forGate;
+    var chromeH = twoRow ? (land ? 86 : 90) : CHROME;
+    var chipY = twoRow ? (H - 20) : (H - 26);
+    var chipH = phone ? (land ? 34 : (twoRow ? 36 : 40)) : 34;
     plate(layer, 0, 0, W, FOOT, ccColor(15, 18, 48, 242), 18);
     plate(layer, 0, FOOT - 3, W, 3, ccColor(255, 224, 122, 180), 19);
-    plate(layer, 0, H - CHROME, W, CHROME, ccColor(15, 18, 48, 242), 20);
-    var slots = isPhoneShell() ? [24, 870, 930] : [28, 890, 940];
+    plate(layer, 0, H - chromeH, W, chromeH, ccColor(15, 18, 48, 242), 20);
+    var slots = phone ? [24, 870, 930] : [28, 890, 940];
     AV.forEach(function (src, i) {
       var face = ART.avatars[src];
       var sp = face ? new cc.Sprite(face) : new cc.Sprite(src);
-      sp.setPosition(slots[i], H - 26);
+      sp.setPosition(slots[i], chipY);
       layer.addChild(sp, 22);
       if (face) {
         sp.setScale(36 / 72);
@@ -401,11 +411,6 @@
         }, 50);
       }
     });
-    var phone = isPhoneShell();
-    var land = false;
-    try { land = window.innerWidth > window.innerHeight && window.innerHeight < 520; } catch (eL) {}
-    var onDesign = isDesignStep(step);
-    if (onDesign) WB.ui.ldStep = step | 0;
     /* 四芯片：①看图 · 关卡设计 · ⑤觉察 · ⑥听选 */
     var labels = phone ? STEPS_PHONE : STEPS;
     var centers = phone
@@ -415,7 +420,7 @@
     labels.forEach(function (name, i) {
       var on = i === activeChip;
       var wBtn = phone ? (land ? 88 : 100) : (i === 1 ? 148 : 122);
-      button(layer, name, centers[i], H - 26, wBtn, phone ? (land ? 36 : 40) : 34, on ? GREEN : NAVY, WHITE, function () {
+      button(layer, name, centers[i], chipY, wBtn, chipH, on ? GREEN : NAVY, WHITE, function () {
         later(function () {
           if (i === 0) show(0);
           else if (i === 1) show((WB.ui.ldStep | 0) || 2);
@@ -428,12 +433,13 @@
     if (forGate) {
       words(layer, land ? '先答三问 · 再进关卡设计' : '小宇：先答三问，再进关卡设计', W / 2, H - 52, phone ? 12 : 13, '#a8a0c8', 21);
     } else if (onDesign) {
-      /* 二级平铺：摆关 | 设置 | 关联（次行，与页内标题留空） */
-      var tabY = H - 52;
+      /* 二级平铺：摆关 | 设置 | 关联 — 手机壳独立次行 band */
+      var tabY = twoRow ? (land ? (H - 60) : (H - 64)) : (H - 52);
+      var tabH = twoRow ? 26 : (phone ? 28 : 30);
       var tCenters = phone ? (land ? [160, 320, 480] : [180, 360, 540]) : [240, 480, 720];
       LD_TABS.forEach(function (tab, ti) {
         var on = (step | 0) === tab.step;
-        button(layer, tab.label, tCenters[ti], tabY, phone ? (land ? 100 : 110) : 128, phone ? 28 : 30, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+        button(layer, tab.label, tCenters[ti], tabY, phone ? (land ? 100 : 110) : 128, tabH, on ? GOLD : NAVY, on ? INK : WHITE, function () {
           later(function () { show(tab.step); });
         });
       });
@@ -744,7 +750,7 @@
       WB.sceneName = 'settings';
       WB.ui.running = false;
       addChrome(this, 1);
-      words(this, '设置 · 频率 + 装备商店', W / 2, 448, 18, '#ffe07a', 8);
+      words(this, '设置 · 频率 + 装备商店', W / 2, isPhoneShell() ? 430 : 448, 18, '#ffe07a', 8);
       words(this, '滑条调节拍 · 跑一次 · 钱不够买不了', W / 2, 426, 13, '#e8e4ff', 8);
       var box = { x: 18, y: 156, w: 924, h: 250 };
       var gy = box.y + 28;
@@ -906,7 +912,7 @@
       var gy = EDIT.gy;
       this._sky = ART.dressSky(this, gy + 6);
       ART.addGround(this, EDIT.L, gy, STORE.MC * EDIT.cw, 4, 2);
-      words(this, '摆关 · 前两格安全 · 点格子摆东西', 360, 448, 16, '#1a2744', 8);
+      words(this, '摆关 · 前两格安全 · 点格子摆东西', 360, isPhoneShell() ? 430 : 448, 16, '#1a2744', 8);
       var self = this;
       var tools = [['spike', '刺'], ['fire', '火'], ['spring', '弹'], ['mist', '雾'], ['rock', '石'], ['coin', '币'], ['del', '擦']];
       addTrapChipStrip(self, tools, isPhoneShell() ? 412 : 416);
@@ -1234,8 +1240,8 @@
       var phoneL = isPhoneShell();
       var landL = false;
       try { landL = window.innerWidth > window.innerHeight && window.innerHeight < 520; } catch (eLL) {}
-      var titleY = phoneL && landL ? 428 : 436;
-      var subY = phoneL && landL ? 404 : 412;
+      var titleY = phoneL ? (landL ? 418 : 424) : 436;
+      var subY = phoneL ? (landL ? 396 : 402) : 412;
       words(this, '关联 · BGM ↔ 九关', W / 2, titleY, phoneL && landL ? 16 : 18, '#ffe7a0', 8);
       words(this, phoneL && landL ? '点心情曲可听 · 再点关卡挂/清 · 未挂回退全局 · 禁 Mixkit' : '先点心情曲（可听），再点关卡挂上/清掉 · 未挂试玩回退全局曲 · 禁 Mixkit', W / 2, subY, phoneL && landL ? 11 : 12, '#c9c3ef', 8);
       var panelCy = phoneL && landL ? 238 : 248;
