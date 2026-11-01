@@ -865,30 +865,45 @@
   VW.refreshMusic = function () {
     var el = document.getElementById('musicList');
     var pick = document.getElementById('musicPick');
+    var credit = document.getElementById('musicCredit');
     if (!el) return;
-    var tracks = [
-      { id: 'meadow', name: '草地轻跳', stub: true },
-      { id: 'river', name: '小河叮咚', stub: true },
-      { id: 'night', name: '夜路鼓点', stub: true }
+    var AUDIO = window.WBAudio || null;
+    var tracks = AUDIO && AUDIO.BGM ? AUDIO.BGM.map(function (b) {
+      return { id: b.id, name: b.name, stub: false };
+    }) : [
+      { id: 'explore', name: '探险', stub: true },
+      { id: 'tense', name: '紧张', stub: true },
+      { id: 'win', name: '过关', stub: true },
+      { id: 'fail', name: '失败', stub: true }
     ];
-    var cur = (WB.data && WB.data.music) || '';
+    var cur = '';
+    if (WB.data && WB.data.audio && WB.data.audio.bgmId) cur = WB.data.audio.bgmId;
+    else if (WB.data && WB.data.music) cur = WB.data.music;
     el.innerHTML = '';
     tracks.forEach(function (t) {
       var b = document.createElement('button');
       b.type = 'button';
       b.className = 'item' + (cur === t.id ? ' on' : '');
-      b.innerHTML = t.name + '<span class="price">' + (t.stub ? '先听（占位静音）' : '试听') + '</span>';
+      b.innerHTML = t.name + '<span class="price">' + (t.stub ? '占位' : '试听 / 选用') + '</span>';
       b.onclick = function () {
         WB.data.music = t.id;
+        if (!WB.data.audio) WB.data.audio = AUDIO && AUDIO.blankAudio ? AUDIO.blankAudio() : { bgmId: t.id, sfx: {} };
+        WB.data.audio.bgmId = t.id;
         STORE.save(localStorage, WB.data);
-        if (pick) pick.textContent = '已选：' + t.name + '（音频入库后可听）';
+        if (AUDIO) {
+          try { AUDIO.unlock(); AUDIO.setBgm(t.id); } catch (e) {}
+        }
+        if (pick) pick.textContent = '已选：' + t.name;
         VW.refreshMusic();
       };
       el.appendChild(b);
     });
-    if (pick && cur) {
-      var found = tracks.filter(function (t) { return t.id === cur; })[0];
+    if (pick) {
+      var found = tracks.filter(function (tr) { return tr.id === cur; })[0];
       pick.textContent = found ? ('已选：' + found.name) : '还没选曲';
+    }
+    if (credit && AUDIO && AUDIO.CREDITS) {
+      credit.innerHTML = AUDIO.CREDITS.lineZh + '<br>详见 audio/SOURCES.md · 不用 Mixkit';
     }
   };
   VW.openMusic = function () {

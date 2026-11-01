@@ -184,15 +184,15 @@
     var panel = new cc.Node();
     panel.setPosition(0, 0);
     layer.addChild(panel, 40);
-    ART.panel(panel, W / 2, H / 2 - 10, 520, 420, ccColor(12, 18, 40), 245, 0, 18);
-    ART.frame(panel, W / 2, H / 2 - 10, 520, 420, cc.color(255, 224, 122), 180, 1, 18);
-    words(panel, '先听后选 · 音乐', W / 2, H / 2 + 180, 20, '#ffe07a', 2);
-    words(panel, '挑一首背景乐，点音效试听；选用会写进这一关', W / 2, H / 2 + 152, 13, '#c9c3ef', 2);
+    ART.panel(panel, W / 2, H / 2 - 10, 540, 460, ccColor(12, 18, 40), 245, 0, 18);
+    ART.frame(panel, W / 2, H / 2 - 10, 540, 460, cc.color(255, 224, 122), 180, 1, 18);
+    words(panel, '先听后选 · 音乐', W / 2, H / 2 + 196, 20, '#ffe07a', 2);
+    words(panel, '挑一首背景乐，点音效试听；选用会写进这一关', W / 2, H / 2 + 168, 13, '#c9c3ef', 2);
 
     var audio = AUDIO.get();
     AUDIO.BGM.forEach(function (b, i) {
       var on = audio.bgmId === b.id;
-      var y = H / 2 + 110 - i * 42;
+      var y = H / 2 + 122 - i * 40;
       button(panel, (on ? '✓ ' : '听 ') + b.name, W / 2 - 90, y, 200, 34, on ? GOLD : NAVY, on ? INK : WHITE, function () {
         AUDIO.setBgm(b.id);
         persistAudio();
@@ -206,12 +206,12 @@
       });
     });
 
-    words(panel, '音效：点一下先听并开关', W / 2, H / 2 - 70, 14, '#ffe7a0', 2);
+    words(panel, '音效：点一下先听并开关', W / 2, H / 2 - 58, 14, '#ffe7a0', 2);
     AUDIO.SFX.forEach(function (s, i) {
       var col = i % 3;
       var row = (i / 3) | 0;
       var x = W / 2 - 160 + col * 160;
-      var y = H / 2 - 110 - row * 42;
+      var y = H / 2 - 96 - row * 40;
       var on = audio.sfx[s.id] !== false;
       button(panel, (on ? '开 ' : '关 ') + s.name, x, y, 140, 34, on ? NAVY : ccColor(60, 60, 80), WHITE, function () {
         AUDIO.playSfx(s.id, true);
@@ -221,7 +221,10 @@
       });
     });
 
-    button(panel, '关闭', W / 2, H / 2 - 200, 140, 40, NAVY, WHITE, function () {
+    var credit = (AUDIO.CREDITS && AUDIO.CREDITS.lineZh) || '音乐 Kevin MacLeod · CC BY 3.0｜音效 Kenney · CC0';
+    words(panel, credit, W / 2, H / 2 - 188, 11, '#8a84b0', 2);
+    words(panel, '详见 audio/SOURCES.md · 不用 Mixkit（游戏禁用）', W / 2, H / 2 - 208, 10, '#6a6490', 2);
+    button(panel, '关闭', W / 2, H / 2 - 248, 140, 40, NAVY, WHITE, function () {
       closeAudioDrawer();
       later(function () { show(selfStep); });
     });

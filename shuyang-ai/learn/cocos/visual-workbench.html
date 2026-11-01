@@ -127,9 +127,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
 <aside class="drawer" id="drawerMusic" aria-label="音乐">
   <button class="close" data-close type="button">×</button>
   <h3>音乐 · 先听后选</h3>
-  <p class="hint">听一小段，再配到关上。不是完整编曲台。音频文件还没入库时用静音占位。</p>
+  <p class="hint">听一小段，再配到关上。完整喇叭（BGM+SFX）在今晚基础台右上角。</p>
   <div class="row" id="musicList"></div>
   <p class="hint" id="musicPick">还没选曲</p>
+  <p class="hint" id="musicCredit" style="margin-top:12px;font-size:11px;opacity:.85">音乐 Kevin MacLeod · CC BY 3.0｜音效 Kenney · CC0<br>详见 audio/SOURCES.md · 不用 Mixkit</p>
 </aside>
 
 <aside class="drawer" id="drawerBuddy" aria-label="点赞与陪伴">
@@ -150,9 +151,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
 </aside>
 
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
-<script src="wb-store.js?v=vw1"></script>
-<script src="wb-art.js?v=vw1"></script>
-<script src="visual-workbench.js?v=vw1"></script>
+<script src="wb-store.js?v=vw2"></script>
+<script src="wb-art.js?v=vw2"></script>
+<script src="wb-audio.js?v=wb6"></script>
+<script src="visual-workbench.js?v=vw2"></script>
 <script>
 (function () {
   var shell = document.getElementById('shell');

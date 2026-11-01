@@ -177,9 +177,17 @@
     }
   }
 
+  var CREDITS = {
+    short: 'Music: Kevin MacLeod (incompetech.com) · CC BY 3.0 · SFX: Kenney.nl · CC0',
+    bgm: 'BGM: Kevin MacLeod (incompetech.com) · CC BY 3.0',
+    sfx: 'SFX: Kenney.nl Impact / RPG Audio · CC0',
+    lineZh: '音乐 Kevin MacLeod · CC BY 3.0｜音效 Kenney · CC0'
+  };
+
   root.WBAudio = {
     BGM: BGM,
     SFX: SFX,
+    CREDITS: CREDITS,
     blankAudio: blankAudio,
     normalize: normalize,
     apply: apply,
