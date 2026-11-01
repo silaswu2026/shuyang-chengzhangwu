@@ -79,6 +79,14 @@
 - **联机入口上壳**：顶栏「联机」、可视化工坊右侧 🤝、④觉察步「联机游玩」→ `custom-play.html?net=1`（真 PeerJS，不假联机）。备路 `xy-go/?custom=1`。
 - 天空渐变中轴对齐旧今晚画布 `#6ec8ff`；步骤文案统一「③ 设计一小关」（不再写「摆关工坊」）。
 
+已经做上的（wb72 / vw42 · 2026-11-01）：
+
+- **手机横屏主验（~844×390）**：`@media (orientation:landscape) and (max-height:520px)` — 手机壳改为横宽金框，凹槽侧置，`.canvas-slot` 以高度吃满并锁 16:9，禁止竖屏高壳在横屏里上下大空边。
+- **竖屏壳收紧**：`.phone-bezel` 改为 `height:auto` 贴合 16:9 舞台，减轻「下半空金边」。
+- **六步顶栏信息架构（未拆场景）**：顶栏显示 ①…⑥；场景仍是旧四步（①②③⑤）。④装备 → 开商店抽屉（visual）或回摆关（workbench）；⑥听选 → 音乐/喇叭抽屉。验收对照 `PRODUCT.md` P-L2-* / `PLAYER-TEST-CASES.md` B3·B12L·G。
+- 联机单人优先加固：`?net=1` 立刻 `netSoft=true`，全屏房间卡不挡操作（PeerJS 栈未换）。
+
+
 ## 旧→新画面对照（parity）
 
 对照源：`level-design.html?path=tonight` + `ld-art.js`。新主路径：`visual-workbench.html`（备用 `workbench.html?lesson=tonight`）。
@@ -87,7 +95,7 @@
 | --- | --- | --- | --- |
 | 页壳色 | `#0f1230`→`#24305f` | navy/gold `brand-tokens` + 双壳 | ✅ |
 | 画布底 | `#6ec8ff` 圆角 | `wb-art` 天空含 `#6ec8ff` + 远山/泥地 | ✅ 更细，非截图 |
-| 四步文案 | ①看图一句 ②频率 ③设计一小关 ④玩完 | 同文案；当前步绿 / 其余海军蓝 | ✅ |
+| 四步文案 / 六步 tip | ①看图一句 ②频率 ③设计一小关 ④玩完 | 场景同四步；顶栏六步 tip（④⑥抽屉） | ✅ tip / 场景 WIP |
 | 头像位 | 小宇左 · 爸妈右 | 同 | ✅ |
 | 频率滑条 | 真控件在画布外 | Cocos 滑条+± | ✅ 形不同、语义同 |
 | 摆关陷阱 | 短筹码 | 横滑短筹码 + 武器店 | ✅ |
