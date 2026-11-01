@@ -85,6 +85,7 @@
 
 - **窄屏默认手机壳（P1 · vw43/wb73）**：`innerWidth≤520` 或（`<720` 且竖屏）打开时强制「手机壳」，不吃过期的电脑壳 localStorage；宽屏仍可读偏好。
 - **①看图不叠字（P1）**：底句「一句：上钩…」与「忘了事 / 花时间」卡分行；caption y≈62，卡行上移。
+- **首页横屏首屏四课（2026-11-01）**：根 `index.html` 在 `orientation:landscape` + `max-height:520px` 压矮 hero，2×2 课卡同屏可见，**今晚主课（课程3）** 不需下滚才点到（对照 P-L0-2 / P-L1）。
 - **手机横屏主验（~844×390）**：`@media (orientation:landscape) and (max-height:520px)` — 手机壳改为横宽金框，凹槽侧置，`.canvas-slot` 以高度吃满并锁 16:9，禁止竖屏高壳在横屏里上下大空边。
 - **竖屏壳收紧**：`.phone-bezel` 改为 `height:auto` 贴合 16:9 舞台，减轻「下半空金边」。
 - **六步正式拆开（vw44 / wb74；练习金 vw45 / wb75）**：顶栏 chip i ↔ 场景 i（①→⑥）；当前步绿、其余海军蓝；④装备 / ⑥听选为真场景（visual 仍可开 HTML 抽屉；workbench ⑥默认开喇叭面板）。`?step=0..5`。验收对照 `PRODUCT.md` P-L2-* / `PLAYER-TEST-CASES.md` B3·B5·B16·B17。
