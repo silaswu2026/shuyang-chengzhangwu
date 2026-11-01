@@ -147,3 +147,7 @@ HUD 显示「积分」。规则：
 
 ## 人名
 - 孩子正式名：**五树杨**（勿写「伍树杨 / 伍澍暘」）。
+
+
+### 音效素材来源
+占位蜂鸣已替换为有授权素材，详见 [`audio/SOURCES.md`](audio/SOURCES.md)（Kevin MacLeod CC BY 3.0 + Kenney CC0）。
