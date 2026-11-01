@@ -49,8 +49,8 @@ a.go-link{border-radius:999px;background:linear-gradient(180deg,#78d484,#4ea85c)
 .faces figure{margin:0;text-align:center;width:64px}
 .faces img,.face{width:64px;height:64px;border-radius:50%;object-fit:cover;display:block;border:2px solid #ffe9a066;background:#1a2048}
 .faces figcaption{font-size:12px;color:var(--gold);margin-top:4px;font-weight:700}
-.face.xiaoyu{object-position:32% 34%}
-.face.dad,.face.mom,.face.son{object-position:center 16%}
+.face.xiaoyu{object-position:center 32%}
+.face.dad,.face.mom,.face.son{object-position:center 28%}
 .inline-face{width:28px;height:28px;vertical-align:-6px;margin-right:6px}
 .talk{padding:0;list-style:none;margin:0}
 .talk li{display:flex;gap:10px;align-items:flex-start;margin:12px 0;line-height:1.5}

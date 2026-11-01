@@ -104,8 +104,8 @@ h1 {
   font-size: 16px;
   font-weight: 800;
 }
-.face.xiaoyu { object-position: 32% 34%; }
-.face.dad, .face.mom, .face.son { object-position: center 16%; }
+.face.xiaoyu { object-position: center 32%; }
+.face.dad, .face.mom, .face.son { object-position: center 28%; }
 .star {
   font-size: 72px;
   line-height: 1;
