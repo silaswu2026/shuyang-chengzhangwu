@@ -864,7 +864,7 @@
   </section>
 
   <section class="panel cams">
-    <h2>伍澍暘</h2>
+    <h2>五树杨</h2>
     <div class="vids" id="vids">
       <div class="tile rain online digital mood-idle" id="tile-xiaoyu" data-role="xiaoyu" role="button" tabindex="0" aria-label="小雨：默认静音旁听，点一下开口；再点静音" title="默认静音。点小雨开口说话；再点静音（仍旁听）。Grok 电话时请静音或点「关掉小雨声音」">
         <div class="tile-inner">
@@ -888,9 +888,9 @@
           <div class="tile-spin" aria-hidden="true"><span>打开中…</span></div>
         </div>
       </div>
-      <div class="tile online joinable" id="tile-kid" data-role="kid" role="button" tabindex="0" aria-label="点芃芃（伍澍暘）头像进房开摄像头" title="点一下开摄像头">
+      <div class="tile online joinable" id="tile-kid" data-role="kid" role="button" tabindex="0" aria-label="点芃芃（五树杨）头像进房开摄像头" title="点一下开摄像头">
         <div class="tile-inner">
-          <img class="avatar" src="../avatars/pengpeng.jpg" alt="伍澍暘（芃芃）"/>
+          <img class="avatar" src="../avatars/pengpeng.jpg" alt="五树杨（芃芃）"/>
           <video autoplay playsinline muted hidden></video>
           <div class="badge">卡通</div>
           <div class="name">芃芃</div>
@@ -1475,7 +1475,7 @@ function whoToTileId(who, identity){
   }
   const w = String(who || '');
   if (/爸爸|dad/i.test(w)) return 'tile-dad';
-  if (/芃芃|伍澍暘|澍暘|kid|lucas/i.test(w)) return 'tile-kid';
+  if (/芃芃|五树杨|澍暘|kid|lucas/i.test(w)) return 'tile-kid';
   if (/妈妈|mom/i.test(w)) return 'tile-mom';
   if (/小雨|xiaoyu|rain/i.test(w)) return 'tile-xiaoyu';
   if (myRole === 'dad') return 'tile-dad';
@@ -1949,7 +1949,7 @@ async function join(role){
       markMeTile();
       document.getElementById('leave').disabled = true;
     });
-    const label = role === 'dad' ? '爸爸' : role === 'mom' ? '妈妈' : '芃芃（伍澍暘）';
+    const label = role === 'dad' ? '爸爸' : role === 'mom' ? '妈妈' : '芃芃（五树杨）';
     log('系统：进入同房「chengzhangwu」作为 ' + label + ' …');
     await room.connect(URL_WS, TOKENS[role]);
     log('系统：已进同房: ' + room.name + ' · 身份=' + room.localParticipant.identity + ' · 一家人一起上课');
