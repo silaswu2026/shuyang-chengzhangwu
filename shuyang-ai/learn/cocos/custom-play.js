@@ -1,6 +1,7 @@
 /**
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·自制关
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
+ * c34: 键盘武器仅 KeyL（去掉 F/J；无 R 武器键；触控 btnL/btnR 仍左右走，投靠 btnT）。
  * c33: 走路手脚自然摆动 — 程序化 opposite arm/leg（旧 walk_* PNG 近同姿态仅飘围巾）；WBNinjaWalk。
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
  * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。
@@ -795,7 +796,7 @@
         inp.jump = true;
         e.preventDefault();
       }
-      if (e.code === 'KeyF' || e.code === 'KeyJ') { inp.throwPressed = true; e.preventDefault(); }
+      if (e.code === 'KeyL') { inp.throwPressed = true; e.preventDefault(); }
     });
     window.addEventListener('keyup', function (e) {
       if (e.code === 'ArrowLeft' || e.code === 'KeyA') inp.left = false;
@@ -2071,7 +2072,7 @@
               bootErr('场景启动失败：' + (eRun && eRun.message || eRun));
               return;
             }
-            setBootMsg('伍澍暘 · 第9关 · 绿/红/蓝 · ←→跳 · F/J投');
+            setBootMsg('伍澍暘 · 第9关 · 绿/红/蓝 · ←→跳 · L投');
             setTimeout(fitStage, 50);
             ensureTintCache(function () {
               if (sceneRef && sceneRef.ninja) {
