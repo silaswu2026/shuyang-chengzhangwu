@@ -1,0 +1,15 @@
+{
+  "source": "xy-go/game.js LEVELS[].boss",
+  "decided": "2026-11-01",
+  "decision": "第3关显示名为影忍者，因此正式名册采用 LEVELS[].boss.name 这一列，不用 LEVEL_CRITTERS 的显示名。",
+  "levels": [
+    { "n": 1, "id": "forest-jog", "name": "林间晨跑", "en": "Forest Jog", "terrain": "swamp", "bossId": "bear-king", "bossName": "熊大王", "bossKind": "slime", "bossHp": 4, "bossCol": 58 },
+    { "n": 2, "id": "moss-path", "name": "苔岩小径", "en": "Moss Path", "terrain": "mountain", "bossId": "boar", "bossName": "野猪", "bossKind": "boar", "bossHp": 5, "bossCol": 70 },
+    { "n": 3, "id": "firefly-canopy", "name": "萤火树冠", "en": "Firefly Canopy", "terrain": "swamp", "bossId": "shadow-ninja", "bossName": "影忍者", "bossKind": "shadow", "bossHp": 6, "bossCol": 80 },
+    { "n": 4, "id": "spike-hall", "name": "尖刺走廊", "en": "Spike Hall", "terrain": "mountain", "bossId": "spike-beetle", "bossName": "刺甲虫", "bossKind": "slime", "bossHp": 6, "bossCol": 84 },
+    { "n": 5, "id": "flame-bridge", "name": "火焰栈道", "en": "Flame Bridge", "terrain": "swamp", "bossId": "flame-boar", "bossName": "炎猪", "bossKind": "boar", "bossHp": 7, "bossCol": 90 },
+    { "n": 6, "id": "thunder-gate", "name": "雷鸣谷口", "en": "Thunder Gate", "terrain": "mountain", "bossId": "thunder-shadow", "bossName": "雷影", "bossKind": "shadow", "bossHp": 8, "bossCol": 94 },
+    { "n": 7, "id": "bomb-pit", "name": "炸弹矿坑", "en": "Bomb Pit", "terrain": "swamp", "bossId": "mine-boss", "bossName": "矿霸", "bossKind": "boar", "bossHp": 9, "bossCol": 100 },
+    { "n": 8, "id": "all-terrains", "name": "终极融合", "en": "All Terrains", "terrain": "all", "bossId": "final-shadow", "bossName": "终焉影", "bossKind": "shadow", "bossHp": 10, "bossCol": 110 }
+  ]
+}
