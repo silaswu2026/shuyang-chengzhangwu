@@ -97,6 +97,12 @@
 - 状态：**待 Silas 拍板**；**未改** LookScene 代码。
 - 全文分镜：[`docs/LOOK-STEP-SCRIPT.md`](docs/LOOK-STEP-SCRIPT.md)（原理 A0–A6 → 方法 B1–B3 → 总结 C1；第二主题钓鱼的人 F1–F4）。
 - 正式名锁：伍澍暘 · 小宇。
+
+### ②③④横版关卡综合方案（2026-11-01）
+- 状态：**待 Silas 拍板**；**未改** Frequency / Build / Equip / 试玩 / PeerJS 代码。
+- 全文：[`docs/LEVEL-STEPS-234-REDESIGN.md`](docs/LEVEL-STEPS-234-REDESIGN.md)（短链 [`docs/LEVEL-DESIGN-234.md`](docs/LEVEL-DESIGN-234.md)）。
+- 要点：维度调研；②跑一次；③「设计关卡」列=摆放+单关设置；陷阱六类属性草案；奖励三档 TBD；④钱包不吞回③；口述附录。
+- 正式名锁：伍澍暘 · 小宇。
 已经做上的（c37 · 2026-11-01）：
 
 - **试玩泥土带压矮（手机横屏）**：`custom-play` 草线 `gy≈H*0.28`（原 ~0.42），最小夹紧 72（原 110）；矮横屏下棕色土带不再占约半屏，天空/可走层多留空间；坑/草帽/忍者落地仍跟 `this.gy`。正式名 **伍澍暘** / 助手 **小宇**。
