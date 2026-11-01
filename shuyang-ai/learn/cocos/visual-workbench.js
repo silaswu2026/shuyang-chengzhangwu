@@ -1,17 +1,22 @@
 /** AI办学小屋 · 课程3 · 可视化关卡工坊 (deep editor). Same save key as tonight. */
 /**
  * 可视化工坊 · 与今晚工作台共用 xygo-custom-level v1.2。
- * vw48: 觉察前置闸 · vw47: 正式六步 ①→⑥（④装备/⑥听选升格为场景）· vw47 看图三阶段；vw43 叠字/窄屏壳保留。
+ * vw49: 关卡设计合并（四芯片+二级摆关|设置|关联）· vw48 觉察闸 · vw47 看图三阶段。
  */
 (function () {
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
   var SP = '../../../xy-go/sprites/green/';
   var AV = ['../../avatars/xiaoyu.jpg', '../../avatars/dad-wuxin.jpg', '../../avatars/mom-chunyan.jpg'];
-  /* Formal L2 six steps (PRODUCT §4): 0看图 1频率 2摆关 3装备 4觉察 5听选. */
-  var STEPS = ['①看图', '②频率', '③摆关', '④装备', '⑤觉察', '⑥听选'];
-  var STEPS_PHONE = ['①', '②', '③', '④', '⑤', '⑥'];
+  /* PRODUCT §4 四芯片；内部场景仍 0..5：0看图 1设置(频率+店) 2摆关 3关联 4觉察 5听选 */
+  var STEPS = ['①看图', '关卡设计', '⑤觉察', '⑥听选'];
+  var STEPS_PHONE = ['①', '关卡', '⑤', '⑥'];
   var TIP6 = STEPS;
   var TIP6_PHONE = STEPS_PHONE;
+  var LD_TABS = [
+    { id: 'place', label: '摆关', step: 2 },
+    { id: 'settings', label: '设置', step: 1 },
+    { id: 'link', label: '关联', step: 3 }
+  ];
   var STORE = window.WBStore;
   var ART = window.WBArt;
   var DUR = 12;
@@ -51,7 +56,7 @@
     sceneName: '',
     data: null,
     shell: readShellPref(),
-    ui: { step: 0, look: 0, running: false, runT0: 0, previewDone: false, flash: '', freqDone: false, gatePassed: false, gatePending: 1, gateQ: 0, gatePicks: null, gateFlash: '' },
+    ui: { step: 0, look: 0, running: false, runT0: 0, previewDone: false, flash: '', freqDone: false, ldStep: 2, gatePassed: false, gatePending: 2, gateQ: 0, gatePicks: null, gateFlash: '' },
     layout: {},
     setShell: function (mode) {
       if (mode !== 'phone' && mode !== 'desktop') return;
@@ -170,7 +175,7 @@
 
 
   /* ---------- 觉察前置闸门（进 ②③④ 前） ---------- */
-  var DESIGN_STEPS = { 1: 1, 2: 1, 3: 1 }; /* 频率/摆关/装备；切片3 合并前挂这三步 */
+  var DESIGN_STEPS = { 1: 1, 2: 1, 3: 1 }; /* 关卡设计内：设置/摆关/关联；闸挂整块入口 */
   var GATE_QS = [
     {
       q: '什么样的关卡最难？',
@@ -269,13 +274,13 @@
     }
     WB.ui.step = step;
     WB.ui.running = false;
+    if (isDesignStep(step)) WB.ui.ldStep = step;
     try { if (window.VW && VW.closeDrawers) VW.closeDrawers(); } catch (eC2) {}
-    if (step >= 2) STORE.save(localStorage, WB.data);
+    if (step >= 1) STORE.save(localStorage, WB.data);
     syncStepUrl(step);
-    var scenes = [LookScene, FreqScene, EditScene, EquipScene, ReflectScene, AudioScene];
+    var scenes = [LookScene, FreqScene, EditScene, LinkScene, ReflectScene, AudioScene];
     cc.director.runScene(new scenes[step]());
-    /* Keep shop/audio drawers available inside ④/⑥ without blocking the scene. */
-    if (step === 3) later(function () { try { if (window.VW && VW.openShop) VW.openShop(); } catch (eS) {} });
+    /* ⑥仍可开喇叭；设置页内嵌商店，不再自动弹抽屉 */
     if (step === 5) later(function () { try { if (window.VW && VW.openMusic) VW.openMusic(); } catch (eM) {} });
   }
 
@@ -397,19 +402,39 @@
     var phone = isPhoneShell();
     var land = false;
     try { land = window.innerWidth > window.innerHeight && window.innerHeight < 520; } catch (eL) {}
-    /* Formal six-step nav: chip i ↔ scene i; current = green */
+    var onDesign = isDesignStep(step);
+    if (onDesign) WB.ui.ldStep = step | 0;
+    /* 四芯片：①看图 · 关卡设计 · ⑤觉察 · ⑥听选 */
     var labels = phone ? STEPS_PHONE : STEPS;
     var centers = phone
-      ? (land ? [78, 168, 258, 348, 438, 528] : [90, 190, 290, 390, 490, 590])
-      : [95, 230, 365, 500, 640, 780];
+      ? (land ? [100, 250, 400, 540] : [110, 280, 450, 600])
+      : [120, 340, 560, 760];
+    var activeChip = step === 0 ? 0 : (onDesign ? 1 : (step === 4 ? 2 : (step === 5 ? 3 : 1)));
     labels.forEach(function (name, i) {
-      var on = i === step;
-      var wBtn = phone ? (land ? 72 : 78) : (i === 2 || i === 4 ? 118 : 108);
+      var on = i === activeChip;
+      var wBtn = phone ? (land ? 88 : 100) : (i === 1 ? 148 : 122);
       button(layer, name, centers[i], H - 26, wBtn, phone ? (land ? 36 : 40) : 34, on ? GREEN : NAVY, WHITE, function () {
-        later(function () { show(i); });
+        later(function () {
+          if (i === 0) show(0);
+          else if (i === 1) show((WB.ui.ldStep | 0) || 2);
+          else if (i === 2) show(4);
+          else show(5);
+        });
       });
     });
-    words(layer, land ? '课程3 · 六步' : '课程3 · 可视化工坊 · 六步', W / 2, H - 52, 12, '#a8a0c8', 21);
+    if (onDesign) {
+      /* 二级平铺：摆关 | 设置 | 关联 */
+      var tabY = H - 52;
+      var tCenters = phone ? (land ? [160, 320, 480] : [180, 360, 540]) : [240, 480, 720];
+      LD_TABS.forEach(function (tab, ti) {
+        var on = (step | 0) === tab.step;
+        button(layer, tab.label, tCenters[ti], tabY, phone ? (land ? 100 : 110) : 128, phone ? 28 : 30, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+          later(function () { show(tab.step); });
+        });
+      });
+    } else {
+      words(layer, land ? '课程3 · 四芯片' : '课程3 · 可视化工坊 · 四芯片+关卡设计', W / 2, H - 52, 12, '#a8a0c8', 21);
+    }
   }
 
   function addNinja(parent, x, y, h, z) {
@@ -525,7 +550,7 @@
       }
       button(this, last ? '我看懂钩子了' : '下一张', phone ? (last ? 720 : 780) : (last ? 760 : 800), 32, phone ? (last ? 220 : 160) : (last ? 240 : 180), phone ? 46 : 44, GREEN, WHITE, function () {
         later(function () {
-          if (page >= LOOK_PAGES.length - 1) show(1);
+          if (page >= LOOK_PAGES.length - 1) show(2);
           else { WB.ui.look = lookClamp(page + 1); show(0); }
         });
       });
@@ -710,11 +735,11 @@
   var FreqLayer = cc.Layer.extend({
     ctor: function () {
       this._super();
-      WB.sceneName = 'freq';
+      WB.sceneName = 'settings';
       WB.ui.running = false;
       addChrome(this, 1);
-      words(this, '⏱️ 调频率：拖滑条 · 点按钮跑', W / 2, 466, 18, '#ffe07a', 8);
-      words(this, '一个旋钮：每几秒冒刺', W / 2, 444, 14, '#e8e4ff', 8);
+      words(this, '设置 · 频率 + 装备商店', W / 2, 448, 18, '#ffe07a', 8);
+      words(this, '滑条调节拍 · 跑一次 · 钱不够买不了', W / 2, 426, 13, '#e8e4ff', 8);
       var box = { x: 18, y: 156, w: 924, h: 250 };
       var gy = box.y + 28;
       this.gy = gy;
@@ -770,18 +795,34 @@
 
       this.hookRow = new cc.Node();
       this.addChild(this.hookRow, 31);
-      ART.panel(this.hookRow, W / 2, 96, W - 48, 52, CREAM, 245, 0, 16);
-      this.hookAsk = words(this.hookRow, '你发现哪一点在钓你？', 220, 96, 14, '#1a2744', 2);
+      ART.panel(this.hookRow, W / 2, 88, W - 48, 40, CREAM, 245, 0, 12);
+      this.hookAsk = words(this.hookRow, '你发现哪一点在钓你？', 200, 88, 13, '#1a2744', 2);
       var choices = ['节奏变快', '掉血变多', '还想再跑'];
       choices.forEach(function (name, idx) {
         var on = WB.data.hook === name;
-        button(self.hookRow, name, 430 + idx * 150, 96, 136, 32, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+        button(self.hookRow, name, 420 + idx * 150, 88, 130, 28, on ? GOLD : NAVY, on ? INK : WHITE, function () {
           WB.data.hook = name;
           STORE.save(localStorage, WB.data);
           later(function () { show(1); });
         });
       });
       this._applyHook();
+      /* 装备商店挂设置（不嵌回摆关网格） */
+      var wal = WB.data.wallet || { coins: 0, weapons: [], equipped: null };
+      ART.panel(this, W / 2, 148, W - 40, 40, ccColor(18, 26, 58), 220, 30, 12);
+      words(this, '💰店 ' + ((wal.coins) | 0), 90, 148, 13, '#ffe07a', 31);
+      ['dart', 'blade', 'gun'].forEach(function (id, i) {
+        var spec = STORE.WEAPONS[id];
+        var owned = wal.weapons.indexOf(id) >= 0;
+        var on = wal.equipped === id;
+        var label = on ? (spec.name + '·用') : (owned ? (spec.name + '·装') : (spec.name + spec.price));
+        button(self, label, 220 + i * 200, 148, 170, 32, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+          var res = STORE.buy(WB.data, id);
+          WB.ui.flash = res.flash || '';
+          if (res.ok) STORE.save(localStorage, WB.data);
+          later(function () { show(1); });
+        });
+      });
       addFootTrio(this,
         '回看图', function () { later(function () { show(0); }); },
         '跑一次', function () {
@@ -790,7 +831,7 @@
           WB.ui.runT0 = Date.now() / 1000;
           self._applyHook();
         },
-        '去摆关', function () { later(function () { show(2); }); }
+        '打开商店', function () { try { if (window.VW && VW.openShop) VW.openShop(); } catch (e) {} }
       );
       WB.layout.freqPlus = { x: 500, y: 430 };
       WB.layout.freqMinus = { x: 310, y: 430 };
@@ -859,16 +900,16 @@
       var gy = EDIT.gy;
       this._sky = ART.dressSky(this, gy + 6);
       ART.addGround(this, EDIT.L, gy, STORE.MC * EDIT.cw, 4, 2);
-      words(this, '摆一小关 · 放陷阱 · 调频率 · 跑一次', 360, 470, 16, '#1a2744', 8);
+      words(this, '摆关 · 前两格安全 · 点格子摆东西', 360, 448, 16, '#1a2744', 8);
       var self = this;
       var tools = [['spike', '刺'], ['fire', '火'], ['spring', '弹'], ['mist', '雾'], ['rock', '石'], ['coin', '币'], ['del', '擦']];
-      addTrapChipStrip(self, tools, isPhoneShell() ? 424 : 428);
-      var trayY = isPhoneShell() ? 424 : 428;
-      button(self, '④装备', 560, trayY, 84, isPhoneShell() ? 26 : 36, GREEN, WHITE, function () {
-        later(function () { show(3); });
+      addTrapChipStrip(self, tools, isPhoneShell() ? 412 : 416);
+      var trayY = isPhoneShell() ? 412 : 416;
+      button(self, '去设置', 560, trayY, 84, isPhoneShell() ? 26 : 36, GREEN, WHITE, function () {
+        later(function () { show(1); });
       });
-      button(self, '⑥听选', 660, trayY, 84, isPhoneShell() ? 26 : 36, NAVY, WHITE, function () {
-        later(function () { show(5); });
+      button(self, '去关联', 660, trayY, 84, isPhoneShell() ? 26 : 36, NAVY, WHITE, function () {
+        later(function () { show(3); });
       });
       /* shop lives in HTML drawer; keep a tiny wallet chip on canvas */
       words(this, '💰' + ((WB.data.wallet && WB.data.wallet.coins) | 0), 720, trayY, 15, '#ffe07a', 8);
@@ -931,9 +972,9 @@
       ART.panel(this, 386, 96, 460, 30, cc.color(255, 244, 214), 235, 10, 12);
       this.flashLab = words(this, WB.ui.flash || '点格子摆东西', 386, 96, 15, '#7a4e00', 11);
       addFootTrio(this,
-        '回频率', function () { later(function () { show(1); }); },
+        '回看图', function () { later(function () { show(0); }); },
         '跑一次', function () { WB.ui.running = true; WB.ui.runT0 = Date.now() / 1000; },
-        '去装备', function () { later(function () { show(3); }); }
+        '去觉察', function () { later(function () { show(4); }); }
       );
       WB.layout.editCell = function (i) {
         return { x: EDIT.L + (i + 0.5) * EDIT.cw, y: EDIT.gy + 50 };
@@ -1139,7 +1180,7 @@
       var note = WB.data.expect ? ('记下了：' + WB.data.expect) : '点一个就行';
       words(this, note, 724, 120, 16, '#9ff0a8', 8);
 
-      button(this, '回装备', isPhoneShell() ? 90 : 110, 30, isPhoneShell() ? 100 : 130, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show(3); }); });
+      button(this, '回关卡', isPhoneShell() ? 90 : 110, 30, isPhoneShell() ? 100 : 130, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show((WB.ui.ldStep | 0) || 2); }); });
       button(this, '联机游玩', isPhoneShell() ? 300 : 360, 32, isPhoneShell() ? 140 : 160, isPhoneShell() ? 48 : 48, GOLD, INK, function () {
         STORE.save(localStorage, WB.data);
         location.href = 'custom-play.html?v=c38&net=1';
@@ -1165,46 +1206,46 @@
   });
 
 
-  /* ---------- ④ 装备 ---------- */
-  var EquipLayer = cc.Layer.extend({
+  /* ---------- 关联 · BGM↔九关（骨架；细挂曲切片4） ---------- */
+  var LinkLayer = cc.Layer.extend({
     ctor: function () {
       this._super();
-      WB.sceneName = 'equip';
+      WB.sceneName = 'link';
       addChrome(this, 3);
       ART.fill(this, ART.tex.night, 0);
-      words(this, '④ 装备 · 用钱包买武器', W / 2, 470, 24, '#ffe7a0', 8);
-      words(this, '钱不够买不了 · 已买再点是装备 · 没装备仍是手里剑', W / 2, 436, 14, '#c9c3ef', 8);
-      var wal = WB.data.wallet || { coins: 0, weapons: [], equipped: null };
-      ART.panel(this, W / 2, 300, 820, 260, ccColor(18, 26, 58), 235, 2, 18);
-      ART.frame(this, W / 2, 300, 820, 260, cc.color(255, 255, 255), 70, 3, 18);
-      words(this, '💰 金币 ' + ((wal.coins) | 0), W / 2, 390, 22, '#ffe07a', 8);
+      words(this, '关联 · BGM ↔ 九关', W / 2, 448, 22, '#ffe7a0', 8);
+      words(this, '本页是挂载面骨架 · 完整选曲挂关见切片4 · 可先去⑥深听选', W / 2, 418, 13, '#c9c3ef', 8);
+      ART.panel(this, W / 2, 270, 880, 260, ccColor(18, 26, 58), 235, 2, 18);
+      ART.frame(this, W / 2, 270, 880, 260, cc.color(255, 224, 122), 120, 3, 18);
+      var cur = '';
+      if (WB.data && WB.data.audio && WB.data.audio.bgmId) cur = WB.data.audio.bgmId;
+      else if (WB.data && WB.data.music) cur = WB.data.music;
+      var curName = cur || '未选（试玩回退全局曲）';
+      words(this, '当前全局曲：' + curName, W / 2, 370, 16, '#9ff0a8', 8);
+      words(this, '九关槽（1–8 + 第9我的关卡）· 未挂则用全局曲', W / 2, 340, 13, '#a8a0c8', 8);
       var self = this;
-      var ids = ['dart', 'blade', 'gun'];
-      ids.forEach(function (id, i) {
-        var spec = STORE.WEAPONS[id];
-        var owned = wal.weapons.indexOf(id) >= 0;
-        var on = wal.equipped === id;
-        var label = on ? (spec.name + ' · 使用中') : (owned ? (spec.name + ' · 点击装备') : (spec.name + ' · ' + spec.price + '币'));
-        var cx = 220 + i * 260;
-        button(self, label, cx, 300, 220, 56, on ? GOLD : NAVY, on ? INK : WHITE, function () {
-          var res = STORE.buy(WB.data, id);
-          WB.ui.flash = res.flash || '';
-          if (res.ok) STORE.save(localStorage, WB.data);
-          later(function () { show(3); });
-        });
-        words(self, owned ? '已拥有' : ('价格 ' + spec.price), cx, 250, 14, '#a8a0c8', 8);
-      });
-      var flash = WB.ui.flash || '点一张卡购买或装备';
-      words(this, flash, W / 2, 200, 16, '#9ff0a8', 8);
-      words(this, '右侧抽屉也可买 · 规则与存档钱包 v1.2 相同', W / 2, 168, 13, '#8f88b8', 8);
+      var i;
+      for (i = 1; i <= 9; i++) {
+        (function (n) {
+          var label = n === 9 ? '第9·我的' : ('第' + n + '关');
+          var cx = 80 + ((n - 1) % 5) * 170;
+          var cy = n <= 5 ? 290 : 230;
+          button(self, label + '·未挂', cx, cy, 150, 36, NAVY, WHITE, function () {
+            WB.ui.flash = '小宇：挂曲细功能在下一刀；先去⑥听选或回设置。';
+            later(function () { show(3); });
+          });
+        })(i);
+      }
+      words(this, WB.ui.flash || '点关卡槽占位 · 或跳⑥听完整曲库', W / 2, 175, 14, '#ffe7a0', 8);
       addFootTrio(this,
         '回摆关', function () { later(function () { show(2); }); },
-        '打开商店', function () { try { if (window.VW && VW.openShop) VW.openShop(); } catch (e) {} },
+        '去⑥听选', function () { later(function () { show(5); }); },
         '去觉察', function () { later(function () { show(4); }); }
       );
       return true;
     }
   });
+
 
   /* ---------- ⑥ 听选音频 ---------- */
   var AudioLayer = cc.Layer.extend({
@@ -1271,7 +1312,7 @@
       this._super();
       WB.sceneName = 'gate';
       var pending = WB.ui.gatePending;
-      if (pending == null || !isDesignStep(pending)) pending = 1;
+      if (pending == null || !isDesignStep(pending)) pending = 2;
       WB.ui.gatePending = pending;
       addChrome(this, pending);
       ART.fill(this, ART.tex.night, 0);
@@ -1350,7 +1391,7 @@
   var LookScene = cc.Scene.extend({ onEnter: function () { this._super(); this.addChild(new LookLayer()); } });
   var FreqScene = cc.Scene.extend({ onEnter: function () { this._super(); this.addChild(new FreqLayer()); } });
   var EditScene = cc.Scene.extend({ onEnter: function () { this._super(); this.addChild(new EditLayer()); } });
-  var EquipScene = cc.Scene.extend({ onEnter: function () { this._super(); this.addChild(new EquipLayer()); } });
+  var LinkScene = cc.Scene.extend({ onEnter: function () { this._super(); this.addChild(new LinkLayer()); } });
   var ReflectScene = cc.Scene.extend({ onEnter: function () { this._super(); this.addChild(new ReflectLayer()); } });
   var AudioScene = cc.Scene.extend({ onEnter: function () { this._super(); this.addChild(new AudioLayer()); } });
 
@@ -1378,8 +1419,8 @@
         WB.ui.flash = res.flash || '';
         if (res.ok) STORE.save(localStorage, WB.data);
         VW.refreshShop();
-        if (WB.ui.step === 3) later(function () { show(3); });
-        else if (WB.ui.step === 2) later(function () { show(2); });
+        if (WB.ui.step === 1) later(function () { show(1); });
+        else if (isDesignStep(WB.ui.step)) later(function () { show(WB.ui.step | 0); });
       };
       el.appendChild(b);
     });
@@ -1558,8 +1599,8 @@
             scene.addChild(layer);
             ART.fill(layer, ART.tex.night, 0);
             words(layer, '这一课还没迁进工作台', W / 2, H / 2 + 20, 28, '#ffe7a0', 2);
-            words(layer, '今晚六步已经可以打开', W / 2, H / 2 - 30, 20, '#ffffff', 2);
-            button(layer, '打开今晚六步', W / 2, H / 2 - 90, 240, 52, GREEN, WHITE, function () {
+            words(layer, '今晚关卡工坊已经可以打开', W / 2, H / 2 - 30, 20, '#ffffff', 2);
+            button(layer, '打开今晚工坊', W / 2, H / 2 - 90, 240, 52, GREEN, WHITE, function () {
               location.search = '?lesson=tonight&step=0';
             });
             cc.director.runScene(scene);

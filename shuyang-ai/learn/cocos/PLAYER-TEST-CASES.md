@@ -1,5 +1,7 @@
 # 伍澍暘成长屋 · 玩家测试用例
 
+> 实现进度：切片3 关卡设计合并已上 tip `vw49`/`wb80`（B-LD-* 可测；关联面骨架）。
+
 对照需求：`PRODUCT.md`（权威）· `DESIGN.md` · Player playtest · Jobs Pages QA。  
 测环境：GitHub Pages `main` → https://silaswu2026.github.io/shuyang-chengzhangwu/  
 每条用例：硬刷新后再测；**手机横屏 ~844×390（主验）** + 竖屏 ~390×844 + 桌面（标「双端/三端」）。  
