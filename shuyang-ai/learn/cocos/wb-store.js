@@ -1,6 +1,8 @@
 /**
  * Tonight workbench save. v1.2 adds wallet (coins, weapons, equipped)
  * and still writes the v1.1 tiles / traps / mine fields.
+ * Audio (bgmId + sfx toggles) lives beside wallet without breaking it.
+ * Default runway: tonight-waves-v1 (safe start, four waves, all traps).
  * No Cocos calls, so a node check can load this file.
  */
 (function (root) {
@@ -32,7 +34,98 @@
     return { coins: 0, weapons: [], equipped: null };
   }
 
+  function blankAudio() {
+    if (root.WBAudio && root.WBAudio.blankAudio) return root.WBAudio.blankAudio();
+    return {
+      bgmId: 'explore',
+      sfx: {
+        walk: true, jump: true, land: true, spike: true, fire: true,
+        spring: true, coin: true, hurt: true, hit: true
+      }
+    };
+  }
+
+  function normalizeAudio(raw) {
+    if (root.WBAudio && root.WBAudio.normalize) return root.WBAudio.normalize(raw);
+    var a = blankAudio();
+    if (!raw || typeof raw !== 'object') return a;
+    if (typeof raw.bgmId === 'string') a.bgmId = raw.bgmId;
+    if (raw.sfx && typeof raw.sfx === 'object') {
+      Object.keys(a.sfx).forEach(function (k) {
+        if (typeof raw.sfx[k] === 'boolean') a.sfx[k] = raw.sfx[k];
+      });
+    }
+    return a;
+  }
+
+  /**
+   * Perfect default runway: safe start, four waves, all trap kinds,
+   * monsters/boss stay at the play end (not on the 12 design cells).
+   * 教 2–3 · 练 4–5 · 变 7–8 · 考 10–11, with coin breaths.
+   */
+  function defaultMineMap() {
+    var m = blankMap();
+    m[2] = 'coin';
+    m[3] = 'spike';
+    m[4] = 'fire';
+    m[5] = 'spring';
+    m[6] = 'coin';
+    m[7] = 'mist';
+    m[8] = 'rock';
+    m[9] = 'coin';
+    m[10] = 'spike';
+    m[11] = 'fire';
+    return m;
+  }
+
+  function defaultTraps() {
+    return {
+      spike: { interval: 3, up: 1, damage: 1 },
+      fire: { damage: 1, dur: 3, burn: 3 },
+      rock: { damage: 1 },
+      mist: { slow: 1.6 },
+      spring: { power: 820 }
+    };
+  }
+
+  /** Full localStorage payload shared by workbench, custom-play, xy-go ?custom=1. */
+  function buildDefaultSave(extra) {
+    var map = defaultMineMap();
+    var mp = defaultMp();
+    var tiles = [];
+    var x;
+    for (x = 0; x < MC; x++) tiles.push({ x: x, y: ROWS - 1, type: 'g' });
+    /* one late gap in 考区前，不打断前三波铺垫 */
+    tiles = tiles.filter(function (t) { return !(t.x === 9 && t.y === ROWS - 1); });
+    map.forEach(function (k, i) { if (k) tiles.push({ x: i, y: ROWS - 2, type: k }); });
+    var d = {
+      version: '1.2',
+      theme: 'swamp',
+      cols: MC,
+      rows: ROWS,
+      tiles: tiles,
+      traps: defaultTraps(),
+      mine: {
+        map: map.slice(),
+        mp: {
+          spike: { interval: mp.spike.interval, up: mp.spike.up, damage: mp.spike.damage },
+          fire: { dur: mp.fire.dur, damage: mp.fire.damage }
+        }
+      },
+      wallet: blankWallet(),
+      audio: blankAudio(),
+      lastScore: 0,
+      by: '',
+      presetId: 'tonight-waves-v1'
+    };
+    if (extra && typeof extra === 'object') {
+      Object.keys(extra).forEach(function (k) { d[k] = extra[k]; });
+    }
+    return d;
+  }
+
   function createState() {
+    var map = defaultMineMap();
     return {
       interval: 3,
       hook: '',
@@ -42,13 +135,15 @@
       add_one: '',
       who: '小雨',
       tool: 'spike',
-      sel: null,
-      selX: -1,
-      map: blankMap(),
+      sel: 'spike',
+      selX: 3,
+      map: map,
       mp: defaultMp(),
       wallet: blankWallet(),
       music: '',
-      likes: 0
+      likes: 0,
+      audio: blankAudio(),
+      lastScore: 0
     };
   }
 
@@ -159,8 +254,10 @@
     }
     if (typeof raw.music === 'string') s.music = raw.music;
     if (typeof raw.likes === 'number' && raw.likes >= 0) s.likes = raw.likes | 0;
+    s.audio = normalizeAudio(raw.audio);
+    if (typeof raw.lastScore === 'number' && raw.lastScore >= 0) s.lastScore = raw.lastScore | 0;
     for (var i = 0; i < MC; i++) {
-      if (s.map[i] === 'spike' || s.map[i] === 'fire') {
+      if (s.map[i] === 'spike' || s.map[i] === 'fire' || s.map[i] === 'spring' || s.map[i] === 'mist' || s.map[i] === 'rock') {
         s.sel = s.map[i];
         s.selX = i;
         s.tool = s.map[i];
@@ -237,6 +334,9 @@
     };
     d.music = state.music || '';
     d.likes = state.likes | 0;
+    d.audio = normalizeAudio(state.audio || (prev && prev.audio));
+    d.lastScore = (state.lastScore | 0);
+    d.presetId = prev.presetId || 'tonight-waves-v1';
     d.savedAt = new Date().toISOString();
     d.by = prev.by || '伍澍暘';
     storage.setItem(KEY, JSON.stringify(d));
@@ -309,30 +409,31 @@
   }
 
 
-  function defaultRhythmMap() {
-    var m = blankMap();
-    m[2] = 'coin';
-    m[5] = 'spike';
-    m[8] = 'coin';
-    return m;
-  }
-
   function mapIsEmpty(map) {
     if (!map || map.length !== MC) return true;
     for (var i = 0; i < MC; i++) if (map[i]) return false;
     return true;
   }
 
-  /** Seed old tonight rhythm when there is no saved map. */
+  /** @deprecated use defaultMineMap; kept for visual-workbench callers. */
+  function defaultRhythmMap() {
+    return defaultMineMap();
+  }
+
+  /** Seed tonight-waves-v1 when there is no saved map. */
   function ensureDefaultMap(state) {
     if (!state) return state;
     if (mapIsEmpty(state.map)) {
-      state.map = defaultRhythmMap();
+      state.map = defaultMineMap();
       state.interval = 3;
       state.mp.spike.interval = 3;
       state.tool = 'spike';
       state.sel = 'spike';
-      state.selX = 5;
+      state.selX = 3;
+      if (state.lastScore == null) state.lastScore = 0;
+      if (!state.audio) state.audio = blankAudio();
+      if (state.music == null) state.music = '';
+      if (state.likes == null) state.likes = 0;
     }
     return state;
   }
@@ -359,6 +460,10 @@
     grantCoins: grantCoins,
     buy: buy,
     ensureDefaultMap: ensureDefaultMap,
-    defaultRhythmMap: defaultRhythmMap
+    defaultRhythmMap: defaultRhythmMap,
+    defaultMineMap: defaultMineMap,
+    defaultTraps: defaultTraps,
+    buildDefaultSave: buildDefaultSave,
+    blankWallet: blankWallet
   };
 })(typeof window !== 'undefined' ? window : this);
