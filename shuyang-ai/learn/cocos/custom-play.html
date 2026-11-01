@@ -44,8 +44,8 @@ h1{margin:0;font-size:13px;color:#ffe7a0;flex:1;text-align:center;font-weight:90
 #boot.err{display:flex}
 #netBanner{display:none;position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:11;font-size:12px;font-weight:800;background:#1a2048ee;color:#9ff0a8;padding:4px 12px;border-radius:999px;white-space:nowrap}
 #netBanner.on{display:block}
-#netPanel{display:none;position:fixed;inset:0;z-index:40;align-items:center;justify-content:center;background:rgba(8,10,20,.82)}
-#netPanel.on{display:flex}
+#netPanel{display:none;position:fixed;inset:0;z-index:40;align-items:center;justify-content:center;background:rgba(8,10,20,.82);pointer-events:none}
+#netPanel.on{display:flex;pointer-events:auto}
 #netPanel .card{background:linear-gradient(180deg,#2a3360,#1a2048);border:2px solid #9ff0a866;border-radius:16px;padding:16px 18px;text-align:center;max-width:92%;min-width:260px}
 #netPanel h2{margin:0 0 8px;font-size:18px;color:#ffe7a0}
 #netPanel p{margin:0 0 10px;font-size:13px;color:#c9c3ef;font-weight:700}
@@ -172,6 +172,6 @@ h1{margin:0;font-size:13px;color:#ffe7a0;flex:1;text-align:center;font-weight:90
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
 <script src="wb-store.js?v=wb6"></script>
 <script src="wb-audio.js?v=wb6"></script>
-<script src="custom-play.js?v=c32"></script>
+<script src="custom-play.js?v=c33"></script>
 </body>
 </html>

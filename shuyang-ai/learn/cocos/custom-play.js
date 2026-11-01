@@ -1237,9 +1237,15 @@
       if (wait) netBanner(wait, false);
       p.classList.remove('on');
       p.style.display = 'none';
+      p.style.pointerEvents = 'none';
       var st = $('netStart');
       if (st) st.style.display = 'none';
       return;
+    }
+    if (!on) {
+      p.style.pointerEvents = 'none';
+    } else {
+      p.style.pointerEvents = 'auto';
     }
     if (on) {
       p.classList.add('on');
@@ -1471,7 +1477,9 @@
     try {
       var q = new URLSearchParams(location.search || '');
       if (q.get('net') === '1') {
-        /* Solo-first: play immediately; Peer match is soft invite in background */
+        /* Solo-first: soft BEFORE any panel; play never waits on peer */
+        netSoft = true;
+        netBanner('联机邀请中（可继续单人）·点「联机游玩」看房间', false);
         setTimeout(function () {
           netSoft = true;
           netBanner('联机邀请中（可继续单人）·点「联机游玩」看房间', false);
