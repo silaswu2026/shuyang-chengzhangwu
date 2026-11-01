@@ -93,9 +93,10 @@
 - **六步正式拆开（vw44 / wb74；练习金 vw45 / wb75）**：顶栏 chip i ↔ 场景 i（①→⑥）；当前步绿、其余海军蓝；④装备 / ⑥听选为真场景（visual 仍可开 HTML 抽屉；workbench ⑥默认开喇叭面板）。`?step=0..5`。验收对照 `PRODUCT.md` P-L2-* / `PLAYER-TEST-CASES.md` B3·B5·B16·B17。
 - 联机单人优先加固：`?net=1` 立刻 `netSoft=true`，全屏房间卡不挡操作（PeerJS 栈未换）。
 
-### ①看图脚本重写（方案 · 2026-11-01）
-- 状态：**待 Silas 拍板**；**未改** LookScene 代码。
-- 全文分镜：[`docs/LOOK-STEP-SCRIPT.md`](docs/LOOK-STEP-SCRIPT.md)（原理 A0–A6 → 方法 B1–B3 → 总结 C1；第二主题钓鱼的人 F1–F4）。
+### ①看图脚本重写（已落地 · vw47/wb78 · 2026-11-01）
+- 状态：**Silas 已放行**；LookScene 已改为三阶段翻页（原理 A0–A6 → 方法 B1–B3 → 总结 C1）。
+- 每页左【画面区】右【信息区】（孩子句 + 小宇旁白 + chips）；阶段钮可跳；末页「我看懂钩子了」→②频率。
+- 全文分镜：[`docs/LOOK-STEP-SCRIPT.md`](docs/LOOK-STEP-SCRIPT.md)；第二主题 F1–F4 仍 P1 未强制接入。
 - 正式名锁：伍澍暘 · 小宇。
 
 ### ②③④横版关卡综合方案（2026-11-01）
@@ -105,12 +106,12 @@
 - 正式名锁：伍澍暘 · 小宇。
 
 ### 今日通话设计总册（2026-11-01）
-- 状态：**设计授权已开 · 全部待 Silas 确认**；**未改代码**。
+- 状态：**Silas 已放行实现**；切片按 IMPLEMENTATION-PLAN；切片1 看图已推。
 - 总册：[`docs/TODAY-CALL-DESIGN-2026-11-01.md`](docs/TODAY-CALL-DESIGN-2026-11-01.md)（醒目标题：**待 Silas 确认：并 vs 不并**；默认不并）。
 - 觉察前置：[`docs/AWARENESS-GATE-BEFORE-DESIGN.md`](docs/AWARENESS-GATE-BEFORE-DESIGN.md)。
 - 试玩换壳：[`docs/PLAYTEST-SHELL-PARITY.md`](docs/PLAYTEST-SHELL-PARITY.md)（只换壳，PeerJS/核心不动）。
 - ⑥角色走路/砍击 SFX：[`docs/MUSIC-LEVEL-BIND-UI.md`](docs/MUSIC-LEVEL-BIND-UI.md) §9b。
-- 确认前禁止改 LookScene / 摆关 / 听选 / L3。
+- ~~确认前禁止改 LookScene~~ → 切片1 已改 LookScene；摆关/听选/L3 仍等后续切片。
 
 已经做上的（c37 · 2026-11-01）：
 

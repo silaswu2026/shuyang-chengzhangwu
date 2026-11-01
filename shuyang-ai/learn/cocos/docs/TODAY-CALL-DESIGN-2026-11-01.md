@@ -91,7 +91,7 @@
 
 | 文档 | 状态 | 代码 |
 | --- | --- | --- |
-| LOOK-STEP-SCRIPT | 方案待拍板 | 未改 |
+| LOOK-STEP-SCRIPT | Silas 已放行 · 切片1 落地 | LookScene 三阶段（vw47/wb78） |
 | AWARENESS-GATE-BEFORE-DESIGN | 产品官补签 PASS · 待拍板 | 未改 |
 | LEVEL-STEPS-234-REDESIGN | 维度 PASS；**结构=合并**（合同已跟） | 未改 |
 | MUSIC-LEVEL-BIND-UI | 产品官补签 PASS（含 §9b） | 未改 |

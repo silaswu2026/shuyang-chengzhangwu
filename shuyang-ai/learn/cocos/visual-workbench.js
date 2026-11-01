@@ -1,7 +1,7 @@
 /** AI办学小屋 · 课程3 · 可视化关卡工坊 (deep editor). Same save key as tonight. */
 /**
  * 可视化工坊 · 与今晚工作台共用 xygo-custom-level v1.2。
- * vw44: 正式六步 ①→⑥（④装备/⑥听选升格为场景）· vw43 叠字/窄屏壳保留。
+ * vw47: 正式六步 ①→⑥（④装备/⑥听选升格为场景）· vw47 看图三阶段；vw43 叠字/窄屏壳保留。
  */
 (function () {
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
@@ -363,157 +363,257 @@
     }
   }
 
-  /* ---------- 看图 ---------- */
+  /* ---------- 看图 · 三阶段（原理→方法→总结）vw47/wb78 ---------- */
+  /* 每页：左【画面区】右【信息区】；分镜对照 docs/LOOK-STEP-SCRIPT.md */
+  var LOOK_PAGES = [
+    { phase: '原理', id: 'A0', kid: '有的游戏一开始就对你好。', xiaoyu: '先别急着玩。我们看它怎么请你进来。', kind: 'open', chips: ['观察', '新手礼'] },
+    { phase: '原理', id: 'A1', kid: '它先用很容易的奖励让你开心。', xiaoyu: '门槛很低：动一点点，就开箱、加分。', kind: 'easy', chips: ['低门槛', '即时奖'] },
+    { phase: '原理', id: 'A2', kid: '难一点之后，你会以为全是自己厉害。', xiaoyu: '再难一点。你以为：这是我自己的本事。', kind: 'pride', chips: ['我厉害？'] },
+    { phase: '原理', id: 'A3', kid: '再往后，它要你多想一想才给奖。', xiaoyu: '要动脑、花心思，才拿到回馈。', kind: 'think', chips: ['动脑', '花心思'] },
+    { phase: '原理', id: 'A4', kid: '奖励会越来越大、越来越新。', xiaoyu: '奖励一直升级：更新的、更大的、更想再来一局。', kind: 'upgrade', chips: ['升级奖', '再一局'] },
+    { phase: '原理', id: 'A5', kid: '玩着玩着，就停不下来。', xiaoyu: '不知不觉，时间被它牵走了。', kind: 'addict', chips: ['再一局', '花时间'] },
+    { phase: '原理', id: 'A6', kid: '最后它要你继续付时间，有时还要钱或看广告。', xiaoyu: '沉迷以后：花更多时间，有时还要花钱或看广告。', kind: 'cost', chips: ['花时间', '钱/广告', '学习受损'], exit: '看清楚了：这不是你笨，是钩子一步步变长。' },
+    { phase: '方法', id: 'B1', kid: '先练：把奖励看成钩子。', xiaoyu: '方法一：看见钩子。宝箱、积分、再一局——都可能是钩。', kind: 'see', chips: ['低门槛', '升级奖', '再一局'] },
+    { phase: '方法', id: 'B2', kid: '玩之前/玩之中，问自己这三句。', xiaoyu: '方法二：停三秒，问自己。想清楚再点「再一局」。', kind: 'ask', chips: ['练本事还是要奖？', '丢掉什么？', '谁说了算？'] },
+    { phase: '方法', id: 'B3', kid: '开玩前先定：什么时候停。', xiaoyu: '方法三：先定停点，再开始玩。停点是你定的。', kind: 'rule', chips: ['玩到××停', '响铃就停'], exit: '钩子还在，但我可以不咬。' },
+    { phase: '总结', id: 'C1', kid: '我的人生我来掌舵，动脑，不让别人牵着走。', xiaoyu: '总结：掌握自己的人生。自己动脑想，而不是被别人——或被游戏——牵着走。', kind: 'master', chips: ['掌握人生', '自己动脑', '不被牵着走'], exit: '给伍澍暘：看懂钩子，再去自己摆关。' }
+  ];
+  var LOOK_PHASE_FIRST = { '原理': 0, '方法': 7, '总结': 10 };
+
+  function lookClamp(i) {
+    var n = LOOK_PAGES.length;
+    i = i | 0;
+    if (i < 0) return 0;
+    if (i >= n) return n - 1;
+    return i;
+  }
+
   var LookLayer = cc.Layer.extend({
     ctor: function () {
       this._super();
       WB.sceneName = 'look';
       addChrome(this, 0);
+      WB.ui.look = lookClamp(WB.ui.look);
       var page = WB.ui.look;
-      if (page === 0) this._hook();
-      else this._stop();
-      if (page === 1) {
-        button(this, '上一句', 150, 32, 160, 44, NAVY, WHITE, function () {
+      var spec = LOOK_PAGES[page];
+      var phone = isPhoneShell();
+      var land = false;
+      try { land = window.innerWidth > window.innerHeight && window.innerHeight < 520; } catch (eL) {}
+
+      /* 阶段小标：原理 · 方法 · 总结 */
+      var phases = ['原理', '方法', '总结'];
+      var pCenters = phone ? (land ? [120, 260, 400] : [140, 300, 460]) : [160, 340, 520];
+      phases.forEach(function (name, i) {
+        var on = spec.phase === name;
+        button(this, name, pCenters[i], 468, phone ? 100 : 120, phone ? 32 : 34, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+          later(function () { WB.ui.look = LOOK_PHASE_FIRST[name]; show(0); });
+        });
+      }, this);
+      words(this, '伍澍暘 · 看图', phone ? 720 : 780, 468, 14, '#e8e4ff', 9);
+
+      /* 左画面 / 右信息 */
+      var pic = { x: 20, y: 92, w: phone && land ? 480 : 520, h: 300 };
+      var infoX = pic.x + pic.w + 16;
+      var infoW = W - infoX - 20;
+      var info = { x: infoX, y: 92, w: infoW, h: 300 };
+      this._pic = pic;
+      ART.frame(this, pic.x + pic.w / 2, pic.y + pic.h / 2, pic.w + 6, pic.h + 6, cc.color(110, 200, 255), 200, 1, 14);
+      ART.panel(this, info.x + info.w / 2, info.y + info.h / 2, info.w, info.h, ccColor(18, 26, 52), 235, 2, 14);
+      ART.frame(this, info.x + info.w / 2, info.y + info.h / 2, info.w, info.h, cc.color(255, 224, 122), 140, 3, 14);
+
+      words(this, '【画面】' + spec.id, pic.x + 70, pic.y + pic.h - 18, 13, '#9ff0a8', 8);
+      words(this, '【信息】' + spec.phase, info.x + 70, info.y + info.h - 18, 13, '#ffe07a', 8);
+
+      this._drawPic(spec, pic);
+      this._drawInfo(spec, info);
+
+      /* 底栏翻页 */
+      var last = page >= LOOK_PAGES.length - 1;
+      if (page > 0) {
+        button(this, '上一张', phone ? 110 : 130, 32, phone ? 120 : 140, phone ? 42 : 44, NAVY, WHITE, function () {
+          later(function () { WB.ui.look = lookClamp(page - 1); show(0); });
+        });
+      }
+      button(this, last ? '我看懂钩子了' : '下一张', phone ? (last ? 720 : 780) : (last ? 760 : 800), 32, phone ? (last ? 220 : 160) : (last ? 240 : 180), phone ? 46 : 44, GREEN, WHITE, function () {
+        later(function () {
+          if (page >= LOOK_PAGES.length - 1) show(1);
+          else { WB.ui.look = lookClamp(page + 1); show(0); }
+        });
+      });
+      if (last) {
+        button(this, '再看原理', phone ? 400 : 420, 32, phone ? 140 : 150, phone ? 40 : 42, NAVY, WHITE, function () {
           later(function () { WB.ui.look = 0; show(0); });
         });
       }
-      button(this, page === 0 ? '下一句' : '去调频率', 790, 32, 220, 44, GREEN, WHITE, function () {
-        later(function () {
-          if (WB.ui.look === 0) { WB.ui.look = 1; show(0); }
-          else show(1);
-        });
-      });
-      words(this, page === 0 ? '● ○' : '○ ●', 470, 32, 16, '#ffe7a0', 31);
-      /* P1: caption band below nav, above icon cards — was y=78 z=31 over 「忘了事/花时间」 */
-      words(this, '一句：上钩 → 自己决定停', W / 2, 62, 14, '#e8e4ff', 9);
+      var dots = '';
+      var i;
+      for (i = 0; i < LOOK_PAGES.length; i++) {
+        dots += (i === page ? '●' : '○');
+        if (i === 6 || i === 9) dots += ' ';
+      }
+      words(this, dots, W / 2, 58, 11, '#ffe7a0', 9);
+      words(this, spec.phase + ' · ' + (page + 1) + '/' + LOOK_PAGES.length + ' · 小宇旁白', W / 2, 78, 12, '#c8c0e8', 9);
+
       this._t = 0;
       this.scheduleUpdate();
       return true;
     },
-    _hook: function () {
-      var box = { x: 24, y: 108, w: 912, h: 328 };
-      this._box = box;
-      ART.frame(this, box.x + box.w / 2, box.y + box.h / 2, box.w + 8, box.h + 8, cc.color(110, 200, 255), 220, 1, 16);
-      this._water = ART.dressWater(this, box);
-      words(this, '上钩＝鱼被钓上钩', W / 2, 458, 26, '#ffe07a', 8);
-      words(this, '饵在钩上。鱼咬住，就被拉上去。', W / 2, box.y + box.h - 22, 16, '#ffffff', 8);
-      this.line = ART.place(this, ART.tex.pixel, 710, 402, {
-        anchor: [0.5, 1], z: 13, color: cc.color(236, 244, 255)
-      });
-      this.hookSp = ART.place(this, ART.tex.hook, 710, 340, { anchor: [0.5, 1], h: 78, z: 14 });
-      this.worm = ART.place(this, ART.tex.worm, 692, 250, { h: 34, z: 15 });
-      this.fishShade = ART.place(this, ART.tex.blob, 200, 200, { h: 16, z: 11, opacity: 120 });
-      this.fish = ART.place(this, ART.tex.fish, 160, 210, { h: 124, z: 12 });
-      this.bubbles = [];
-      var i, b;
-      for (i = 0; i < 6; i++) {
-        b = ART.place(this, ART.tex.bubble, 70 + i * 140, 120, { h: 14 + (i % 3) * 6, z: 3, opacity: 180 });
-        b._x = 70 + i * 140;
-        b._base = 90 + (i % 3) * 24;
-        this.bubbles.push(b);
+    _drawInfo: function (spec, info) {
+      var cx = info.x + info.w / 2;
+      var top = info.y + info.h - 48;
+      /* 孩子句 */
+      var kidLines = this._wrap(spec.kid, 13);
+      var ky = top;
+      kidLines.forEach(function (ln, i) {
+        words(this, ln, cx, ky - i * 26, 18, '#ffe07a', 8);
+      }, this);
+      ky -= kidLines.length * 26 + 10;
+      /* 小宇旁白 */
+      ART.panel(this, cx, ky - 36, info.w - 24, 78, ccColor(8, 16, 32), 200, 6, 12);
+      var yuLines = this._wrap('小宇：' + spec.xiaoyu, 14);
+      yuLines.forEach(function (ln, i) {
+        words(this, ln, cx, ky - 18 - i * 20, 13, '#c8ffd0', 8);
+      }, this);
+      ky -= 90;
+      if (spec.exit) {
+        var ex = this._wrap(spec.exit, 15);
+        var eh = 18 + ex.length * 16;
+        ART.panel(this, cx, info.y + 14 + eh / 2, info.w - 20, eh, ccColor(0, 0, 0), 160, 7, 10);
+        ex.forEach(function (ln, i) {
+          words(this, ln, cx, info.y + 22 + (ex.length - 1 - i) * 16, 12, '#9ff0a8', 8);
+        }, this);
+      } else {
+        words(this, '点「下一张」继续', cx, info.y + 28, 12, '#a8a0c8', 8);
       }
-      this.meta = new cc.Node();
-      this.addChild(this.meta, 13);
-      ART.panel(this.meta, 250, 332, 430, 108, ccColor(8, 16, 32), 200, 0, 16);
-      ART.frame(this.meta, 250, 332, 430, 108, cc.color(255, 224, 122), 160, 1, 16);
-      ART.place(this.meta, ART.tex.pad, 78, 332, { h: 64, z: 2 });
-      addNinja(this.meta, 160, 286, 84, 3);
-      words(this.meta, '进游戏＝被钓上钩', 330, 332, 22, '#9ff0a8', 4);
-      this.meta.setVisible(false);
-      this._hooked = false;
-      var icons = [
-        [ART.tex.loop, '一直玩'],
-        [ART.tex.head, '忘了事'],
-        [ART.tex.clock, '花时间'],
-        [ART.tex.coin, '以后还想玩']
-      ];
-      icons.forEach(function (it, idx) {
-        var x = 120 + idx * 200;
-        /* raise card row so labels clear the caption band at y≈62 */
-        ART.panel(this, x, 132, 150, 72, ccColor(255, 255, 255), 28, 6, 14);
-        ART.place(this, it[0], x, 144, { h: 36, z: 7 });
-        words(this, it[1], x, 108, 14, '#ffe7a0', 8);
-      }, this);
     },
-    _stop: function () {
-      words(this, '我自己决定停', W / 2, 458, 26, '#ffe07a', 8);
-      var box = { x: 24, y: 108, w: 912, h: 328 };
-      ART.frame(this, box.x + box.w / 2, box.y + box.h / 2, box.w + 8, box.h + 8, cc.color(110, 200, 255), 160, 1, 16);
-      ART.blit(this, ART.tex.night, box.x, box.y, box.w, box.h, 0);
-      ART.panel(this, 236, 282, 420, 300, ccColor(0, 0, 0), 80, 1, 18);
-      ART.panel(this, 236, 286, 420, 300, ccColor(18, 26, 52), 235, 2, 18);
-      ART.panel(this, 236, 390, 380, 70, ccColor(255, 255, 255), 22, 3, 16);
-      ART.frame(this, 236, 286, 420, 300, cc.color(255, 150, 150), 210, 4, 18);
-      ART.panel(this, 724, 282, 420, 300, ccColor(0, 0, 0), 80, 1, 18);
-      ART.panel(this, 724, 286, 420, 300, ccColor(18, 26, 52), 235, 2, 18);
-      ART.panel(this, 724, 390, 380, 70, ccColor(255, 255, 255), 22, 3, 16);
-      ART.frame(this, 724, 286, 420, 300, cc.color(159, 240, 168), 210, 4, 18);
-      ART.place(this, ART.tex.fish, 108, 368, { h: 56, z: 5 });
-      ART.place(this, ART.tex.hookMark, 176, 392, { h: 36, z: 6 });
-      words(this, '被钓住了', 300, 400, 26, '#ff8a8a', 6);
-      var left = ['一直玩不停', '忘了别的事', '花时间、还想再开一局'];
-      left.forEach(function (line, i) {
-        ART.place(this, ART.tex.hookMark, 86, 332 - i * 52, { h: 26, z: 5 });
-        words(this, line, 220, 332 - i * 52, 20, '#ffb4b4', 6);
-      }, this);
-      ART.place(this, ART.tex.shield, 620, 392, { h: 64, z: 5 });
-      words(this, '看懂上钩', 760, 400, 26, '#9ff0a8', 6);
-      var right = ['我看见钩子了', '玩够了就停', '我自己决定'];
-      right.forEach(function (line, i) {
-        ART.place(this, ART.tex.shield, 560, 348 - i * 52, { h: 32, z: 5 });
-        words(this, line, 740, 332 - i * 52, 20, '#c8ffd0', 6);
-      }, this);
-      ART.place(this, ART.tex.blob, 480, 162, { h: 18, z: 16, opacity: 140 });
-      this.hero = addNinja(this, 480, 168, 150, 17);
-      ART.panel(this, W / 2, 100, 520, 40, ccColor(0, 0, 0), 140, 7, 14);
-      words(this, '什么时候停，我自己决定', W / 2, 100, 22, '#ffe07a', 8);
+    _wrap: function (text, maxChars) {
+      var out = [];
+      var s = String(text || '');
+      while (s.length > maxChars) {
+        out.push(s.slice(0, maxChars));
+        s = s.slice(maxChars);
+      }
+      if (s) out.push(s);
+      if (!out.length) out.push('');
+      return out.slice(0, 2);
+    },
+    _drawPic: function (spec, pic) {
+      var cx = pic.x + pic.w / 2;
+      var cy = pic.y + pic.h / 2;
+      var kind = spec.kind;
+      if (kind === 'open' || kind === 'easy' || kind === 'pride' || kind === 'think' || kind === 'upgrade') {
+        this._sky = ART.dressSky(this, pic.y + 40, pic);
+        ART.addGround(this, pic.x, pic.y + 36, pic.w - 8, 3, 1);
+      } else if (kind === 'addict' || kind === 'cost' || kind === 'master' || kind === 'see' || kind === 'ask' || kind === 'rule') {
+        ART.blit(this, ART.tex.night, pic.x + 2, pic.y + 2, pic.w - 4, pic.h - 4, 0);
+      } else {
+        ART.blit(this, ART.tex.night, pic.x + 2, pic.y + 2, pic.w - 4, pic.h - 4, 0);
+      }
+
+      if (kind === 'open') {
+        this.hero = addNinja(this, pic.x + 120, pic.y + 40, 110, 12);
+        ART.place(this, ART.tex.pad, pic.x + 280, pic.y + 120, { h: 70, z: 10 });
+        ART.place(this, ART.tex.star, pic.x + 360, pic.y + 200, { h: 48, z: 11 });
+        ART.place(this, ART.tex.coin, pic.x + 400, pic.y + 140, { h: 36, z: 11 });
+        words(this, '新手礼', pic.x + 380, pic.y + 250, 16, '#ffe07a', 12);
+        words(this, '？', cx, cy + 40, 36, '#ffffff', 12);
+      } else if (kind === 'easy') {
+        this.hero = addNinja(this, pic.x + 100, pic.y + 40, 100, 12);
+        ART.place(this, ART.tex.coin, pic.x + 260, pic.y + 160, { h: 44, z: 11 });
+        ART.place(this, ART.tex.star, pic.x + 340, pic.y + 190, { h: 40, z: 11 });
+        ART.place(this, ART.tex.coin, pic.x + 400, pic.y + 150, { h: 32, z: 11 });
+        words(this, '点一下 → 开箱', cx, pic.y + pic.h - 48, 16, '#ffffff', 12);
+        ART.panel(this, pic.x + 160, pic.y + 70, 120, 16, GOLD, 200, 8, 6);
+        words(this, '矮台阶', pic.x + 160, pic.y + 70, 12, '#222222', 9);
+      } else if (kind === 'pride') {
+        this.hero = addNinja(this, cx - 40, pic.y + 40, 120, 12);
+        ART.place(this, ART.tex.flag, pic.x + 360, pic.y + 180, { h: 56, z: 11 });
+        ART.place(this, ART.tex.hook, pic.x + 420, pic.y + 100, { h: 50, z: 9, opacity: 90 });
+        words(this, '我过关了！', cx + 20, pic.y + 250, 18, '#9ff0a8', 12);
+      } else if (kind === 'think') {
+        this.hero = addNinja(this, pic.x + 140, pic.y + 40, 110, 12);
+        ART.place(this, ART.tex.head, pic.x + 280, pic.y + 200, { h: 48, z: 11 });
+        ART.place(this, ART.tex.star, pic.x + 340, pic.y + 230, { h: 28, z: 12 });
+        ART.place(this, ART.tex.star, pic.x + 300, pic.y + 250, { h: 22, z: 12 });
+        ART.place(this, ART.tex.coin, pic.x + 400, pic.y + 140, { h: 36, z: 11 });
+        words(this, '动脑才给奖', cx + 40, pic.y + 100, 16, '#ffe07a', 12);
+      } else if (kind === 'upgrade') {
+        this.hero = addNinja(this, pic.x + 110, pic.y + 40, 100, 12);
+        ART.place(this, ART.tex.coin, pic.x + 280, pic.y + 180, { h: 64, z: 11 });
+        ART.place(this, ART.tex.flag, pic.x + 380, pic.y + 200, { h: 52, z: 11 });
+        ART.place(this, ART.tex.hook, pic.x + 430, pic.y + 90, { h: 70, z: 10 });
+        words(this, '更大 · 更新 · 再来', cx + 30, pic.y + pic.h - 48, 15, '#ffffff', 12);
+      } else if (kind === 'addict') {
+        ART.place(this, ART.tex.clock, pic.x + 120, pic.y + 200, { h: 56, z: 11 });
+        ART.place(this, ART.tex.loop, pic.x + 260, pic.y + 180, { h: 48, z: 11 });
+        this.hero = addNinja(this, pic.x + 380, pic.y + 40, 110, 12);
+        ART.panel(this, pic.x + 260, pic.y + 90, 160, 36, GOLD, 230, 8, 10);
+        words(this, '再一局', pic.x + 260, pic.y + 90, 16, '#222222', 9);
+        words(this, '白天 → 夜里', cx, pic.y + pic.h - 40, 15, '#ffb4b4', 12);
+      } else if (kind === 'cost') {
+        ART.place(this, ART.tex.clock, pic.x + 120, cy + 20, { h: 52, z: 11 });
+        words(this, '花时间', pic.x + 120, cy - 40, 14, '#ffb4b4', 12);
+        ART.place(this, ART.tex.coin, pic.x + 280, cy + 20, { h: 48, z: 11 });
+        words(this, '钱/广告', pic.x + 280, cy - 40, 14, '#ffb4b4', 12);
+        ART.place(this, ART.tex.head, pic.x + 420, cy + 20, { h: 48, z: 11 });
+        words(this, '不想学习', pic.x + 420, cy - 40, 14, '#ffb4b4', 12);
+        this.hero = addNinja(this, cx, pic.y + 36, 90, 12);
+      } else if (kind === 'see') {
+        ART.place(this, ART.tex.pad, cx, cy + 30, { h: 80, z: 10 });
+        [['低门槛', -120], ['升级奖', 0], ['再一局', 120]].forEach(function (it) {
+          ART.place(this, ART.tex.hookMark, cx + it[1], cy - 40, { h: 32, z: 12 });
+          words(this, it[0], cx + it[1], cy - 80, 13, '#ffe07a', 12);
+        }, this);
+        this.hero = addNinja(this, pic.x + 90, pic.y + 36, 100, 12);
+        words(this, '看见钩子', cx, pic.y + pic.h - 40, 16, '#9ff0a8', 12);
+      } else if (kind === 'ask') {
+        var qs = ['①练本事还是要奖？', '②再玩丢掉什么？', '③谁说了算？'];
+        qs.forEach(function (q, i) {
+          var y = pic.y + pic.h - 70 - i * 70;
+          ART.panel(this, cx, y, pic.w - 40, 54, ccColor(18, 26, 52), 230, 8, 12);
+          ART.frame(this, cx, y, pic.w - 40, 54, cc.color(159, 240, 168), 180, 9, 12);
+          words(this, q, cx, y, 15, '#c8ffd0', 10);
+        }, this);
+      } else if (kind === 'rule') {
+        ART.panel(this, cx - 40, cy + 30, 220, 90, ccColor(90, 60, 30), 240, 8, 10);
+        words(this, '玩到××就停', cx - 40, cy + 40, 16, '#ffe07a', 10);
+        words(this, '响铃就停', cx - 40, cy + 10, 14, '#ffffff', 10);
+        ART.place(this, ART.tex.shield, pic.x + 380, cy + 20, { h: 64, z: 11 });
+        this.hero = addNinja(this, pic.x + 120, pic.y + 36, 110, 12);
+        ART.place(this, ART.tex.loop, pic.x + 400, pic.y + 70, { h: 36, z: 9, opacity: 100 });
+        words(this, '无木牌会被拖走', pic.x + 380, pic.y + 50, 12, '#ffb4b4', 12);
+      } else if (kind === 'master') {
+        ART.place(this, ART.tex.hook, pic.x + 80, cy, { h: 60, z: 8, opacity: 70 });
+        this.hero = addNinja(this, cx, pic.y + 40, 130, 14);
+        ART.place(this, ART.tex.shield, cx - 100, cy + 40, { h: 48, z: 12 });
+        ART.place(this, ART.tex.star, cx + 110, cy + 50, { h: 40, z: 12 });
+        ART.place(this, ART.tex.head, cx + 100, cy - 20, { h: 36, z: 12 });
+        words(this, '掌握自己的人生', cx, pic.y + pic.h - 36, 17, '#ffe07a', 12);
+        words(this, '自己动脑 · 不被牵着走', cx, pic.y + pic.h - 58, 13, '#c8ffd0', 12);
+      }
+      /* 信息点 chips 挂在画面区底，避免右栏叠字 */
+      if (spec.chips && spec.chips.length && kind !== 'ask') {
+        var n = Math.min(3, spec.chips.length);
+        var gap = pic.w / (n + 1);
+        for (var ci = 0; ci < n; ci++) {
+          var zx = pic.x + gap * (ci + 1);
+          ART.panel(this, zx, pic.y + 22, Math.min(140, gap - 8), 26, ccColor(0, 0, 0), 160, 14, 8);
+          words(this, spec.chips[ci], zx, pic.y + 22, 11, '#ffe7a0', 15);
+        }
+      }
     },
     update: function (dt) {
       this._t += dt;
-      if (this.hero) this.hero.setPosition(480, 168 + Math.sin(this._t * 2) * 4);
-      if (!this.fish) return;
-      var t = this._t % 8;
-      var ph = t < 2.2 ? 0 : (t < 3.4 ? 1 : 2);
-      if (ph === 2) this._hooked = true;
-      var mouthX = 710;
-      var mouthY = ph < 2 ? 236 : 300 + Math.sin(this._t * 8) * 3;
-      var fishX, fishY;
-      if (ph === 0) {
-        fishX = 150 + (t / 2.2) * 480;
-        fishY = 214 + Math.sin(this._t * 3) * 6;
-      } else {
-        fishX = mouthX - 84;
-        fishY = mouthY + 14;
-      }
-      this.fish.setPosition(fishX, fishY);
-      this.fish.setRotation(ph === 2 ? Math.sin(this._t * 10) * 4 : 0);
-      if (this.fishShade) this.fishShade.setPosition(fishX + 10, fishY - 36);
-      var hookTop = mouthY + 58;
-      this.hookSp.setPosition(mouthX, hookTop);
-      this.line.setPosition(mouthX, 402);
-      this.line.setScale(1.15, Math.max(12, 402 - hookTop) / 4);
-      this.worm.setVisible(ph === 0);
-      this.worm.setPosition(mouthX - 16, mouthY + 6);
-      if (this.meta) this.meta.setVisible(!!this._hooked);
-      var i;
-      if (this._water) {
-        for (i = 0; i < this._water.waves.length; i++) {
-          var wv = this._water.waves[i];
-          wv.setPosition(wv._x0 + Math.sin(this._t * 0.8 + i) * 10, wv._y0 + Math.sin(this._t * 1.6 + i) * 3);
+      if (this.hero) {
+        var hx = this.hero.getPositionX();
+        var hy0 = this.hero._baseY;
+        if (hy0 == null) {
+          this.hero._baseY = this.hero.getPositionY();
+          hy0 = this.hero._baseY;
         }
-        if (this._water.glints) {
-          for (i = 0; i < this._water.glints.length; i++) {
-            var gl = this._water.glints[i];
-            gl.setPosition(gl._x0 + Math.sin(this._t * 1.4 + i) * 18, gl._y0 + Math.sin(this._t * 2 + i) * 2);
-            gl.setOpacity(90 + Math.floor(70 + Math.sin(this._t * 3 + i) * 70));
-          }
-        }
+        this.hero.setPosition(hx, hy0 + Math.sin(this._t * 2) * 3);
       }
-      for (i = 0; i < this.bubbles.length; i++) {
-        var bb = this.bubbles[i];
-        var by = bb._base + ((this._t * 26 + i * 36) % 150);
-        bb.setPosition(bb._x + Math.sin(this._t + i) * 8, by);
-      }
+      driftClouds(this._sky, this._t);
     }
   });
 
