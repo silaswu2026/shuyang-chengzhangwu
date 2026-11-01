@@ -1,6 +1,7 @@
 /**
- * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·沼泽
+ * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·自制关
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
+ * c42: P2 HUD 去「沼泽」壳话（保留 c29 着火/锤提示口径）· c41 换壳；PeerJS/玩法不动。
  * c29: 小岩签 — 沼泽保底可踩火源+着火/灭火短提示；锤子近战/投掷明确扣血闪白。弓/飞镖不回退。
  * c41: 试玩换壳 — 海军径向+手机横屏金框；fitStage 按壳槽；PeerJS/玩法不动。
  * c40: levelAudio 第9关 BGM 回退全局；走路/砍击 SFX 钩子。
@@ -1121,7 +1122,7 @@
       var lvEl = $('lvlChip');
       if (lvEl) lvEl.textContent = '第9关 我的关卡';
       var iv = (level.traps.spike && +level.traps.spike.interval) || 3;
-      $('msg').textContent = (level.by ? level.by + ' · ' : '') + '沼泽·踩火会着火·晃/踩水灭火·锤可砸可投 · Q切武器';
+      $('msg').textContent = (level.by ? level.by + ' · ' : '') + '自制关·踩火会着火·晃/踩水灭火·锤可砸可投 · Q切武器';
     },
     reset: function () {
       this.px = level.spawnC * T + T * 0.5;

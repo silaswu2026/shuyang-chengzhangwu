@@ -1,7 +1,7 @@
 /** AI办学小屋 · 课程3 · 可视化关卡工坊 (deep editor). Same save key as tonight. */
 /**
  * 可视化工坊 · 与今晚工作台共用 xygo-custom-level v1.2。
- * vw51: 试玩入口 tip→c29 · vw50 关联挂九关+走路/砍击 · vw49 关卡设计合并 · vw48 觉察闸 · vw47 看图。
+ * vw52: P2 标题/叠字/HUD · vw51 试玩入口（曾 tip→c29）· vw50 关联+SFX · vw49 关卡设计 · vw48 闸 · vw47 看图。
  */
 (function () {
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
@@ -422,7 +422,8 @@
         });
       });
     });
-    if (onDesign) {
+    /* 闸门场景不挂二级条，避免与金句叠字；①看图二级由 LookLayer 画在同排 */
+    if (onDesign && WB.sceneName !== 'gate') {
       /* 二级平铺：摆关 | 设置 | 关联 */
       var tabY = H - 52;
       var tCenters = phone ? (land ? [160, 320, 480] : [180, 360, 540]) : [240, 480, 720];
@@ -432,7 +433,7 @@
           later(function () { show(tab.step); });
         });
       });
-    } else {
+    } else if (!onDesign && step !== 0) {
       words(layer, land ? '课程3 · 四芯片' : '课程3 · 可视化工坊 · 四芯片+关卡设计', W / 2, H - 52, 12, '#a8a0c8', 21);
     }
   }
@@ -514,16 +515,17 @@
       var land = false;
       try { land = window.innerWidth > window.innerHeight && window.innerHeight < 520; } catch (eL) {}
 
-      /* 阶段小标：原理 · 方法 · 总结 */
+      /* 阶段小标并入顶栏次行（H-52），避免与四芯片/闸门金句叠字；横屏 844×390 主验 */
       var phases = ['原理', '方法', '总结'];
+      var phaseY = H - 52;
       var pCenters = phone ? (land ? [120, 260, 400] : [140, 300, 460]) : [160, 340, 520];
       phases.forEach(function (name, i) {
         var on = spec.phase === name;
-        button(this, name, pCenters[i], 468, phone ? 100 : 120, phone ? 32 : 34, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+        button(this, name, pCenters[i], phaseY, phone ? (land ? 88 : 100) : 120, phone ? (land ? 28 : 32) : 34, on ? GOLD : NAVY, on ? INK : WHITE, function () {
           later(function () { WB.ui.look = LOOK_PHASE_FIRST[name]; show(0); });
         });
       }, this);
-      words(this, '伍澍暘 · 看图', phone ? 720 : 780, 468, 14, '#e8e4ff', 9);
+      words(this, '伍澍暘 · 看图', phone ? (land ? 700 : 720) : 780, phaseY, 13, '#e8e4ff', 21);
 
       /* 左画面 / 右信息 */
       var pic = { x: 20, y: 92, w: phone && land ? 480 : 520, h: 300 };
@@ -1183,14 +1185,14 @@
       button(this, '回关卡', isPhoneShell() ? 90 : 110, 30, isPhoneShell() ? 100 : 130, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show((WB.ui.ldStep | 0) || 2); }); });
       button(this, '联机游玩', isPhoneShell() ? 300 : 360, 32, isPhoneShell() ? 140 : 160, isPhoneShell() ? 48 : 48, GOLD, INK, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c29&net=1';
+        location.href = 'custom-play.html?v=c42&net=1';
       });
       button(this, '去听选', isPhoneShell() ? 520 : 560, 32, isPhoneShell() ? 120 : 140, isPhoneShell() ? 48 : 46, NAVY, WHITE, function () {
         later(function () { show(5); });
       });
       button(this, '去玩这一关', isPhoneShell() ? 760 : 800, 32, isPhoneShell() ? 200 : 200, isPhoneShell() ? 50 : 48, GREEN, WHITE, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c29';
+        location.href = 'custom-play.html?v=c42';
       });
       this._t = 0;
       this.scheduleUpdate();
@@ -1316,7 +1318,7 @@
         '去⑥听选', function () { later(function () { show(5); }); },
         '去玩第9关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c29';
+          location.href = 'custom-play.html?v=c42';
         }
       );
       return true;
@@ -1399,7 +1401,7 @@
         '打开喇叭', function () { try { if (window.VW && VW.openMusic) VW.openMusic(); } catch (e) {} },
         '去玩这一关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c29';
+          location.href = 'custom-play.html?v=c42';
         }
       );
       return true;
@@ -1428,16 +1430,17 @@
       var spec = GATE_QS[qi];
       var picks = WB.ui.gatePicks || (WB.ui.gatePicks = [null, null, null]);
 
-      words(this, '小宇：伍澍暘，先想清楚，再动手摆关', W / 2, phone && land ? 470 : 478, phone ? 16 : 20, '#ffe7a0', 8);
-      words(this, '觉察前置 · 第 ' + (qi + 1) + ' / ' + GATE_QS.length + ' 问 · 答对才能进关卡设计', W / 2, phone && land ? 442 : 448, phone ? 12 : 14, '#c9c3ef', 8);
+      /* 金句放在顶栏板下方，不与四芯片/二级条抢行 */
+      words(this, '小宇：伍澍暘，先想清楚，再动手摆关', W / 2, phone && land ? 448 : 458, phone ? 15 : 18, '#ffe7a0', 8);
+      words(this, '觉察前置 · 第 ' + (qi + 1) + ' / ' + GATE_QS.length + ' 问 · 答对才能进关卡设计', W / 2, phone && land ? 418 : 428, phone ? 12 : 14, '#c9c3ef', 8);
 
-      ART.panel(this, W / 2, phone && land ? 270 : 280, phone ? 900 : 860, phone && land ? 250 : 280, ccColor(18, 26, 58), 235, 2, 18);
-      ART.frame(this, W / 2, phone && land ? 270 : 280, phone ? 900 : 860, phone && land ? 250 : 280, cc.color(255, 224, 122), 120, 3, 18);
+      ART.panel(this, W / 2, phone && land ? 250 : 268, phone ? 900 : 860, phone && land ? 230 : 260, ccColor(18, 26, 58), 235, 2, 18);
+      ART.frame(this, W / 2, phone && land ? 250 : 268, phone ? 900 : 860, phone && land ? 230 : 260, cc.color(255, 224, 122), 120, 3, 18);
 
-      words(this, spec.q, W / 2, phone && land ? 360 : 380, phone ? 18 : 22, '#ffffff', 8);
+      words(this, spec.q, W / 2, phone && land ? 340 : 360, phone ? 17 : 20, '#ffffff', 8);
 
       var self = this;
-      var baseY = phone && land ? 300 : 310;
+      var baseY = phone && land ? 280 : 292;
       spec.opts.forEach(function (opt, i) {
         var on = picks[qi] === opt.id;
         var bg = NAVY;
