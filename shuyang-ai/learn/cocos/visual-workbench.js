@@ -1,7 +1,7 @@
 /** AI办学小屋 · 课程3 · 可视化关卡工坊 (deep editor). Same save key as tonight. */
 /**
  * 可视化工坊 · 与今晚工作台共用 xygo-custom-level v1.2。
- * vw50: 关联挂九关+走路/砍击 · vw49 关卡设计合并 · vw48 觉察闸 · vw47 看图。
+ * vw51: 试玩入口 tip→c41 · vw50 关联挂九关+走路/砍击 · vw49 关卡设计合并 · vw48 觉察闸 · vw47 看图。
  */
 (function () {
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
@@ -1183,14 +1183,14 @@
       button(this, '回关卡', isPhoneShell() ? 90 : 110, 30, isPhoneShell() ? 100 : 130, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show((WB.ui.ldStep | 0) || 2); }); });
       button(this, '联机游玩', isPhoneShell() ? 300 : 360, 32, isPhoneShell() ? 140 : 160, isPhoneShell() ? 48 : 48, GOLD, INK, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c40&net=1';
+        location.href = 'custom-play.html?v=c41&net=1';
       });
       button(this, '去听选', isPhoneShell() ? 520 : 560, 32, isPhoneShell() ? 120 : 140, isPhoneShell() ? 48 : 46, NAVY, WHITE, function () {
         later(function () { show(5); });
       });
       button(this, '去玩这一关', isPhoneShell() ? 760 : 800, 32, isPhoneShell() ? 200 : 200, isPhoneShell() ? 50 : 48, GREEN, WHITE, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c40';
+        location.href = 'custom-play.html?v=c41';
       });
       this._t = 0;
       this.scheduleUpdate();
@@ -1316,7 +1316,7 @@
         '去⑥听选', function () { later(function () { show(5); }); },
         '去玩第9关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c40';
+          location.href = 'custom-play.html?v=c41';
         }
       );
       return true;
@@ -1399,7 +1399,7 @@
         '打开喇叭', function () { try { if (window.VW && VW.openMusic) VW.openMusic(); } catch (e) {} },
         '去玩这一关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c40';
+          location.href = 'custom-play.html?v=c41';
         }
       );
       return true;

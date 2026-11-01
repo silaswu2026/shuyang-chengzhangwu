@@ -106,12 +106,16 @@
 - 正式名锁：伍澍暘 · 小宇。
 
 ### 今日通话设计总册（2026-11-01）
-- 状态：**Silas 已放行实现**；切片按 IMPLEMENTATION-PLAN；切片1 看图已推；**切片2 觉察前置闸已推（vw48/wb79）**。
+- 状态：**Silas 已放行实现**；切片1–5 已推（含试玩换壳 `c41`）。
 - 总册：[`docs/TODAY-CALL-DESIGN-2026-11-01.md`](docs/TODAY-CALL-DESIGN-2026-11-01.md)（醒目标题：**待 Silas 确认：并 vs 不并**；默认不并）。
 - 觉察前置：[`docs/AWARENESS-GATE-BEFORE-DESIGN.md`](docs/AWARENESS-GATE-BEFORE-DESIGN.md) · **已落地方案 A**：进 ②③④ 前三问，答对才进；⑤玩后觉察保留；`?skipGate=1` 仅调试。
-- 试玩换壳：[`docs/PLAYTEST-SHELL-PARITY.md`](docs/PLAYTEST-SHELL-PARITY.md)（只换壳，PeerJS/核心不动）。
+- 试玩换壳：[`docs/PLAYTEST-SHELL-PARITY.md`](docs/PLAYTEST-SHELL-PARITY.md)（**切片5 已上** `c41`：海军径向+手机横屏金框；PeerJS/核心不动）。
 - ⑥角色走路/砍击 SFX：[`docs/MUSIC-LEVEL-BIND-UI.md`](docs/MUSIC-LEVEL-BIND-UI.md) §9b。
 - ~~确认前禁止改 LookScene~~ → 切片1 已改 LookScene；摆关/听选/L3 仍等后续切片。
+
+已经做上的（c41 / vw51 / wb82 · 2026-11-01）：
+
+- **试玩换壳（换壳不换芯）**：`custom-play` 外舞台海军径向 + 手机横屏金框壳（竖屏凹槽 / 桌面铺满）；顶栏 chip 同工坊；联机 CTA 仍在壳上；`fitStage` 按壳槽量尺寸；PeerJS / 单人优先 / 三忍者 / canopy 舞台未改。正式名 **伍澍暘** / 助手 **小宇**。
 
 已经做上的（c37 · 2026-11-01）：
 

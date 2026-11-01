@@ -1,6 +1,7 @@
 /**
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·沼泽
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
+ * c41: 试玩换壳 — 海军径向+手机横屏金框；fitStage 按壳槽；PeerJS/玩法不动。
  * c40: levelAudio 第9关 BGM 回退全局；走路/砍击 SFX 钩子。
  * c28: 明天玩关三件可测 — ①武器弓/锤/飞镖（默飞镖可切换）②水面无陷阱 ③着火踩水灭火（保留左右晃）；结算屏三数。
  * c27: short - load cocos in body (not head): mobile _initSys needs document.body or appendChild null aborts engine before Layer.
@@ -261,15 +262,16 @@
     return s;
   }
 
-  /** Full-bleed like xy-go: shell = viewport; EXACT_FIT kills bottom letterbox black bar. */
+  /** c41: shell fills phone-bezel slot (workbench-family chrome); EXACT_FIT still kills letterbox. */
   function fitStage() {
     updateOrientTip();
     var wrap = $('cvwrap');
     var shell = $('shell');
     if (!wrap || !shell) return;
-    /* shell is position:fixed inset 0 — use window size (not shrunk by top bar) */
-    var aw = Math.max(2, window.innerWidth || shell.clientWidth);
-    var ah = Math.max(2, window.innerHeight || shell.clientHeight);
+    /* Prefer shell/slot client size so gold bezel padding is not counted as play area */
+    var slot = document.getElementById('playSlot') || shell;
+    var aw = Math.max(2, slot.clientWidth || shell.clientWidth || window.innerWidth);
+    var ah = Math.max(2, slot.clientHeight || shell.clientHeight || window.innerHeight);
     var zoom = ah / (TILES_VIS * T);
     zoom = Math.max(0.85, Math.min(zoom, 2.0));
     var nextW = Math.max(240, Math.round(aw / zoom));
