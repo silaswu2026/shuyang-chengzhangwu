@@ -1,11 +1,19 @@
 # 今晚工作台 · 设计记录
 
 
-## 2026-11-01 · 走路手脚摆动（c33 / walk1）
+## 2026-11-01 · 还原原版走动模型（c40）
 
-**问题**：`walk_0..3.png` 几乎是同一中跨步姿态（仅围巾等微差），flipbook 看起来像「滑步 + 冻肢」。
-**做法**：共享模块 `wb-ninja-walk.js`（程序化对侧摆臂/摆腿，绿/红/蓝调色），`custom-play.js` 走路优先走该贴图；工坊预览 `stepNinja` 同口径；`xy-go` run 恢复 `drawHero` 程序化摆臂（不再用 walk_* 静帧）。
-**验收**：左右走动时手臂前后摆、腿交替迈，不是冻结 idle 姿势。
+**问题**：Silas 反馈成长屋试玩走动角色突然变成「另一个模型」。
+**根因**：`c33`（`8f29891`）引入 `wb-ninja-walk.js` / `WBNinjaWalk` 程序化剪影替掉 `walk_0..3` 精灵帧；`c39` 冷开 idle 未就绪时还用程序化贴图占位，剪影与原绿/红/蓝忍者表不一致。
+**做法**：`custom-play` 走路/待机/冷开一律回原版精灵帧（`xy-go/sprites/green` + 红蓝 tint）；撤掉 `applyWalkPose` / 程序化占位；试玩页不再加载 `wb-ninja-walk.js`（工坊预览可暂留）。**原模型优先于摆臂**。
+**保留**：c37 踩踏、c38 chip、c39 冷开 ASAP（earlyIdleImg / 不等 load）、着火、复活、KeyL、PeerJS；正式名 **伍澍暘** / **小宇**。
+**验收**：走动可见原版忍者表（非几何程序化剪影）；idle/jump/knock 同族。
+
+## 2026-11-01 · 走路手脚摆动（c33 / walk1 · 已由 c40 在试玩回退）
+
+**问题（当时）**：`walk_0..3.png` 几乎是同一中跨步姿态（仅围巾等微差），flipbook 看起来像「滑步 + 冻肢」。
+**当时做法**：共享模块 `wb-ninja-walk.js` 程序化摆臂；`custom-play` 优先该贴图。
+**现状（c40）**：Silas 要求还原最开始的角色模型 → 试玩改回原版 `walk_*` 精灵帧；程序化剪影不再用于 custom-play。工坊预览仍可能用 walk 模块。
 
 ## 产品结构（权威：PRODUCT.md）
 
@@ -140,9 +148,13 @@
 
 - **手机壳同比例放大 ~1.2×**：`.phone-bezel` 上限宽 504 / 高 912（原 420/760），竖屏窄框半径 34；横屏收紧 chrome（`100vh - 28px`、半径 26、padding 7×12），`.canvas-slot` 仍锁 16:9。正式名 **伍澍暘** / 助手 **小宇**。根首页无手机壳，改的是课程3 visual-workbench / workbench。
 
+已经做上的（c40 · 2026-11-01）：
+
+- **还原原版走动模型**：撤 c33 程序化走路与 c39 程序化冷开占位；试玩用绿/红/蓝精灵帧。正式名 **伍澍暘** / 助手 **小宇**。
+
 已经做上的（c39 · 2026-11-01）：
 
-- **试玩冷开首帧忍者**：横屏曾测到冷开 ~0.9–3.2s 只有夜景森林+HUD、透明画布无忍者（非整屏棕底；暖刷 ~0.2s OK）。根因：`boot` 等 `window.load`，被 `#castStrip` 三张大肖像 JPG（~0.9MB）+ CSS `canopy-night` 床图拖住，期间 HTML HUD/床已可见。现：①脚本末立刻 boot（不等 load）；②肖像改 `data-src` 首帧后再灌；③CSS 床纯 `#5a3a24`（夜林仍 JS 并行后贴）；④`<link rel=preload>` idle/dirt/grass；⑤idle 解析期预载；⑥≤1.2s 硬顶开玩，idle 未到则 `WBNinjaWalk` 程序化占位。保留 critical 路径与 c38 chip / c37 踩踏 / c36 着火。正式名 **伍澍暘** / 助手 **小宇**。
+- **试玩冷开首帧忍者**：横屏曾测到冷开 ~0.9–3.2s 只有夜景森林+HUD、透明画布无忍者（非整屏棕底；暖刷 ~0.2s OK）。根因：`boot` 等 `window.load`，被 `#castStrip` 三张大肖像 JPG（~0.9MB）+ CSS `canopy-night` 床图拖住，期间 HTML HUD/床已可见。现：①脚本末立刻 boot（不等 load）；②肖像改 `data-src` 首帧后再灌；③CSS 床纯 `#5a3a24`（夜林仍 JS 并行后贴）；④`<link rel=preload>` idle/dirt/grass；⑤idle 解析期预载；⑥≤1.2s 硬顶开玩。**c40**：占位改为原版 `earlyIdleImg`/idle PNG（不再程序化剪影）。保留 critical 路径与 c38 chip / c37 踩踏 / c36 着火。正式名 **伍澍暘** / 助手 **小宇**。
 
 
 ## 旧→新画面对照（parity）

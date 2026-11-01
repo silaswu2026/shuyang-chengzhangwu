@@ -1,20 +1,21 @@
 /**
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·自制关
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
+ * c40: 还原走动/待机为原版绿/红/蓝精灵帧（walk_0..3 flipbook）；撤掉 c33 程序化 WBNinjaWalk 走路与 c39 程序化冷开占位（原模型优先于摆臂）。
  * c38: 匹配中不再闪「C 红」— 开房路径立刻乐观锁 Host→A绿；id 占用改 Guest→B蓝；跳过 netRole=null 的中间态（PeerJS open 前 ~3s）。
  * c37: 踩踏伤害 — 下落踩中小怪一脚秒杀(2)、鳄王每次1约三踩；成功踩踏不伤自己并小反弹；侧面贴身仍伤玩家。
  * c36: 着火持续掉血；走路不能灭火（仅踩水/烧完灭）；去掉左右晃灭火。
  * c35: 死亡自动复活（−50积分或免活3次/关；用尽才失败重玩）。was c34: 键盘武器仅 KeyL。
- * c33: 走路手脚自然摆动 — 程序化 opposite arm/leg（旧 walk_* PNG 近同姿态仅飘围巾）；WBNinjaWalk。
+ * c33was: 曾用程序化 WBNinjaWalk 摆臂；c40 按 Silas 要求还原原版精灵模型。
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
  * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。
  * c42: P2 HUD 去「沼泽」壳话（保留 c29 着火/锤提示口径）· c41 换壳；PeerJS/玩法不动。
  * c29: 小岩签 — 沼泽保底可踩火源+着火/灭火短提示；锤子近战/投掷明确扣血闪白。弓/飞镖不回退。
  * c41: 试玩换壳 — 海军径向+手机横屏金框；fitStage 按壳槽；PeerJS/玩法不动。
- * c40: levelAudio 第9关 BGM 回退全局；走路/砍击 SFX 钩子。
+ * c40audio(hist): levelAudio 第9关 BGM 回退全局；走路/砍击 SFX 钩子。
  * c28: 明天玩关三件可测 — ①武器弓/锤/飞镖（默飞镖可切换）②水面无陷阱 ③着火踩水灭火（保留左右晃）；结算屏三数。
  * c27: short - load cocos in body (not head): mobile _initSys needs document.body or appendChild null aborts engine before Layer.
- * c39: cold-open ninja ASAP — boot without window.load; defer castStrip JPGs; CSS bed solid (no canopy race); preload idle; critical idle(+dirt/grass); procedural placeholder if PNG late; night BG deferred; 1.2s hard cap.
+ * c39: cold-open ninja ASAP — boot without window.load; defer castStrip JPGs; CSS bed solid (no canopy race); preload idle; critical idle(+dirt/grass); night BG deferred; 1.2s hard cap. (c40: no procedural placeholder — original idle PNG / earlyIdleImg only.)
  * c38also: net host/guest chip always matches visible cast once role known (applyRoleVisuals + updHUD → netLockedPalette).
  * c37dirt: shorten dirt bed (gy≈H*0.28, min 72) for phone landscape play space.
  * c36tint: do not gate runScene on tint cache; tint via data-URL; swamp canvas bed (fix c35 blank navy).
@@ -60,19 +61,6 @@
         if (ds) im.setAttribute('src', ds);
       }
     } catch (eH) {}
-  }
-
-  function proceduralNinjaTex(palette) {
-    try {
-      var WNW = window.WBNinjaWalk;
-      if (!WNW || !WNW.paintFrame || typeof cc === 'undefined' || !cc.Texture2D) return null;
-      var cv = WNW.paintFrame(0, palette || 'green', 0, 0);
-      if (!cv) return null;
-      var tex = new cc.Texture2D();
-      tex.initWithElement(cv);
-      tex.handleLoadedTexture();
-      return tex;
-    } catch (eP) { return null; }
   }
 
   /* PRODUCT §8: only green/red/blue controllable skins (tint from green sheet; no 4th hero). */
@@ -187,11 +175,6 @@
     } catch (eF) {
       try { sp.setTexture(SP + name + '.png'); } catch (eF2) {}
     }
-  }
-  function applyWalkPose(sp, palette, phase, speed) {
-    var WNW = window.WBNinjaWalk;
-    if (!WNW || !sp) return false;
-    return !!WNW.applyToSprite(sp, phase, palette, speed, null);
   }
   function syncCastUI() {
     var row = document.getElementById('castPick');
@@ -1177,18 +1160,21 @@
       this.ninja = new cc.Sprite(texFor(this.palette, 'idle'));
       this.ninja.setAnchorPoint(0.5, 0);
       var sz = this.ninja.getContentSize();
-      /* c39: if idle PNG not in cache yet, procedural pose so first paint is not empty stage. */
+      /* c40: never use procedural silhouette — hydrate original idle PNG (earlyIdleImg) if cache empty. */
       if (!sz || sz.height < 8) {
-        var ph = proceduralNinjaTex(this.palette);
-        if (ph) {
-          try {
-            this.ninja.setTexture(ph);
-            var pr = ph.getContentSize && ph.getContentSize();
-            if (pr && pr.height > 2) this.ninja.setTextureRect(cc.rect(0, 0, pr.width, pr.height));
+        try {
+          var ei = earlyIdleImg;
+          if (ei && ei.naturalHeight > 2 && typeof cc !== 'undefined' && cc.Texture2D) {
+            var et = new cc.Texture2D();
+            et.initWithElement(ei);
+            et.handleLoadedTexture();
+            this.ninja.setTexture(et);
+            var er = et.getContentSize && et.getContentSize();
+            if (er && er.height > 2) this.ninja.setTextureRect(cc.rect(0, 0, er.width, er.height));
             sz = this.ninja.getContentSize();
-            idleTexH = (pr && pr.height) || idleTexH;
-          } catch (ePh) {}
-        }
+            idleTexH = (er && er.height) || ei.naturalHeight || idleTexH;
+          }
+        } catch (ePh) {}
       }
       var texH = idleTexH;
       if (sz && sz.height > 8) texH = sz.height;
@@ -1203,7 +1189,6 @@
       this.burnFx.setVisible(false);
       this.world.addChild(this.burnFx, 11);
       this.walkFrames = ['walk_0', 'walk_1', 'walk_2', 'walk_3'];
-      this.locoT = 0;
       applyNinjaFrame(this.ninja, this.palette, 'idle');
 
       var lvEl = $('lvlChip');
@@ -1678,15 +1663,11 @@
 
         if (!this.grounded) applyNinjaFrame(this.ninja, this.palette, 'jump_0');
         else if (Math.abs(this.vx) > 20) {
-          /* c33: phase-driven opposite limb swing (not stiff walk_* flipbook). */
-          this.locoT = (this.locoT || 0) + Math.abs(this.vx) * dt * 0.085;
-          if (!applyWalkPose(this.ninja, this.palette, this.locoT, Math.abs(this.vx))) {
-            this.frameT += dt;
-            if (this.frameT > 0.1) { this.frameT = 0; this.frame = (this.frame + 1) % 4; }
-            applyNinjaFrame(this.ninja, this.palette, this.walkFrames[this.frame]);
-          }
+          /* c40: original walk_* sprite flipbook (restore pre-c33 model; no WBNinjaWalk). */
+          this.frameT += dt;
+          if (this.frameT > 0.1) { this.frameT = 0; this.frame = (this.frame + 1) % 4; }
+          applyNinjaFrame(this.ninja, this.palette, this.walkFrames[this.frame]);
         } else {
-          this.locoT = 0;
           applyNinjaFrame(this.ninja, this.palette, 'idle');
         }
         if (AUDIO) AUDIO.footstep(dt, Math.abs(this.vx) > 20, this.grounded);
