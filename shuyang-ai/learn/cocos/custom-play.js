@@ -4,6 +4,7 @@
  * c21: layout/CSS chrome only (desktop denser keys, phone smaller pads); CHAR_FRAC/levels unchanged.
  * c27: short - load cocos in body (not head): mobile _initSys needs document.body or appendChild null aborts engine before Layer.
  * c26: canvas always visible (c25); renderMode 1=Canvas (lite has no rendererWebGL).
+ * c37: shorten dirt bed (gy≈H*0.28, min 72) for phone landscape play space.
  * c36: do not gate runScene on tint cache; tint via data-URL; swamp canvas bed (fix c35 blank navy).
  */
 (function () {
@@ -820,9 +821,9 @@
       loadAudioCfg();
       startBgm();
       this.worldW = level.cols * T;
-      /* Grass ~42% up — thick dirt bed fills bottom (kills 18% black band under controls). */
-      this.gy = Math.round(H * 0.42);
-      this.gy = Math.max(110, Math.min(this.gy, H - 100));
+      /* c37: grass ~28% up — shorter dirt bed on phone landscape (~844×390); keep under touch pad, free sky/walk. */
+      this.gy = Math.round(H * 0.28);
+      this.gy = Math.max(72, Math.min(this.gy, H - 100));
 
       this._addNightBg();
       this._buildGround();
