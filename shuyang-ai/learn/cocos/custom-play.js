@@ -4,6 +4,7 @@
  * c21: layout/CSS chrome only (desktop denser keys, phone smaller pads); CHAR_FRAC/levels unchanged.
  * c27: short - load cocos in body (not head): mobile _initSys needs document.body or appendChild null aborts engine before Layer.
  * c26: canvas always visible (c25); renderMode 1=Canvas (lite has no rendererWebGL).
+ * c38: net host/guest chip always matches visible cast (fix stale 「C 红」 on green host).
  * c37: shorten dirt bed (gy≈H*0.28, min 72) for phone landscape play space.
  * c36: do not gate runScene on tint cache; tint via data-URL; swamp canvas bed (fix c35 blank navy).
  */
@@ -130,6 +131,16 @@
       btn.disabled = locked && sk !== cur;
       btn.setAttribute('aria-pressed', sk === cur ? 'true' : 'false');
     });
+  }
+  /** Keep sprite + HUD chip + cast row on the same palette (host=绿 / guest=蓝 / solo=local). */
+  function applyRoleVisuals() {
+    var pal = netLockedPalette();
+    if (sceneRef) {
+      sceneRef.palette = pal;
+      if (sceneRef.ninja) applyNinjaFrame(sceneRef.ninja, pal, sceneRef.grounded === false ? 'jump_0' : 'idle');
+      updHUD(sceneRef.hp, sceneRef.coins);
+    }
+    syncCastUI();
   }
   function bindCastUI() {
     var row = document.getElementById('castPick');
@@ -565,7 +576,9 @@
     var hpEl = $('hp');
     if (hpEl) {
       var pct = Math.round((left / MAX_HP) * 100);
-      var pal = (sceneRef && sceneRef.palette) || netLockedPalette();
+      /* Chip must follow role lock, not a stale solo pick (e.g. red) after becoming host. */
+      var pal = netLockedPalette();
+      if (sceneRef && sceneRef.palette !== pal) sceneRef.palette = pal;
       var chip = CAST_LABEL[pal] || 'A 绿';
       var extra = (sceneRef && sceneRef.p2) ? ' · B 蓝' : '';
       hpEl.innerHTML = '<span class="hpchip">' + chip + extra + '</span><span class="hpbar"><i style="width:' + pct + '%"></i></span>';
@@ -1353,15 +1366,7 @@
       layer.world.addChild(sp, 9);
       applyNinjaFrame(sp, pal, 'idle');
       layer.p2 = { sp: sp, palette: pal, x: layer.px - 40, y: layer.py, _nl: false, _nr: false, _nj: false, _nt: false };
-      if (netRole === 'host') {
-        layer.palette = 'green';
-        applyNinjaFrame(layer.ninja, 'green', 'idle');
-      } else if (netRole === 'guest') {
-        layer.palette = 'blue';
-        applyNinjaFrame(layer.ninja, 'blue', 'idle');
-      }
-      syncCastUI();
-      updHUD(layer.hp, layer.coins);
+      applyRoleVisuals();
     } catch (eP2) {}
   }
 
@@ -1458,6 +1463,7 @@
     if (msg.t === 'bc-offer' && !netLinked && netRole !== 'host') {
       netTransport = 'bc'; netBcSession = msg.session; netCode = msg.id || netCode;
       netRole = 'guest'; netLinked = true;
+      applyRoleVisuals();
       netBanner('已连上·同机', true);
       netPanel(true, '已准备！等房主点「开始游戏」');
       netSend({ t: 'bc-ok', session: netBcSession });
@@ -1501,6 +1507,7 @@
       netPanel(true, 'PeerJS 未加载，用同页 BroadcastChannel 试同机…');
       netRole = 'host'; netCode = netRoomId();
       netBcSession = 's' + Date.now();
+      applyRoleVisuals();
       if (netBC) netBC.postMessage({ t: 'bc-offer', session: netBcSession, id: netCode });
       return;
     }
@@ -1514,8 +1521,7 @@
     var hosted = false;
     netPeer.on('open', function (id) {
       hosted = true; netRole = 'host'; netCode = id;
-      if (sceneRef) { sceneRef.palette = 'green'; applyNinjaFrame(sceneRef.ninja, 'green', 'idle'); }
-      syncCastUI();
+      applyRoleVisuals();
       netPanel(true, netSoft ? '开房成功 · 单人可继续，队友稍后可加入' : '开房成功 · 等另一位也点「联机游玩」');
       netBanner('房主 · ' + id.slice(-6), false);
       netBcSession = 's' + Date.now();
@@ -1527,8 +1533,7 @@
       /* id taken → join as guest */
       try { netPeer.destroy(); } catch (e2) {}
       netRole = 'guest';
-      if (sceneRef) { sceneRef.palette = 'blue'; applyNinjaFrame(sceneRef.ninja, 'blue', 'idle'); updHUD(sceneRef.hp, sceneRef.coins); }
-      syncCastUI();
+      applyRoleVisuals();
       netPeer = new Peer(NET_PEER_OPTS);
       netPeer.on('open', function () {
         netPanel(true, '发现房间，正在连接…');
@@ -1563,6 +1568,7 @@
       netBanner('', false);
       try { if (netPeer) netPeer.destroy(); } catch (e) {}
       netRole = null; netLinked = false;
+      applyRoleVisuals();
     };
     var start = $('netStart');
     if (start) start.onclick = function () {
@@ -1702,11 +1708,12 @@
             ensureTintCache(function () {
               if (sceneRef && sceneRef.ninja) {
                 try {
-                  applyNinjaFrame(sceneRef.ninja, sceneRef.palette || localPalette, 'idle');
+                  applyRoleVisuals();
                   if (sceneRef.p2 && sceneRef.p2.sp) applyNinjaFrame(sceneRef.p2.sp, sceneRef.p2.palette || 'blue', 'idle');
                 } catch (eApply) {}
+              } else {
+                syncCastUI();
               }
-              syncCastUI();
             });
           }
           if (!others.length) { left = 1; tick(); return; }

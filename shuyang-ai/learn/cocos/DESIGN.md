@@ -121,6 +121,7 @@
 
 可控皮肤 **只许** 绿 / 红 / 蓝（`xy-go/sprites/green/` 底图 + canvas color-tint；肖像 `xy-go/ninjas/ninja-{green,blue,red}.jpg`）。
 - `custom-play`：单人选色（`#castPick` / `?skin=` / `localStorage sycocos-skin`）；联机锁定 Host=绿、Guest=蓝；禁第四主角；`tex.head` 等插画不是玩家皮。
+- **c38 chip 同步**：开房主 / 进房客 / 选色 / tint 就绪后，HUD `hpchip` 与可见忍者同色（`applyRoleVisuals` + `updHUD` 一律读 `netLockedPalette()`）。修「房主绿身却仍写 C 红」。
 - 工坊演示跑图目前默认绿忍者（三色子集，合格）；不引入绿色小人头像当主控。
 - 备路 `xy-go` 本身已有三色 tint；仍标过渡（见上表）。
 
