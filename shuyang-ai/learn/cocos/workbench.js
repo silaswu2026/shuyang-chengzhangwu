@@ -3,7 +3,7 @@
  * 画面按旧课件今晚路径的插画来拼：天空、远山、草皮、水面、钩子、鱼，
  * 道具用 wb-art 小图。全是 Cocos 节点，不是整页截图。
  * 存档 localStorage xygo-custom-level v1.2（wallet + audio）。试玩 custom-play.html。
- * wb72: 手机横屏壳入框 · 顶栏六步信息架构 · 旧四场景仍可跑 · 联机入口。
+ * wb73: P1 叠字/窄屏默认手机壳 · wb72: 手机横屏壳入框 · 顶栏六步信息架构 · 旧四场景仍可跑 · 联机入口。
  */
 (function () {
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
@@ -25,14 +25,22 @@
   var WHITE = ccColor(255, 255, 255);
   var CREAM = ccColor(232, 244, 255);
 
+  function isNarrowViewport() {
+    try {
+      var w = window.innerWidth || 0, h = window.innerHeight || 0;
+      return w <= 520 || (w < 720 && h > w);
+    } catch (e) { return false; }
+  }
+
   function detectDevicePhone() {
     try {
-      return window.innerWidth < 720 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || '');
+      return isNarrowViewport() || window.innerWidth < 720 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || '');
     } catch (e) { return false; }
   }
 
   function readShellPref() {
     try {
+      if (isNarrowViewport()) return 'phone';
       if (window.__wbShell === 'phone' || window.__wbShell === 'desktop') return window.__wbShell;
       var s = localStorage.getItem('wb-shell');
       if (s === 'phone' || s === 'desktop') return s;
@@ -464,7 +472,8 @@
         });
       });
       words(this, page === 0 ? '● ○' : '○ ●', 470, 32, 16, '#ffe7a0', 31);
-      words(this, '一句：上钩 → 自己决定停', W / 2, 78, 16, '#e8e4ff', 31);
+      /* P1: caption band below nav, above icon cards — was y=78 z=31 over 「忘了事/花时间」 */
+      words(this, '一句：上钩 → 自己决定停', W / 2, 62, 14, '#e8e4ff', 9);
       this._t = 0;
       this.scheduleUpdate();
       return true;
@@ -508,9 +517,10 @@
       ];
       icons.forEach(function (it, idx) {
         var x = 120 + idx * 200;
-        ART.panel(this, x, 112, 150, 78, ccColor(255, 255, 255), 28, 6, 14);
-        ART.place(this, it[0], x, 124, { h: 40, z: 7 });
-        words(this, it[1], x, 90, 15, '#ffe7a0', 8);
+        /* raise card row so labels clear the caption band at y≈62 */
+        ART.panel(this, x, 132, 150, 72, ccColor(255, 255, 255), 28, 6, 14);
+        ART.place(this, it[0], x, 144, { h: 36, z: 7 });
+        words(this, it[1], x, 108, 14, '#ffe7a0', 8);
       }, this);
     },
     _stop: function () {
