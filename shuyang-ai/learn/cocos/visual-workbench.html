@@ -5,7 +5,7 @@
 <meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0f1230">
-<meta name="wb-build" content="vw45">
+<meta name="wb-build" content="vw46">
 <title>AI办学小屋 · 课程3 · 可视化关卡工坊</title>
 <style>
 :root{
@@ -22,7 +22,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   align-items:center;justify-content:center;gap:10px;padding:0}
 #shell.phone .phone-bezel{display:flex}
 #shell.desktop .phone-bezel{display:none}
-.phone-bezel{display:none;width:min(96vw,420px);height:min(calc(100vh - 72px),760px);max-height:100%;border-radius:36px;
+.phone-bezel{display:none;width:min(96vw,504px);height:min(calc(100vh - 72px),912px);max-height:100%;border-radius:43px;
   padding:12px 10px 16px;background:linear-gradient(160deg,#1c2348,#0a0d22);
   border:2px solid var(--stroke);box-shadow:0 18px 40px rgba(0,0,0,.45);flex-direction:column;
   justify-content:center;align-items:stretch;gap:8px}
@@ -89,7 +89,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
 @media (max-width:720px){
   #stage{padding:52px 4px 4px}
   #shell{max-height:calc(100vh - 56px);height:auto;min-height:0}
-  .phone-bezel{width:min(100vw - 8px,420px);height:auto;max-height:calc(100vh - 56px);border-radius:28px;padding:10px 8px 12px}
+  .phone-bezel{width:min(100vw - 8px,504px);height:auto;max-height:calc(100vh - 56px);border-radius:34px;padding:10px 8px 12px}
   #shell.desktop #desktopSlot{width:min(100%,calc((100vh - 120px) * 16 / 9));height:auto;aspect-ratio:16/9;
     max-height:min(70vh,calc(100vh - 120px))}
   .phone-bezel .canvas-slot{width:100%;max-height:calc(100vh - 100px)}
@@ -107,9 +107,9 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   #shell{width:100%;height:calc(100vh - 38px);max-height:calc(100vh - 38px)}
   .phone-bezel{
     flex-direction:row;align-items:center;justify-content:center;
-    width:min(100vw - 8px, calc((100vh - 42px) * 16 / 9 + 28px));
-    height:calc(100vh - 42px);max-height:calc(100vh - 42px);
-    padding:6px 10px;border-radius:22px;gap:8px
+    width:min(100vw - 8px, calc((100vh - 28px) * 16 / 9 + 34px));
+    height:calc(100vh - 28px);max-height:calc(100vh - 28px);
+    padding:7px 12px;border-radius:26px;gap:8px
   }
   .phone-notch{width:8px;height:26%;margin:0;border-radius:8px;flex:0 0 8px}
   .phone-bezel .canvas-slot{
@@ -198,7 +198,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   </div>
 </aside>
 
-<!-- vw45: practice coins for ④ · vw44: formal six steps · vw43: narrow→手机壳 · caption clear · vw42: landscape phone shell + honest boot if canvas never lands in the phone frame -->
+<!-- vw46: phone-bezel ~1.2× (504/912) + landscape chrome · vw45: practice coins for ④ · vw44: formal six steps · vw43: narrow→手机壳 · caption clear · vw42: landscape phone shell + honest boot if canvas never lands in the phone frame -->
 <script>
 (function(){
   var cleared=false;
@@ -240,10 +240,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
 })();
 </script>
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
-<script src="wb-store.js?v=vw45"></script>
-<script src="wb-art.js?v=vw45"></script>
+<script src="wb-store.js?v=vw46"></script>
+<script src="wb-art.js?v=vw46"></script>
 <script src="wb-audio.js?v=wb71"></script>
-<script src="visual-workbench.js?v=vw45"></script>
+<script src="visual-workbench.js?v=vw46"></script>
 <script>
 (function () {
   var shell = document.getElementById('shell');
