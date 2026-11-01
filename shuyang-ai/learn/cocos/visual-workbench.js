@@ -1,7 +1,7 @@
 /** AI办学小屋 · 课程3 · 可视化关卡工坊 (deep editor). Same save key as tonight. */
 /**
  * 可视化工坊 · 与今晚工作台共用 xygo-custom-level v1.2。
- * vw52: P2 标题/叠字/HUD · vw51 试玩入口（曾 tip→c29）· vw50 关联+SFX · vw49 关卡设计 · vw48 闸 · vw47 看图。
+ * vw53: 闸门藏二级条 + 关联不挤条 · vw52 P2 标题/叠字 · vw51 试玩壳 · vw50 关联+SFX · vw49 关卡设计 · vw48 闸。
  */
 (function () {
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
@@ -369,7 +369,9 @@
     }
   }
 
-  function addChrome(layer, step) {
+  function addChrome(layer, step, opts) {
+    opts = opts || {};
+    var forGate = !!opts.gate;
     ART.fill(layer, ART.tex.night, 0);
     plate(layer, 0, 0, W, FOOT, ccColor(15, 18, 48, 242), 18);
     plate(layer, 0, FOOT - 3, W, 3, ccColor(255, 224, 122, 180), 19);
@@ -422,9 +424,11 @@
         });
       });
     });
-    /* 闸门场景不挂二级条，避免与金句叠字；①看图二级由 LookLayer 画在同排 */
-    if (onDesign && WB.sceneName !== 'gate') {
-      /* 二级平铺：摆关 | 设置 | 关联 */
+    /* 闸门：显式 gate 旗藏二级条（不占压金句、不可点）；①看图二级由 LookLayer 画 */
+    if (forGate) {
+      words(layer, land ? '先答三问 · 再进关卡设计' : '小宇：先答三问，再进关卡设计', W / 2, H - 52, phone ? 12 : 13, '#a8a0c8', 21);
+    } else if (onDesign) {
+      /* 二级平铺：摆关 | 设置 | 关联（次行，与页内标题留空） */
       var tabY = H - 52;
       var tCenters = phone ? (land ? [160, 320, 480] : [180, 360, 540]) : [240, 480, 720];
       LD_TABS.forEach(function (tab, ti) {
@@ -433,7 +437,7 @@
           later(function () { show(tab.step); });
         });
       });
-    } else if (!onDesign && step !== 0) {
+    } else if (step !== 0) {
       words(layer, land ? '课程3 · 四芯片' : '课程3 · 可视化工坊 · 四芯片+关卡设计', W / 2, H - 52, 12, '#a8a0c8', 21);
     }
   }
@@ -1226,10 +1230,18 @@
         : (WB.data.levelAudio || {});
       WB.data.levelAudio = la;
 
-      words(this, '关联 · BGM ↔ 九关', W / 2, 468, 20, '#ffe7a0', 8);
-      words(this, '先点心情曲（可听），再点关卡挂上/清掉 · 未挂试玩回退全局曲 · 禁 Mixkit', W / 2, 442, 12, '#c9c3ef', 8);
-      ART.panel(this, W / 2, 255, 900, 300, ccColor(18, 26, 58), 235, 2, 18);
-      ART.frame(this, W / 2, 255, 900, 300, cc.color(255, 224, 122), 120, 3, 18);
+      /* 标题在二级条（H-52≈488）下方留空，横屏不挤不叠 */
+      var phoneL = isPhoneShell();
+      var landL = false;
+      try { landL = window.innerWidth > window.innerHeight && window.innerHeight < 520; } catch (eLL) {}
+      var titleY = phoneL && landL ? 428 : 436;
+      var subY = phoneL && landL ? 404 : 412;
+      words(this, '关联 · BGM ↔ 九关', W / 2, titleY, phoneL && landL ? 16 : 18, '#ffe7a0', 8);
+      words(this, phoneL && landL ? '点心情曲可听 · 再点关卡挂/清 · 未挂回退全局 · 禁 Mixkit' : '先点心情曲（可听），再点关卡挂上/清掉 · 未挂试玩回退全局曲 · 禁 Mixkit', W / 2, subY, phoneL && landL ? 11 : 12, '#c9c3ef', 8);
+      var panelCy = phoneL && landL ? 238 : 248;
+      var panelH = phoneL && landL ? 268 : 280;
+      ART.panel(this, W / 2, panelCy, 900, panelH, ccColor(18, 26, 58), 235, 2, 18);
+      ART.frame(this, W / 2, panelCy, 900, panelH, cc.color(255, 224, 122), 120, 3, 18);
 
       var tracks = AUDIO && AUDIO.BGM ? AUDIO.BGM : [
         { id: 'explore', name: '探险' }, { id: 'tense', name: '紧张' },
@@ -1244,10 +1256,11 @@
         if (msg) WB.ui.flash = msg;
         later(function () { show(3); });
       }
+      var trackY = phoneL && landL ? 360 : 368;
       tracks.forEach(function (t, i) {
         var on = track === t.id;
         var cx = 130 + i * 200;
-        button(self, (on ? '● ' : '') + t.name, cx, 380, 170, 36, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+        button(self, (on ? '● ' : '') + t.name, cx, trackY, 170, phoneL && landL ? 32 : 36, on ? GOLD : NAVY, on ? INK : WHITE, function () {
           WB.ui.linkTrack = t.id;
           if (AUDIO) {
             try { AUDIO.unlock(); AUDIO.playBgm(t.id, true); } catch (eA) {}
@@ -1258,7 +1271,7 @@
       });
 
       var globalCur = (WB.data.audio && WB.data.audio.bgmId) || WB.data.music || 'explore';
-      words(this, '选中曲：' + track + '　全局回退：' + globalCur, W / 2, 340, 13, '#9ff0a8', 8);
+      words(this, '选中曲：' + track + '　全局回退：' + globalCur, W / 2, phoneL && landL ? 322 : 330, 13, '#9ff0a8', 8);
 
       var i;
       for (i = 1; i <= 9; i++) {
@@ -1268,7 +1281,7 @@
           if (bound) label += '·' + shortOf(bound);
           else label += '·未挂';
           var cx = 90 + ((n - 1) % 5) * 170;
-          var cy = n <= 5 ? 290 : 232;
+          var cy = n <= 5 ? (phoneL && landL ? 276 : 282) : (phoneL && landL ? 222 : 226);
           var onSame = bound === track;
           button(self, label, cx, cy, 155, 40, onSame ? GREEN : (bound ? GOLD : NAVY), onSame || bound ? INK : WHITE, function () {
             if (!WB.data.levelAudio) WB.data.levelAudio = {};
@@ -1417,7 +1430,7 @@
       var pending = WB.ui.gatePending;
       if (pending == null || !isDesignStep(pending)) pending = 2;
       WB.ui.gatePending = pending;
-      addChrome(this, pending);
+      addChrome(this, pending, { gate: true });
       ART.fill(this, ART.tex.night, 0);
 
       var phone = isPhoneShell();
