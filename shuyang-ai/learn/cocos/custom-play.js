@@ -1,6 +1,7 @@
 /**
  * 玩我的关 — Cocos2d-JS Lite ≈ xy-go ?custom=1 第9关·自制关
  * Same JSON / T=40 / PAD·EXP / canopy-night / 鳄王. Engine only.
+ * c37: 踩踏伤害 — 下落踩中小怪一脚秒杀(2)、鳄王每次1约三踩；成功踩踏不伤自己并小反弹；侧面贴身仍伤玩家。
  * c36: 着火持续掉血；走路不能灭火（仅踩水/烧完灭）；去掉左右晃灭火。
  * c35: 死亡自动复活（−50积分或免活3次/关；用尽才失败重玩）。was c34: 键盘武器仅 KeyL。
  * c33: 走路手脚自然摆动 — 程序化 opposite arm/leg（旧 walk_* PNG 近同姿态仅飘围巾）；WBNinjaWalk。
@@ -1299,6 +1300,14 @@
       }
       return false;
     },
+    _stompBounce: function () {
+      /* light hop; brief i-frames so rising bounce does not re-trigger side hurt */
+      this.vy = 420;
+      this.grounded = false;
+      if (this.py < this.gy + 8) this.py = this.gy + 8;
+      this.invuln = Math.max(this.invuln || 0, 0.35);
+      applyNinjaFrame(this.ninja, this.palette, 'jump_0');
+    },
     _coinBurst: function (x, y) {
       var i;
       for (i = 0; i < 4; i++) {
@@ -1589,6 +1598,7 @@
 
         var gY = this._groundYAt(this.px);
         var wasGrounded = this.grounded;
+        var fallVy = this.vy; /* pre-snap; Mario-style stomp */
         if (this.py <= gY && this.vy <= 0 && gY > -1000) {
           this.py = gY;
           this.vy = 0;
@@ -1733,7 +1743,17 @@
             this.bossSp.setOpacity(255);
             this.bossSp.setColor(cc.color(255, 255, 255));
           }
-          if (this.invuln <= 0 && Math.abs(this.px - bx) < T * 1.2 && this.py < this.gy + DRAW_H) {
+          var bossTouch = Math.abs(this.px - bx) < T * 1.2 && this.py < this.gy + DRAW_H;
+          /* c37: airborne fall onto boss = stomp (1 dmg); side/body still hurts player */
+          var canStomp = !wasGrounded && fallVy < 0;
+          if (bossTouch && canStomp && this.boss.hurtT <= 0) {
+            if (this._hurtAt(bx, this.boss.y + 28, T * 1.5, 1)) {
+              this._stompBounce();
+              var tipB = $('msg');
+              if (tipB && this.boss.alive) tipB.textContent = '踩中鳄王！血 ' + this.boss.hp + '/' + this.boss.max;
+              else if (tipB && !this.boss.alive) tipB.textContent = '踩倒鳄王！';
+            }
+          } else if (bossTouch && !canStomp && this.invuln <= 0) {
             this.hp -= 1;
             this.invuln = 1.0;
             this.vx = (this.px < bx ? -1 : 1) * 120;
@@ -1760,7 +1780,17 @@
               cr.sp.setOpacity(255);
               cr.sp.setColor(cc.color(255, 255, 255));
             }
-            if (this.invuln <= 0 && Math.abs(this.px - cr.x) < T * 0.7 && this.py < this.gy + DRAW_H * 0.8) {
+            var crTouch = Math.abs(this.px - cr.x) < T * 0.7 && this.py < this.gy + DRAW_H * 0.8;
+            var canStompCr = !wasGrounded && fallVy < 0;
+            if (crTouch && canStompCr && cr.hurtT <= 0) {
+              /* slime max 2 → stomp dmg 2 one-shots; score/SFX via _hurtAt */
+              if (this._hurtAt(cr.x, this.gy + 16, T, 2)) {
+                this._stompBounce();
+                var tipC = $('msg');
+                if (tipC && !cr.alive) tipC.textContent = '踩扁小怪！+1币 +' + SCORE.slime + '分';
+                else if (tipC) tipC.textContent = '踩中小怪！血 ' + cr.hp + '/' + cr.max;
+              }
+            } else if (crTouch && !canStompCr && this.invuln <= 0) {
               this.hp -= 1;
               this.invuln = 0.8;
               applyNinjaFrame(this.ninja, this.palette, 'knock_0');
