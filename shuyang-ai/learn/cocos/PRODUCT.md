@@ -9,7 +9,7 @@
 
 ## 产品官补签 · 2026-11-01（ls2）
 
-- **选关一点进关**：`level-select.html?v=ls2` — 试完 1–4（`sycocos-level-progress`：优先 completed，否则 tried=进过试玩页）后，点 1–9 任一关直达 `custom-play?v=c50&level=N`；闸前 5–8 仍诚实「即将开放」。正式名 **伍澍暘** / **小宇**。未换 PeerJS；1–8 暂复用 custom-play 可玩帧。
+- **选关一点进关**：`level-select.html?v=ls2` — 试完 1–4（`sycocos-level-progress`：优先 completed，否则 tried=进过试玩页）后，点 1–9 任一关直达 `custom-play?v=c51&level=N`；闸前 5–8 仍诚实「即将开放」。正式名 **伍澍暘** / **小宇**。未换 PeerJS；1–8 暂复用 custom-play 可玩帧。
 
 ## 产品官补签 · 2026-11-01（ls1 / 801c2ea）
 

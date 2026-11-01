@@ -1,3 +1,10 @@
+## 2026-11-01 · 手机仍微糊（c51）
+
+**现象**：伍澍暘反馈 `custom-play?v=c50` 真机仍软糊；c50 的 `min(3,dpr)` 已在 Pages 生效。
+**根因**：横屏 `.canvas-slot{border-radius+overflow:hidden}` 让移动 Safari/Chrome 把 WebGL 画布合成到低分图层（桌面不明显）；次因是 c50 在 stock `min(2,dpr)` 之后再改 `canvas.width`，部分机型双改缓冲不稳。
+**做法**：槽圆角改 0（金框壳仍圆）；`_setupContainer` 一次写满 CSS×min(3,dpr)；`data-play-dpr/buf` 便于核对。不改玩法/联机。
+**验收**：PLAYER-TEST **C23**；硬刷 `custom-play.html?v=c51`。正式名 **伍澍暘** / **小宇**。
+
 ## 2026-11-01 · 手机微糊（c50）
 
 **现象**：伍澍暘反馈 `custom-play?v=c49` 电脑清晰、手机略软糊（非旧「滑沙颗粒」）。
@@ -50,7 +57,7 @@ PRODUCT.md §8.1–8.4 硬标准（风格/三忍者/PeerJS）与后置 LOOK（�
 
 **目标（Silas / 伍澍暘）**：试完第 1–4 关后，选关壳上点任意关 **一下** 直达该关，无二次确认、不绕工坊多步。
 **试完规则**：`localStorage` 键 `sycocos-level-progress`；某关算试过优先看 `completed`（过关戳），否则看 `tried`（进过 `custom-play` 一次即记）。闸门：1–4 都试过 → 5–8 也开放。
-**做法**：`level-select.html?v=ls2`；闸前 1–4 + 9 绿卡直链 `custom-play.html?v=c50&level=N`（正式 1–8 暂复用 custom-play 可玩帧，不造空白 Cocos 场景）；闸后 1–9 全绿卡一点进。`custom-play.js` 读 `?level=`，boot 写 `tried`，过关写 `completed`。入口 tip 同步 ls2。
+**做法**：`level-select.html?v=ls2`；闸前 1–4 + 9 绿卡直链 `custom-play.html?v=c51&level=N`（正式 1–8 暂复用 custom-play 可玩帧，不造空白 Cocos 场景）；闸后 1–9 全绿卡一点进。`custom-play.js` 读 `?level=`，boot 写 `tried`，过关写 `completed`。入口 tip 同步 ls2。
 **未做**：1–8 独特正式跑道内容；Cocos 封面场景；PeerJS 改动。
 **验收**：PLAYER-TEST L1-SEL-*（ls2）；正式名 **伍澍暘** / **小宇**。
 

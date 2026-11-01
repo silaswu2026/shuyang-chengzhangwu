@@ -11,6 +11,7 @@
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
  * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。
  * c42: 默认关保底可见线圈弹簧垫（ensureSprings）+ 贴图更醒目；保留 c32 power=1300；P2 HUD 去「沼泽」壳话。
+ * c51: 手机仍微糊 — c50 的 min(3,dpr) 已上线；横屏 `.canvas-slot` 的 border-radius+overflow:hidden 让移动 Safari/Chrome 把 WebGL 画布合成到低分图层（桌面不明显）。去掉槽圆角裁切；`_setupContainer` 一次写满 DPR 缓冲（不再先 2× 再改）。不改玩法/联机。
  * c50: 手机微糊 — 页 DPR≈3 时 Cocos `_setupContainer`/`ensureRetinaBuffer` 仍 min(2,dpr)→画布仅 2×CSS，浏览器再放大约 1.5× 发软。改为缓冲对齐 min(3,dpr)，并同步 `cc.view._devicePixelRatio`；桌面 dpr≤2 不变。不改玩法/联机。
  * c49: 真机仍见「小颗粒滑屏」— c48 Retina 保留；主因是 14 颗 4×4 硬边 LayerColor 萤火虫横向快漂 + 亚像素 cam 卷像素泥土。改为软光晕萤火虫（手机/DPR≥2 更少更淡更慢）、世界层 camX 取整、fitStage 后复核 retina 缓冲。不改玩法/联机。
  * c48: 手机横屏颗粒滑屏 — enableRetina(true)（Cocos 上限 min(2,dpr)）+ fitStage 引擎就绪后不再手写 canvas.width/height（交给 _setupContainer 写 DPR 缓冲）；根因是 c47 及更早 enableRetina(false)+手机 WebGL antialias:false 导致 1× 缓冲被 CSS 放大成颗粒，叠 canopy 视差/萤火虫漂移像「滑屏沙粒」。不改玩法/联机。
@@ -361,41 +362,45 @@
     return (window.devicePixelRatio || 1) >= 1.5;
   }
   function playDprCap() {
-    /* c50: Cocos lite hard-caps retina at 2; phones often report dpr 3 → soft CSS upscale. */
+    /* c50/c51: Cocos lite hard-caps retina at 2; phones often report dpr 3 → soft CSS upscale. */
     var dpr = window.devicePixelRatio || 1;
     if (!(dpr > 0)) dpr = 1;
     return Math.min(3, dpr);
   }
   function patchCocosRetinaCap() {
+    /* c51: replace _setupContainer entirely — write CSS×min(3,dpr) in one shot.
+     * Post-bump after stock min(2,dpr) double-resized WebGL buffer on some mobile browsers. */
     try {
       if (typeof cc === 'undefined' || cc.__playDpr3Patched) return;
       var proto = cc.ContainerStrategy && cc.ContainerStrategy.prototype;
       if (!proto || typeof proto._setupContainer !== 'function') return;
-      var orig = proto._setupContainer;
       proto._setupContainer = function (view, w, h) {
-        orig.call(this, view, w, h);
+        var locCanvas = cc.game && cc.game.canvas;
+        var locContainer = cc.game && cc.game.container;
+        if (!locCanvas || !locContainer) return;
+        locContainer.style.width = locCanvas.style.width = w + 'px';
+        locContainer.style.height = locCanvas.style.height = h + 'px';
+        var devicePixelRatio = 1;
+        if (view && view.isRetinaEnabled && view.isRetinaEnabled()) {
+          devicePixelRatio = playDprCap();
+        }
+        view._devicePixelRatio = devicePixelRatio;
+        locCanvas.width = Math.round(w * devicePixelRatio);
+        locCanvas.height = Math.round(h * devicePixelRatio);
         try {
-          if (!view || !view.isRetinaEnabled || !view.isRetinaEnabled()) return;
-          var dprWant = playDprCap();
-          var cur = view._devicePixelRatio || 1;
-          if (dprWant <= cur + 0.01) return;
-          view._devicePixelRatio = dprWant;
-          var locCanvas = cc.game && cc.game.canvas;
-          if (!locCanvas) return;
-          var needW = Math.round(w * dprWant);
-          var needH = Math.round(h * dprWant);
-          if (locCanvas.width + 2 < needW || locCanvas.height + 2 < needH) {
-            locCanvas.width = needW;
-            locCanvas.height = needH;
-            if (cc._renderContext && cc._renderContext.resetCache) cc._renderContext.resetCache();
-          }
-        } catch (ePatch) {}
+          if (cc._renderContext && cc._renderContext.resetCache) cc._renderContext.resetCache();
+        } catch (eRc0) {}
+        try {
+          /* playtest/debug: ratio ≈ min(3,dpr) on phone */
+          locCanvas.setAttribute('data-play-dpr', String(devicePixelRatio));
+          locCanvas.setAttribute('data-play-buf', locCanvas.width + 'x' + locCanvas.height);
+        } catch (eAttr) {}
       };
       cc.__playDpr3Patched = true;
     } catch (eP) {}
   }
   function ensureRetinaBuffer(aw, ah) {
-    /* c50: keep backing store ≥ CSS×min(3,dpr) after fitStage / EXACT_FIT (was min(2,dpr)) */
+    /* c51: keep backing store = CSS×min(3,dpr) after every fitStage / orientation */
     try {
       if (typeof cc === 'undefined' || !cc.view) return;
       patchCocosRetinaCap();
@@ -404,14 +409,19 @@
       if (!cv) return;
       var dprWant = playDprCap();
       if (dprWant <= 1.01) return;
-      /* keep touch/GL math in sync with the forced buffer */
       try { cc.view._devicePixelRatio = dprWant; } catch (eDpr) {}
       var cssW = Math.max(2, cv.clientWidth || aw || 0);
       var cssH = Math.max(2, cv.clientHeight || ah || 0);
       var needW = Math.round(cssW * dprWant);
       var needH = Math.round(cssH * dprWant);
-      if (cv.width + 2 >= needW && cv.height + 2 >= needH) return;
-      /* re-run resolution policy so _setupContainer rewrites DPR buffer (patched → min(3,dpr)) */
+      if (cv.width + 2 >= needW && cv.height + 2 >= needH) {
+        try {
+          cv.setAttribute('data-play-dpr', String(dprWant));
+          cv.setAttribute('data-play-buf', cv.width + 'x' + cv.height);
+        } catch (eAttr2) {}
+        return;
+      }
+      /* re-run policy so patched _setupContainer writes full DPR buffer once */
       if (cc.view.setDesignResolutionSize && W && H) {
         cc.view.setDesignResolutionSize(W, H, cc.ResolutionPolicy.EXACT_FIT);
       }
@@ -423,7 +433,15 @@
         try {
           if (cc._renderContext && cc._renderContext.resetCache) cc._renderContext.resetCache();
         } catch (eRc) {}
+        /* ExactFit reads canvas.width — re-apply so scale matches final buffer */
+        if (cc.view.setDesignResolutionSize && W && H) {
+          cc.view.setDesignResolutionSize(W, H, cc.ResolutionPolicy.EXACT_FIT);
+        }
       }
+      try {
+        cv.setAttribute('data-play-dpr', String(dprWant));
+        cv.setAttribute('data-play-buf', cv.width + 'x' + cv.height);
+      } catch (eAttr3) {}
     } catch (eRet) {}
   }
 
@@ -2879,7 +2897,7 @@
     function startEngine() {
       cc.game.onStart = function () {
         try {
-          /* c50: Retina on; buffer follows min(3,dpr) (Cocos stock cap is 2). c49 soft fireflies + cam snap kept. */
+          /* c51: Retina on; one-shot min(3,dpr) buffer + no slot round-clip soft composite. */
           patchCocosRetinaCap();
           cc.view.enableRetina(true);
           cc.view.adjustViewPort(true);

@@ -112,15 +112,15 @@
     <p class="lead" id="lead">先试 <b>1–4</b>；试过后，点任意关<strong>一下</strong>就进关。第 <b>9</b> 关是「我的关卡」。</p>
     <div class="grid" id="grid" aria-label="关卡 1 到 9"></div>
     <div class="foot">
-      <a class="primary" id="play9" href="custom-play.html?v=c50&amp;level=9">玩第9关 · 我的关卡</a>
-      <a href="custom-play.html?v=c50&amp;level=9&amp;net=1">第9关联机</a>
+      <a class="primary" id="play9" href="custom-play.html?v=c51&amp;level=9">玩第9关 · 我的关卡</a>
+      <a href="custom-play.html?v=c51&amp;level=9&amp;net=1">第9关联机</a>
       <a href="visual-workbench.html?v=ldt32">去工坊摆关</a>
     </div>
     <p class="note" id="note">加载名册…</p>
   </div>
   <script>
   (function () {
-    var PLAY = 'custom-play.html?v=c50';
+    var PLAY = 'custom-play.html?v=c51';
     var PROG_KEY = 'sycocos-level-progress';
     /* 试完规则（DESIGN）：L1–L4 各至少进过一次试玩页即算试过；
        若有过关 completed 戳也算。解锁后点任一关直达，无二次确认。 */
@@ -223,7 +223,7 @@
       });
       if (unlocked) {
         lead.innerHTML = '已试完 <b>1–4</b>：点任意关<strong>一下</strong>直达试玩（无二次确认）。正式名 <b>伍澍暘</b> / 助手 <b>小宇</b>。';
-        note.textContent = '解锁全开 · tip ls2 · 一点进关 → custom-play?v=c50&level=N。进度键 localStorage sycocos-level-progress。';
+        note.textContent = '解锁全开 · tip ls2 · 一点进关 → custom-play?v=c51&level=N。进度键 localStorage sycocos-level-progress。';
       } else {
         var missing = [];
         for (var j = 1; j <= 4; j++) if (!levelDone(prog, j)) missing.push(j);

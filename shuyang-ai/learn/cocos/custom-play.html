@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0f1230">
-<meta name="play-build" content="c50">
+<meta name="play-build" content="c51">
 <title>玩我的关 · 伍澍暘成长屋</title>
 <link rel="stylesheet" href="../../../brand-tokens.css"/>
 <link rel="preload" as="image" href="../../../xy-go/sprites/green/idle.png" fetchpriority="high"/>
@@ -78,12 +78,15 @@ body{
 }
 .canvas-slot{
   position:relative;flex:1 1 auto;min-width:0;min-height:0;width:auto;height:100%;
-  max-width:calc(100% - 18px);border-radius:14px;overflow:hidden;
+  max-width:calc(100% - 18px);border-radius:0;overflow:hidden;
   background:#0f1230;border:1px solid rgba(255,224,122,.2)
 }
 .shell{position:absolute;inset:0;z-index:0;width:100%;height:100%;background:#0f1230;display:block} /* c43: navy safety bed */
 .cvwrap{position:absolute;inset:0;width:100%;height:100%;background:transparent;overflow:hidden;line-height:0}
 #stagePad{position:absolute;inset:0;z-index:0;background:#0f1230;pointer-events:none;opacity:1} /* c43 */
+/* c51: no border-radius on the WebGL clip parent — radius+overflow:hidden soft-composites canvas on mobile Safari/Chrome */
+.canvas-slot{border-radius:0}
+#gameCanvas,#Cocos2dGameContainer{-webkit-transform:translateZ(0);transform:translateZ(0)}
 #gameCanvas{position:absolute;inset:0;z-index:1;width:100%!important;height:100%!important;display:block;background:transparent;touch-action:none;opacity:1;image-rendering:auto;-ms-interpolation-mode:bicubic}
 
 /* HUD — schoolhouse navy/gold（舞台仍 canopy-night） */
@@ -201,7 +204,7 @@ body{
     border-radius:22px;padding:10px 14px;flex-direction:row
   }
   .phone-notch{display:none}
-  .canvas-slot{max-width:100%;border-radius:16px}
+  .canvas-slot{max-width:100%;border-radius:0}
   .touch{padding:8px 16px 12px;background:transparent;gap:6px}
   .touch button{width:42px;height:42px;font-size:14px;border-radius:11px}
   .touch #btnJ,.touch #btnT{width:50px;font-size:12px}
@@ -293,11 +296,11 @@ body{
     </div>
   </div>
 </div>
-<!-- c50: DPR≤3 retina缓冲消手机微糊 + ls2 level=进度 · was c49: 软萤火虫+cam取整 · was c48: retina · was c47: §8八条落地 · was c46: 同机BC脉冲+bc-want·正在连接仍A绿 · was c45: 正在连接仍A绿·conn.open才B蓝 · was c44: 夜景fallback海军+床不越草+匹配中A绿 · was c43 -->
+<!-- c51: 去槽圆角裁切+一次写满DPR缓冲 · was c50: DPR≤3 · was c49: 软萤火虫+cam取整 · was c48: retina · was c47: §8八条落地 · was c46: 同机BC脉冲+bc-want·正在连接仍A绿 · was c45: 正在连接仍A绿·conn.open才B蓝 · was c44: 夜景fallback海军+床不越草+匹配中A绿 · was c43 -->
 <script src="../../../vendor/peerjs/peerjs.min.js"></script>
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
 <script src="wb-store.js?v=ldt32"></script>
-<script src="wb-audio.js?v=c50"></script>
-<script src="custom-play.js?v=c50"></script>
+<script src="wb-audio.js?v=c51"></script>
+<script src="custom-play.js?v=c51"></script>
 </body>
 </html>
