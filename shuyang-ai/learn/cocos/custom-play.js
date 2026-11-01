@@ -4,6 +4,7 @@
  * c21: layout/CSS chrome only (desktop denser keys, phone smaller pads); CHAR_FRAC/levels unchanged.
  * c27: short - load cocos in body (not head): mobile _initSys needs document.body or appendChild null aborts engine before Layer.
  * c26: canvas always visible (c25); renderMode 1=Canvas (lite has no rendererWebGL).
+ * c39: first interactive frame fast — critical idle+dirt+grass then runScene; night BG deferred; 2.5s hard cap; PeerJS local.
  * c38: net host/guest chip always matches visible cast (fix stale 「C 红」 on green host).
  * c37: shorten dirt bed (gy≈H*0.28, min 72) for phone landscape play space.
  * c36: do not gate runScene on tint cache; tint via data-URL; swamp canvas bed (fix c35 blank navy).
@@ -13,11 +14,15 @@
   var SP = '../../../xy-go/sprites/green/';
   var SC = '../../../xy-go/scenes/';
   var BG = SC + 'canopy-night.jpg';
-  var RES = [
-    SP + 'walk_0.png', SP + 'walk_1.png', SP + 'walk_2.png', SP + 'walk_3.png',
-    SP + 'idle.png', SP + 'knock_0.png', SP + 'jump_0.png',
-    BG, SC + 'dirt-tile.png', SC + 'grass-cap.png'
+  /* c39: critical = grass bed + idle ninja; walks/knock/jump + night BG deferred. */
+  var RES_CRITICAL = [
+    SP + 'idle.png', SC + 'dirt-tile.png', SC + 'grass-cap.png'
   ];
+  var RES_DEFERRED = [
+    SP + 'walk_0.png', SP + 'walk_1.png', SP + 'walk_2.png', SP + 'walk_3.png',
+    SP + 'knock_0.png', SP + 'jump_0.png'
+  ];
+  var RES = RES_CRITICAL.concat(RES_DEFERRED, [BG]);
 
   /* PRODUCT §8: only green/red/blue controllable skins (tint from green sheet; no 4th hero). */
   var CAST = ['green', 'blue', 'red'];
@@ -736,6 +741,33 @@
         dot.setPosition(Math.random() * W, Math.random() * H * 0.7);
         this.ffLayer.addChild(dot);
         this.fireflies.push({ n: dot, phase: Math.random() * 6, spd: 0.6 + Math.random() });
+      }
+    },
+    /* c39: night forest may arrive after first playable frame — attach without rebuild. */
+    _refreshForestBg: function () {
+      if (!forestImg || !forestImg.naturalWidth) return;
+      if (this.bgNode) {
+        this._layoutBg(this.camX || 0);
+        return;
+      }
+      try {
+        var tex = new cc.Texture2D();
+        tex.initWithElement(forestImg);
+        tex.handleLoadedTexture();
+        var sp = new cc.Sprite(tex);
+        sp.setAnchorPoint(0, 0);
+        this.addChild(sp, -5);
+        this.bgNode = sp;
+        this.bgNode2 = null;
+        this._layoutBg(this.camX || 0);
+      } catch (eRF) {
+        try {
+          var sp2 = new cc.Sprite(BG);
+          sp2.setAnchorPoint(0, 0);
+          this.addChild(sp2, -5);
+          this.bgNode = sp2;
+          this._layoutBg(this.camX || 0);
+        } catch (eRF2) {}
       }
     },
     _layoutBg: function (camX) {
@@ -1662,6 +1694,27 @@
     $('retry').onclick = function () { if (sceneRef) sceneRef.reset(); };
     $('again').onclick = function () { if (sceneRef) sceneRef.reset(); };
 
+    function setBootMsg(t) {
+      try { $('msg').textContent = t; } catch (eM) {}
+    }
+
+    function preloadImage(src, onOk, onBad) {
+      var img = new Image();
+      var done = false;
+      function once(fn) {
+        return function () {
+          if (done) return;
+          done = true;
+          fn();
+        };
+      };
+      img.onload = once(function () { if (onOk) onOk(img); });
+      img.onerror = once(function () { if (onBad) onBad(img); });
+      /* hung TCP must not block first frame forever */
+      setTimeout(once(function () { if (onBad) onBad(img); }), 4000);
+      img.src = src;
+    }
+
     function startEngine() {
       cc.game.onStart = function () {
         try {
@@ -1686,24 +1739,23 @@
           dartTex = buildShotTex('#d5dde6', 14, 6);
           gunTex = buildShotTex('#ffd166', 10, 10);
           bladeTex = buildShotTex('#f4f7fb', 36, 14);
-          var others = RES.filter(function (s) { return s.indexOf('canopy-night') < 0; });
-          var left = others.length;
-          function tick() {
-            left--;
-            if (left > 0) return;
+
+          var started = false;
+          function goPlay() {
+            if (started) return;
+            started = true;
             fitStage();
             localPalette = readSkinParam();
             bindCastUI();
             syncCastUI();
-            /* c36: start play IMMEDIATELY (c33 behavior). Tint red/blue in background. */
+            /* c36+c39: never gate on tint or night BG. */
             try {
               cc.director.runScene(new PlayScene());
             } catch (eRun) {
               bootErr('场景启动失败：' + (eRun && eRun.message || eRun));
+              return;
             }
-            try {
-              $('msg').textContent = '伍澍暘 · 第9关 · 绿/红/蓝 · ←→跳 · F/J投';
-            } catch (eMsg) {}
+            setBootMsg('伍澍暘 · 第9关 · 绿/红/蓝 · ←→跳 · F/J投');
             setTimeout(fitStage, 50);
             ensureTintCache(function () {
               if (sceneRef && sceneRef.ninja) {
@@ -1715,32 +1767,53 @@
                 syncCastUI();
               }
             });
+            RES_DEFERRED.forEach(function (src) {
+              preloadImage(src, function () {
+                try { cc.textureCache.addImage(src); } catch (eD) {}
+              }, function () {});
+            });
           }
-          if (!others.length) { left = 1; tick(); return; }
-          others.forEach(function (src) {
-            var img = new Image();
-            img.onload = function () {
+
+          /* c39 hard cap: no 30s pure-brown / no-ninja wait */
+          setTimeout(function () {
+            if (!started) {
+              setBootMsg('小宇：资源偏慢，先开玩…');
+              goPlay();
+            }
+          }, 2500);
+
+          var left = RES_CRITICAL.length;
+          setBootMsg('小宇加载中…草地与忍者');
+          if (!left) { goPlay(); return; }
+          RES_CRITICAL.forEach(function (src) {
+            preloadImage(src, function (img) {
               try { cc.textureCache.addImage(src); } catch (e1) {}
-              if (src.indexOf('idle.png') >= 0 && img.naturalHeight) idleTexH = img.naturalHeight;
-              tick();
-            };
-            img.onerror = function () { bootErr('图片失败 ' + src); tick(); };
-            img.src = src;
+              if (src.indexOf('idle.png') >= 0 && img && img.naturalHeight) idleTexH = img.naturalHeight;
+              left--;
+              if (left <= 0) goPlay();
+            }, function () {
+              setBootMsg('小宇：有图偏慢，继续加载…');
+              left--;
+              if (left <= 0) goPlay();
+            });
           });
+
+          /* night forest parallel — attach when ready */
+          preloadImage(BG, function (img) {
+            forestImg = img;
+            try { if (cc.textureCache) cc.textureCache.addImage(BG); } catch (e0) {}
+            if (sceneRef && sceneRef._refreshForestBg) {
+              try { sceneRef._refreshForestBg(); } catch (eR) {}
+            }
+          }, function () {});
         } catch (e) { bootErr('启动失败：' + e); }
       };
       try { cc.game.run('gameCanvas'); } catch (e) { bootErr('启动失败：' + e); }
     }
 
-    /* c27/c21: decode night forest BEFORE first clear; canvas visible; stagePad swamp bed stays */
-    var pre = new Image();
-    pre.onload = function () {
-      forestImg = pre;
-      try { if (typeof cc !== 'undefined' && cc.textureCache) cc.textureCache.addImage(BG); } catch (e0) {}
-      startEngine();
-    };
-    pre.onerror = function () { bootErr('夜林背景失败'); startEngine(); };
-    pre.src = BG;
+    /* c39: start engine immediately (do not wait on canopy-night decode). */
+    setBootMsg('小宇打开关卡…');
+    startEngine();
   }
 
   if (document.readyState === 'complete') boot();

@@ -25,7 +25,7 @@ h1{margin:0;font-size:13px;color:var(--gold,#ffe07a);flex:1;text-align:center;fo
 .shell{position:fixed;inset:0;z-index:0;width:100%;height:100%;background:#5a3a24 url(../../../xy-go/scenes/canopy-night.jpg) center/cover no-repeat;display:block}
 .cvwrap{position:absolute;inset:0;width:100%;height:100%;background:transparent;overflow:hidden;line-height:0}
 #stagePad{position:absolute;inset:0;z-index:0;background:#5a3a24 url(../../../xy-go/scenes/canopy-night.jpg) center/cover no-repeat;pointer-events:none;opacity:1}
-#gameCanvas{position:absolute;inset:0;z-index:1;width:100%!important;height:100%!important;display:block;background:#5a3a24;touch-action:none;opacity:1}
+#gameCanvas{position:absolute;inset:0;z-index:1;width:100%!important;height:100%!important;display:block;background:transparent;touch-action:none;opacity:1}
 /* HUD — schoolhouse navy/gold (stage still canopy-night Cocos asset family) */
 .hud{position:fixed;top:40px;left:8px;right:8px;z-index:28;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;gap:8px}
 .lvlcard{background:#161b3dee;border-radius:12px;padding:7px 12px;min-width:132px;min-height:44px;border:1px solid rgba(255,224,122,.38);box-shadow:0 2px 10px #0007}
@@ -184,11 +184,11 @@ h1{margin:0;font-size:13px;color:var(--gold,#ffe07a);flex:1;text-align:center;fo
     </div>
   </div>
 </div>
-<!-- c38: host chip sync · c37: shorter dirt bed · c36 unblock stage (tint async) + swamp canvas bed · c35 cast/HUD · c27 body-load cocos -->
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<!-- c39: fast first frame · c38: host chip sync · c37: shorter dirt bed · c36 tint async · c35 cast/HUD · c27 body-load cocos -->
+<script src="../../../vendor/peerjs/peerjs.min.js"></script>
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
 <script src="wb-store.js?v=wb6"></script>
 <script src="wb-audio.js?v=wb6"></script>
-<script src="custom-play.js?v=c38"></script>
+<script src="custom-play.js?v=c39"></script>
 </body>
 </html>
