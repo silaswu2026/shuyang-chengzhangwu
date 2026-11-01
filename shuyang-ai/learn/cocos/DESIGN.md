@@ -39,6 +39,14 @@ PRODUCT.md §8.1–8.4 硬标准（风格/三忍者/PeerJS）与后置 LOOK（�
 # 今晚工作台 · 设计记录
 
 
+## 2026-11-01 · L1 选关一点进关（ls2）
+
+**目标（Silas / 伍澍暘）**：试完第 1–4 关后，选关壳上点任意关 **一下** 直达该关，无二次确认、不绕工坊多步。
+**试完规则**：`localStorage` 键 `sycocos-level-progress`；某关算试过优先看 `completed`（过关戳），否则看 `tried`（进过 `custom-play` 一次即记）。闸门：1–4 都试过 → 5–8 也开放。
+**做法**：`level-select.html?v=ls2`；闸前 1–4 + 9 绿卡直链 `custom-play.html?v=c50&level=N`（正式 1–8 暂复用 custom-play 可玩帧，不造空白 Cocos 场景）；闸后 1–9 全绿卡一点进。`custom-play.js` 读 `?level=`，boot 写 `tried`，过关写 `completed`。入口 tip 同步 ls2。
+**未做**：1–8 独特正式跑道内容；Cocos 封面场景；PeerJS 改动。
+**验收**：PLAYER-TEST L1-SEL-*（ls2）；正式名 **伍澍暘** / **小宇**。
+
 ## 2026-11-01 · L1 选关薄壳（ls1）
 
 **目标（产品官优先序5）**：孩子可见关卡 **1–8 + 第9「我的关卡」**；薄壳优先于纯文档。

@@ -11,6 +11,7 @@
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
  * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。
  * c42: 默认关保底可见线圈弹簧垫（ensureSprings）+ 贴图更醒目；保留 c32 power=1300；P2 HUD 去「沼泽」壳话。
+ * c50: 手机微糊 — 页 DPR≈3 时 Cocos `_setupContainer`/`ensureRetinaBuffer` 仍 min(2,dpr)→画布仅 2×CSS，浏览器再放大约 1.5× 发软。改为缓冲对齐 min(3,dpr)，并同步 `cc.view._devicePixelRatio`；桌面 dpr≤2 不变。不改玩法/联机。
  * c49: 真机仍见「小颗粒滑屏」— c48 Retina 保留；主因是 14 颗 4×4 硬边 LayerColor 萤火虫横向快漂 + 亚像素 cam 卷像素泥土。改为软光晕萤火虫（手机/DPR≥2 更少更淡更慢）、世界层 camX 取整、fitStage 后复核 retina 缓冲。不改玩法/联机。
  * c48: 手机横屏颗粒滑屏 — enableRetina(true)（Cocos 上限 min(2,dpr)）+ fitStage 引擎就绪后不再手写 canvas.width/height（交给 _setupContainer 写 DPR 缓冲）；根因是 c47 及更早 enableRetina(false)+手机 WebGL antialias:false 导致 1× 缓冲被 CSS 放大成颗粒，叠 canopy 视差/萤火虫漂移像「滑屏沙粒」。不改玩法/联机。
  * c46: D7-3 — 同窗两标签真连：乐观 Host 不再挡 BroadcastChannel；host 脉冲重发 bc-offer；guest 发 bc-want；PeerJS ICE 同机常挂时走同机兜底。保留 c45「正在连接」仍 A绿、仅真连上才 B蓝。
@@ -254,7 +255,31 @@
   var AUDIO = window.WBAudio || null;
   var audioCfg = null;
   var levelAudioMap = {};
-  var PLAY_LEVEL_ID = 9; /* custom-play = 第9关「我的关卡」 */
+  var PROG_KEY = 'sycocos-level-progress';
+  function parsePlayLevelId() {
+    try {
+      var q = new URLSearchParams(location.search || '');
+      var raw = q.get('level');
+      if (raw == null || raw === '') return 9;
+      var n = parseInt(raw, 10);
+      if (!isFinite(n) || n < 1 || n > 9) return 9;
+      return n | 0;
+    } catch (e) { return 9; }
+  }
+  var PLAY_LEVEL_ID = parsePlayLevelId(); /* ?level=1..9；缺省第9「我的关卡」 */
+  function markLevelProgress(kind) {
+    /* kind: 'tried' | 'completed' — ls2 选关闸用 */
+    try {
+      var raw = JSON.parse(localStorage.getItem(PROG_KEY) || '{}') || {};
+      if (!raw.tried || typeof raw.tried !== 'object') raw.tried = {};
+      if (!raw.completed || typeof raw.completed !== 'object') raw.completed = {};
+      var k = String(PLAY_LEVEL_ID);
+      var now = Date.now();
+      if (kind === 'completed') raw.completed[k] = now;
+      raw.tried[k] = now; /* 进关或过关都记试过 */
+      localStorage.setItem(PROG_KEY, JSON.stringify(raw));
+    } catch (e) {}
+  }
   var resolvedBgmId = 'explore';
   function loadAudioCfg() {
     audioCfg = { bgmId: 'explore', sfx: {} };
@@ -335,24 +360,62 @@
     } catch (eM) {}
     return (window.devicePixelRatio || 1) >= 1.5;
   }
+  function playDprCap() {
+    /* c50: Cocos lite hard-caps retina at 2; phones often report dpr 3 → soft CSS upscale. */
+    var dpr = window.devicePixelRatio || 1;
+    if (!(dpr > 0)) dpr = 1;
+    return Math.min(3, dpr);
+  }
+  function patchCocosRetinaCap() {
+    try {
+      if (typeof cc === 'undefined' || cc.__playDpr3Patched) return;
+      var proto = cc.ContainerStrategy && cc.ContainerStrategy.prototype;
+      if (!proto || typeof proto._setupContainer !== 'function') return;
+      var orig = proto._setupContainer;
+      proto._setupContainer = function (view, w, h) {
+        orig.call(this, view, w, h);
+        try {
+          if (!view || !view.isRetinaEnabled || !view.isRetinaEnabled()) return;
+          var dprWant = playDprCap();
+          var cur = view._devicePixelRatio || 1;
+          if (dprWant <= cur + 0.01) return;
+          view._devicePixelRatio = dprWant;
+          var locCanvas = cc.game && cc.game.canvas;
+          if (!locCanvas) return;
+          var needW = Math.round(w * dprWant);
+          var needH = Math.round(h * dprWant);
+          if (locCanvas.width + 2 < needW || locCanvas.height + 2 < needH) {
+            locCanvas.width = needW;
+            locCanvas.height = needH;
+            if (cc._renderContext && cc._renderContext.resetCache) cc._renderContext.resetCache();
+          }
+        } catch (ePatch) {}
+      };
+      cc.__playDpr3Patched = true;
+    } catch (eP) {}
+  }
   function ensureRetinaBuffer(aw, ah) {
-    /* c49: keep backing store ≥ CSS×min(2,dpr) after fitStage / EXACT_FIT */
+    /* c50: keep backing store ≥ CSS×min(3,dpr) after fitStage / EXACT_FIT (was min(2,dpr)) */
     try {
       if (typeof cc === 'undefined' || !cc.view) return;
+      patchCocosRetinaCap();
       if (cc.view.enableRetina) cc.view.enableRetina(true);
       var cv = (cc.game && cc.game.canvas) || document.getElementById('gameCanvas');
       if (!cv) return;
-      var dprWant = Math.min(2, window.devicePixelRatio || 1);
+      var dprWant = playDprCap();
       if (dprWant <= 1.01) return;
+      /* keep touch/GL math in sync with the forced buffer */
+      try { cc.view._devicePixelRatio = dprWant; } catch (eDpr) {}
       var cssW = Math.max(2, cv.clientWidth || aw || 0);
       var cssH = Math.max(2, cv.clientHeight || ah || 0);
       var needW = Math.round(cssW * dprWant);
       var needH = Math.round(cssH * dprWant);
       if (cv.width + 2 >= needW && cv.height + 2 >= needH) return;
-      /* re-run resolution policy so _setupContainer rewrites DPR buffer */
+      /* re-run resolution policy so _setupContainer rewrites DPR buffer (patched → min(3,dpr)) */
       if (cc.view.setDesignResolutionSize && W && H) {
         cc.view.setDesignResolutionSize(W, H, cc.ResolutionPolicy.EXACT_FIT);
       }
+      try { cc.view._devicePixelRatio = dprWant; } catch (eDpr2) {}
       cv = (cc.game && cc.game.canvas) || cv;
       if (cv.width + 2 < needW || cv.height + 2 < needH) {
         cv.width = needW;
@@ -1117,6 +1180,7 @@
   }
   function showResult(win, hp, coins, failTitle) {
     var r = $('result'); if (!r) return;
+    if (win) markLevelProgress('completed');
     r.classList.add('show');
     r.classList.add(win ? 'win' : 'fail');
     $('resultBig').textContent = win ? '🎉 过关！' : (failTitle || '😵 再试一次');
@@ -2753,6 +2817,7 @@
     window.addEventListener('error', function (e) { bootErr(e.message || String(e)); });
     bindControls();
     netBindUI(); /* c16: was defined but never called — 联机按钮无 handler */
+    markLevelProgress('tried'); /* ls2: 进试玩页即算试过该关 */
     try {
       var q = new URLSearchParams(location.search || '');
       if (q.get('net') === '1') {
@@ -2814,7 +2879,8 @@
     function startEngine() {
       cc.game.onStart = function () {
         try {
-          /* c48/c49: Retina on (Cocos min(2,dpr)); c49 also softens fireflies + snaps cam. */
+          /* c50: Retina on; buffer follows min(3,dpr) (Cocos stock cap is 2). c49 soft fireflies + cam snap kept. */
+          patchCocosRetinaCap();
           cc.view.enableRetina(true);
           cc.view.adjustViewPort(true);
           fitStage();

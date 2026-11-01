@@ -6,7 +6,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <meta name="theme-color" content="#0f1230"/>
-  <meta name="level-select-build" content="ls1"/>
+  <meta name="level-select-build" content="ls2"/>
   <title>选关 · 伍澍暘成长屋</title>
   <link rel="stylesheet" href="../../../brand-tokens.css"/>
   <style>
@@ -109,18 +109,21 @@
       <a href="../../../index.html">回小屋</a>
       <a href="visual-workbench.html?v=ldt32">工坊</a>
     </header>
-    <p class="lead">正式关 <b>1–8</b> 来自 Boss 名册；第 <b>9</b> 关是「我的关卡」（今晚 <b>custom-play</b>）。名册未进 Cocos 试玩的关诚实标「即将开放」。</p>
+    <p class="lead" id="lead">先试 <b>1–4</b>；试过后，点任意关<strong>一下</strong>就进关。第 <b>9</b> 关是「我的关卡」。</p>
     <div class="grid" id="grid" aria-label="关卡 1 到 9"></div>
     <div class="foot">
-      <a class="primary" id="play9" href="custom-play.html?v=c49">玩第9关 · 我的关卡</a>
-      <a href="custom-play.html?v=c49&amp;net=1">第9关联机</a>
+      <a class="primary" id="play9" href="custom-play.html?v=c50&amp;level=9">玩第9关 · 我的关卡</a>
+      <a href="custom-play.html?v=c50&amp;level=9&amp;net=1">第9关联机</a>
       <a href="visual-workbench.html?v=ldt32">去工坊摆关</a>
     </div>
     <p class="note" id="note">加载名册…</p>
   </div>
   <script>
   (function () {
-    var PLAY = 'custom-play.html?v=c49';
+    var PLAY = 'custom-play.html?v=c50';
+    var PROG_KEY = 'sycocos-level-progress';
+    /* 试完规则（DESIGN）：L1–L4 各至少进过一次试玩页即算试过；
+       若有过关 completed 戳也算。解锁后点任一关直达，无二次确认。 */
     var FALLBACK = [
       { n: 1, name: '林间晨跑', bossName: '熊大王' },
       { n: 2, name: '苔岩小径', bossName: '野猪' },
@@ -133,6 +136,7 @@
     ];
     var grid = document.getElementById('grid');
     var note = document.getElementById('note');
+    var lead = document.getElementById('lead');
 
     function esc(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) {
@@ -140,25 +144,70 @@
       });
     }
 
+    function loadProgress() {
+      try {
+        var raw = JSON.parse(localStorage.getItem(PROG_KEY) || '{}');
+        return {
+          tried: (raw && raw.tried && typeof raw.tried === 'object') ? raw.tried : {},
+          completed: (raw && raw.completed && typeof raw.completed === 'object') ? raw.completed : {}
+        };
+      } catch (e) {
+        return { tried: {}, completed: {} };
+      }
+    }
+
+    function levelDone(prog, n) {
+      var k = String(n);
+      /* prefer completed stamp when present; else entered-once */
+      return !!(prog.completed[k] || prog.tried[k]);
+    }
+
+    function gate14Open(prog) {
+      for (var i = 1; i <= 4; i++) {
+        if (!levelDone(prog, i)) return false;
+      }
+      return true;
+    }
+
+    function playHref(n) {
+      return PLAY + '&level=' + (n | 0);
+    }
+
     function render(levels) {
+      var prog = loadProgress();
+      var unlocked = gate14Open(prog);
       var html = '';
       for (var i = 0; i < levels.length; i++) {
         var lv = levels[i];
-        html +=
-          '<div class="card soon" role="button" tabindex="0" data-soon="1" aria-disabled="true">' +
-            '<span class="n">' + lv.n + '</span>' +
-            '<p class="name">' + esc(lv.name) + '</p>' +
-            '<p class="boss">Boss · ' + esc(lv.bossName || '待定') + '</p>' +
-            '<span class="st">即将开放</span>' +
-            '<span class="flash">Cocos 正式关尚未进试玩</span>' +
-          '</div>';
+        var n = lv.n | 0;
+        var done = levelDone(prog, n);
+        var open = unlocked || n <= 4;
+        if (open) {
+          var st = done ? '已试 · 再玩' : (n <= 4 ? '可玩 · 进试玩' : '可玩 · 一点进关');
+          html +=
+            '<a class="card playable" href="' + playHref(n) + '" data-level="' + n + '">' +
+              '<span class="n">' + n + '</span>' +
+              '<p class="name">' + esc(lv.name) + '</p>' +
+              '<p class="boss">Boss · ' + esc(lv.bossName || '待定') + '</p>' +
+              '<span class="st">' + st + '</span>' +
+            '</a>';
+        } else {
+          html +=
+            '<div class="card soon" role="button" tabindex="0" data-soon="1" aria-disabled="true" data-level="' + n + '">' +
+              '<span class="n">' + n + '</span>' +
+              '<p class="name">' + esc(lv.name) + '</p>' +
+              '<p class="boss">Boss · ' + esc(lv.bossName || '待定') + '</p>' +
+              '<span class="st">即将开放</span>' +
+              '<span class="flash">先试完第1–4关</span>' +
+            '</div>';
+        }
       }
       html +=
-        '<a class="card playable" href="' + PLAY + '" data-level="9">' +
+        '<a class="card playable" href="' + playHref(9) + '" data-level="9">' +
           '<span class="n">9</span>' +
           '<p class="name">我的关卡</p>' +
           '<p class="boss">自制关 · 工坊存档</p>' +
-          '<span class="st">可玩 · 进试玩</span>' +
+          '<span class="st">' + (levelDone(prog, 9) ? '已试 · 再玩' : '可玩 · 进试玩') + '</span>' +
         '</a>';
       grid.innerHTML = html;
       grid.querySelectorAll('.card.soon').forEach(function (el) {
@@ -172,16 +221,23 @@
           if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); flash(); }
         });
       });
-      note.textContent = '可玩：第9关 → custom-play（c49）。1–8 可见 Boss 名，Cocos 路径尚未接通，点按提示「即将开放」。不改 PeerJS / 不重做联网。';
+      if (unlocked) {
+        lead.innerHTML = '已试完 <b>1–4</b>：点任意关<strong>一下</strong>直达试玩（无二次确认）。正式名 <b>伍澍暘</b> / 助手 <b>小宇</b>。';
+        note.textContent = '解锁全开 · tip ls2 · 一点进关 → custom-play?v=c50&level=N。进度键 localStorage sycocos-level-progress。';
+      } else {
+        var missing = [];
+        for (var j = 1; j <= 4; j++) if (!levelDone(prog, j)) missing.push(j);
+        lead.innerHTML = '先点进 <b>1–4</b> 各试一次；还差关 <b>' + missing.join('、') + '</b>。试完后 5–8 也可一点进关。第 <b>9</b> 关随时可玩。';
+        note.textContent = '试完规则：进过该关试玩页即算试过（过关会记 completed）。5–8 在闸未开前诚实「即将开放」。不改 PeerJS。';
+      }
     }
 
     render(FALLBACK);
-    fetch('data/roster.json?v=ls1', { cache: 'no-store' })
+    fetch('data/roster.json?v=ls2', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
         if (!data || !Array.isArray(data.levels) || !data.levels.length) return;
         render(data.levels.slice(0, 8));
-        note.textContent = '名册已载入 · 可玩：第9关 → custom-play（c49）。1–8 诚实「即将开放」。正式名伍澍暘 / 助手小宇。';
       })
       .catch(function () { /* fallback already rendered */ });
   })();
