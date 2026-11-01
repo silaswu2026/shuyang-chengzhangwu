@@ -31,8 +31,28 @@
     gun: { id: 'gun', name: '枪', price: 60 }
   };
 
+  /** Practice purse for tonight ④ shop: enough to buy gun (60) with spare. */
+  var STARTER_COINS = 100;
+
   function blankWallet() {
-    return { coins: 0, weapons: [], equipped: null };
+    return { coins: STARTER_COINS, weapons: [], equipped: null };
+  }
+
+  /**
+   * Grant 练习金 once for empty starter wallets (coins===0 && never purchased).
+   * Does not refill after a buy that spent down to 0, and never clears weapons.
+   */
+  function ensurePracticeWallet(state) {
+    if (!state) return false;
+    if (!state.wallet) state.wallet = blankWallet();
+    var wal = state.wallet;
+    if (!Array.isArray(wal.weapons)) wal.weapons = [];
+    if ((wal.coins | 0) === 0 && wal.weapons.length === 0) {
+      wal.coins = STARTER_COINS;
+      wal.equipped = wal.equipped || null;
+      return true;
+    }
+    return false;
   }
 
   function blankAudio() {
@@ -267,6 +287,9 @@
         break;
       }
     }
+    if (ensurePracticeWallet(s)) {
+      try { save(storage, s); } catch (eSave) { /* ignore quota */ }
+    }
     return s;
   }
 
@@ -438,6 +461,7 @@
       if (state.music == null) state.music = '';
       if (state.likes == null) state.likes = 0;
     }
+    ensurePracticeWallet(state);
     return state;
   }
 
@@ -467,6 +491,8 @@
     defaultMineMap: defaultMineMap,
     defaultTraps: defaultTraps,
     buildDefaultSave: buildDefaultSave,
-    blankWallet: blankWallet
+    blankWallet: blankWallet,
+    STARTER_COINS: STARTER_COINS,
+    ensurePracticeWallet: ensurePracticeWallet
   };
 })(typeof window !== 'undefined' ? window : this);
