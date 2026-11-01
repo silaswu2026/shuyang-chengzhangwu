@@ -100,13 +100,13 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
     <a href="custom-play.html?v=c33&amp;net=1">联机</a>
   </div>
   <div class="shell-toggle" id="shellToggle">
-    <button type="button" data-shell="desktop" class="on">电脑壳</button>
-    <button type="button" data-shell="phone">手机壳</button>
+    <button type="button" data-shell="desktop">电脑壳</button>
+    <button type="button" data-shell="phone" class="on">手机壳</button>
   </div>
 </div>
 
 <div id="stage">
-  <div id="shell" class="desktop">
+  <div id="shell" class="phone">
     <div class="phone-bezel">
       <div class="phone-notch"></div>
       <div class="canvas-slot">
@@ -120,7 +120,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   </div>
 </div>
 
-<!-- wb72: landscape phone shell + boot failsafe stays honest if canvas never paints -->
+<!-- wb73: narrow→手机壳 · caption clear · wb72: landscape phone shell + boot failsafe stays honest if canvas never paints -->
 <script>
 (function(){
   var cleared=false;
@@ -162,10 +162,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
 })();
 </script>
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
-<script src="wb-store.js?v=wb72"></script>
-<script src="wb-art.js?v=wb72"></script>
-<script src="wb-audio.js?v=wb72"></script>
-<script src="workbench.js?v=wb72"></script>
+<script src="wb-store.js?v=wb73"></script>
+<script src="wb-art.js?v=wb73"></script>
+<script src="wb-audio.js?v=wb73"></script>
+<script src="workbench.js?v=wb73"></script>
 <script>
 (function () {
   var shell = document.getElementById('shell');
@@ -200,12 +200,25 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
     try { window.dispatchEvent(new Event('resize')); } catch (e2) {}
   }
   window.__wbPlaceCanvas = placeCanvas;
-  var saved = 'desktop';
-  try {
-    saved = localStorage.getItem('wb-shell') ||
-      ((window.innerWidth < 720 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || '')) ? 'phone' : 'desktop');
-  } catch (e) {}
-  placeCanvas(saved === 'phone' ? 'phone' : 'desktop');
+  function isNarrowViewport() {
+    try {
+      var w = window.innerWidth || 0, h = window.innerHeight || 0;
+      return w <= 520 || (w < 720 && h > w);
+    } catch (e0) { return false; }
+  }
+  function preferShell() {
+    /* P1: narrow portrait always opens 手机壳 (ignore stale desktop localStorage) */
+    if (isNarrowViewport()) return 'phone';
+    try {
+      var s = localStorage.getItem('wb-shell');
+      if (s === 'phone' || s === 'desktop') return s;
+    } catch (e) {}
+    try {
+      if (window.innerWidth < 720 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || '')) return 'phone';
+    } catch (e2) {}
+    return 'desktop';
+  }
+  placeCanvas(preferShell());
   document.getElementById('shellToggle').addEventListener('click', function (ev) {
     var b = ev.target.closest('button[data-shell]');
     if (!b) return;
