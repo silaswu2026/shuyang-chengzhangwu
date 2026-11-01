@@ -330,7 +330,7 @@
   };
   (function loadSpriteFrames() {
     const base = 'sprites/green/';
-    ['walk_1', 'walk_2', 'walk_3'].forEach((name) => {
+    ['idle', 'walk_1', 'walk_2', 'walk_3', 'jump_0'].forEach((name) => {
       const im = new Image();
       im.decoding = 'async';
       im.src = base + name + '.png';
@@ -3777,7 +3777,7 @@
     // green authored; blue/red reuse green knockdown frames (same sequence)
     let ok = drawSpriteFrame(fname, n.face || 1, alpha, 82, n.palette || 'green');
     if (!ok) {
-      // fallback: old portrait lean only if frames not loaded yet
+      // procedural lean — never JPG portrait (opaque box flash)
       ctx.save();
       const phase = n.knockPhase;
       if (phase === 'prone' || phase === 'air') {
@@ -3790,8 +3790,7 @@
         ctx.translate(0, -18);
         ctx.rotate((n.face || 1) * -0.25);
       }
-      ok = drawHeroSprite(n.face || 1, alpha, n.palette || 'green', 0);
-      if (!ok) drawHero(n.phase || 0, 'idle', n.face || 1, alpha, n.palette, 0);
+      drawHero(n.phase || 0, 'idle', n.face || 1, alpha, n.palette, 0);
       ctx.restore();
     }
     if (n.bones > 0) {
@@ -3855,12 +3854,9 @@
       ok = drawSpriteFrame(fname, n.face, alpha, 82, n.palette || 'green');
       if (!ok) drawHero(n.phase, n.anim, n.face, alpha, n.palette || 'green', Math.abs(n.vx));
     } else {
-      // idle / throw: prefer idle sprite, else procedural (not walk flipbook)
+      // idle / throw: prefer idle sprite; skip JPG portrait fallback (opaque sky box flash)
       ok = drawSpriteFrame('idle', n.face, alpha, 82, n.palette || 'green');
-      if (!ok) {
-        ok = drawHeroSprite(n.face, alpha, n.palette || 'green', 0);
-        if (!ok) drawHero(n.phase, n.anim || 'idle', n.face, alpha, n.palette || 'green', Math.abs(n.vx));
-      }
+      if (!ok) drawHero(n.phase, n.anim || 'idle', n.face, alpha, n.palette || 'green', Math.abs(n.vx));
     }
     if (n.bones > 0) {
       ctx.globalAlpha = Math.min(1, n.bones / 0.2);
@@ -4360,6 +4356,9 @@
     const mt = document.getElementById('matchTitle');
     if (mt && !netCountdownT) mt.textContent = linked ? '匹配成功！' : '正在寻找队友…';
     if (host && linked && mode === 'title' && !netCountdownT) netStartCountdown();
+    if (softNet && host && linked && mode === 'play') {
+      netSetBanner('队友已到·联机已连（单人局继续）', 'ok');
+    }
     document.querySelectorAll('.roomLv button').forEach((x) => x.classList.toggle('on', Number(x.dataset.nlv) === (netPickLv | 0)));
   }
   let netCountdownT = 0;
@@ -5305,6 +5304,25 @@
     if (document.hidden && netRoomOverride === NET_LOBBY && netRole === 'host' && !netLinked) netBackMenu();
   });
   let netLobbyTimer = 0;
+  let softNet = false;
+  function softNetAutoMatch() {
+    softNet = true;
+    clearTimeout(netLobbyTimer);
+    if (netRole || netRoomOverride === NET_LOBBY) {
+      netSetBanner('联机邀请中（可继续单人）', 'ok');
+      return;
+    }
+    wantCompanion = true;
+    syncCompanionUi();
+    netRoomOverride = NET_LOBBY;
+    netSetBanner('联机邀请中（可继续单人）', 'ok');
+    netMatchAbort = false;
+    // Prefer host claim silently — netShowRoom no-ops while mode !== title
+    pickColor = 'green';
+    netLobbyMatch().then(() => {
+      if (softNet && !netLinked) netSetBanner('联机邀请中（可继续单人）', 'ok');
+    }).catch(() => {});
+  }
   function netAutoMatch() {
     clearTimeout(netLobbyTimer);
     netLobbyTimer = setTimeout(() => {
@@ -5499,9 +5517,13 @@
     const linkRoom = netCleanCode(q.get('room'));
     const autoNet = q.get('net') === '1';
     if (autoNet && !linkRoom) {
-      // 课程页链接 ?net=1 → 直接进入联机自动匹配
-      netShowView('net');
-      setTimeout(() => netAutoMatch(), 150);
+      // Solo-first: enter play now; soft-match in background (no「等另一位」gate)
+      try { unlock(); } catch (eU) {}
+      const lv0 = customIndex >= 0 ? customIndex : 0;
+      wantCoop = false;
+      start(lv0, false);
+      netSetBanner('联机邀请中（可继续单人）', 'ok');
+      setTimeout(() => softNetAutoMatch(), 200);
     } else if (linkRoom && q.get('a') !== '1' && q.get('as') !== 'a' && q.get('b') !== '1') {
       // 邀请链接 ?room=1234 → 联网对战 page, auto join as 玩家B
       netShowView('net');
