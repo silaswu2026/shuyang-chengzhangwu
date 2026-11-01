@@ -950,12 +950,15 @@
       var note = WB.data.expect ? ('记下了：' + WB.data.expect) : '点一个就行';
       words(this, note, 724, 120, 16, '#9ff0a8', 8);
 
-      button(this, '回摆关', isPhoneShell() ? 100 : 120, 30, isPhoneShell() ? 100 : 140, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show(2); }); });
-      button(this, '联机游玩', isPhoneShell() ? 360 : 420, 32, isPhoneShell() ? 160 : 180, isPhoneShell() ? 48 : 48, GOLD, INK, function () {
+      button(this, '回装备', isPhoneShell() ? 90 : 110, 30, isPhoneShell() ? 100 : 130, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show(3); }); });
+      button(this, '联机游玩', isPhoneShell() ? 300 : 360, 32, isPhoneShell() ? 140 : 160, isPhoneShell() ? 48 : 48, GOLD, INK, function () {
         STORE.save(localStorage, WB.data);
         location.href = 'custom-play.html?v=c37&net=1';
       });
-      button(this, '去玩这一关', isPhoneShell() ? 720 : 760, 32, isPhoneShell() ? 240 : 220, isPhoneShell() ? 50 : 48, GREEN, WHITE, function () {
+      button(this, '去听选', isPhoneShell() ? 520 : 560, 32, isPhoneShell() ? 120 : 140, isPhoneShell() ? 48 : 46, NAVY, WHITE, function () {
+        later(function () { show(5); });
+      });
+      button(this, '去玩这一关', isPhoneShell() ? 760 : 800, 32, isPhoneShell() ? 200 : 200, isPhoneShell() ? 50 : 48, GREEN, WHITE, function () {
         STORE.save(localStorage, WB.data);
         location.href = 'custom-play.html?v=c37';
       });

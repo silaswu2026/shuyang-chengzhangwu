@@ -3,16 +3,16 @@
  * 画面按旧课件今晚路径的插画来拼：天空、远山、草皮、水面、钩子、鱼，
  * 道具用 wb-art 小图。全是 Cocos 节点，不是整页截图。
  * 存档 localStorage xygo-custom-level v1.2（wallet + audio）。试玩 custom-play.html。
- * wb73: P1 叠字/窄屏默认手机壳 · wb72: 手机横屏壳入框 · 顶栏六步信息架构 · 旧四场景仍可跑 · 联机入口。
+ * wb74: 正式六步 ①→⑥（④装备/⑥听选升格）· wb73 叠字/窄屏壳 · 联机入口。
  */
 (function () {
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
   var SP = '../../../xy-go/sprites/green/';
   var AV = ['../../avatars/xiaoyu.jpg', '../../avatars/dad-wuxin.jpg', '../../avatars/mom-chunyan.jpg'];
-  var STEPS = ['① 看图一句', '② 频率', '③ 设计一小关', '④ 玩完'];
-  var STEPS_PHONE = ['①', '②', '③', '④'];
-  var TIP6 = ['①看图', '②频率', '③摆关', '④装备', '⑤觉察', '⑥听选'];
-  var TIP6_PHONE = ['①', '②', '③', '④', '⑤', '⑥'];
+  var STEPS = ['①看图', '②频率', '③摆关', '④装备', '⑤觉察', '⑥听选'];
+  var STEPS_PHONE = ['①', '②', '③', '④', '⑤', '⑥'];
+  var TIP6 = STEPS;
+  var TIP6_PHONE = STEPS_PHONE;
   var STORE = window.WBStore;
   var ART = window.WBArt;
   var AUDIO = window.WBAudio;
@@ -174,12 +174,24 @@
 
   function later(fn) { setTimeout(fn, 0); }
 
+  function syncStepUrl(step) {
+    try {
+      var u = new URL(location.href);
+      u.searchParams.set('lesson', 'tonight');
+      u.searchParams.set('step', String(step));
+      history.replaceState(null, '', u.pathname + u.search + u.hash);
+    } catch (eU) {}
+  }
+
   function show(step) {
-    step = Math.max(0, Math.min(3, step | 0));
+    step = Math.max(0, Math.min(5, step | 0));
     WB.ui.step = step;
     WB.ui.running = false;
-    if (step === 2 || step === 3) STORE.save(localStorage, WB.data);
-    var scenes = [LookScene, FreqScene, EditScene, ReflectScene];
+    if (step !== 5) WB.ui.audioOpen = false;
+    else WB.ui.audioOpen = true;
+    if (step >= 2) STORE.save(localStorage, WB.data);
+    syncStepUrl(step);
+    var scenes = [LookScene, FreqScene, EditScene, EquipScene, ReflectScene, AudioScene];
     cc.director.runScene(new scenes[step]());
   }
 
@@ -388,24 +400,16 @@
     var phone = isPhoneShell();
     var land = false;
     try { land = window.innerWidth > window.innerHeight && window.innerHeight < 520; } catch (eL) {}
-    var labels = phone ? TIP6_PHONE : TIP6;
-    /* six tip chips; leave room for 喇叭 + dad/mom avatars on the right */
+    var labels = phone ? STEPS_PHONE : STEPS;
+    /* Formal six-step nav; leave room for 喇叭 + avatars on the right */
     var centers = phone
       ? (land ? [78, 168, 258, 348, 438, 528] : [90, 190, 290, 390, 490, 590])
       : [95, 230, 365, 500, 640, 780];
-    var tipOn = step <= 2 ? step : 4;
     labels.forEach(function (name, i) {
-      var on = i === tipOn;
+      var on = i === step;
       var wBtn = phone ? (land ? 72 : 78) : (i === 2 || i === 4 ? 118 : 108);
       button(layer, name, centers[i], H - 26, wBtn, phone ? (land ? 36 : 40) : 34, on ? GREEN : NAVY, WHITE, function () {
-        later(function () {
-          if (i <= 2) show(i);
-          else if (i === 3) show(2); /* ④装备: shop lives in 摆关 scene */
-          else if (i === 4) show(3);
-          else if (i === 5) {
-            try { if (window.WBAudio && WBAudio.openHorn) WBAudio.openHorn(); } catch (eM) {}
-          }
-        });
+        later(function () { show(i); });
       });
     });
     addAudioChrome(layer, step);
@@ -810,7 +814,10 @@
       /* Short trap chips · horizontal scroll on phone shell */
       var tools = [['spike', '刺'], ['fire', '火'], ['spring', '弹'], ['mist', '雾'], ['rock', '石'], ['coin', '币'], ['del', '擦']];
       addTrapChipStrip(self, tools, isPhoneShell() ? 424 : 428);
-      this._shop();
+      /* shop promoted to step ④ EquipScene; keep shortcut */
+      button(this, '④装备', isPhoneShell() ? 700 : 760, isPhoneShell() ? 424 : 428, 90, isPhoneShell() ? 26 : 30, GREEN, WHITE, function () {
+        later(function () { show(3); });
+      });
       this.paramRow = new cc.Node();
       this.addChild(this.paramRow, 31);
       this._params();
@@ -871,7 +878,7 @@
       addFootTrio(this,
         '回频率', function () { later(function () { show(1); }); },
         '跑一次', function () { WB.ui.running = true; WB.ui.runT0 = Date.now() / 1000; },
-        '去觉察', function () { later(function () { show(3); }); }
+        '去装备', function () { later(function () { show(3); }); }
       );
       WB.layout.editCell = function (i) {
         return { x: EDIT.L + (i + 0.5) * EDIT.cw, y: EDIT.gy + 50 };
@@ -1006,7 +1013,7 @@
     ctor: function () {
       this._super();
       WB.sceneName = 'reflect';
-      addChrome(this, 3);
+      addChrome(this, 4);
       ART.fill(this, ART.tex.night, 0);
       words(this, '玩完问一句', W / 2, 458, 26, '#ffe7a0', 8);
       ART.panel(this, 250, 270, 450, 330, ccColor(18, 26, 58), 235, 2, 18);
@@ -1067,7 +1074,7 @@
         button(this, name, 560 + i * 140, 348, 126, 42, on ? GOLD : NAVY, on ? INK : WHITE, function () {
           WB.data.expect = name;
           STORE.save(localStorage, WB.data);
-          later(function () { show(3); });
+          later(function () { show(4); });
         });
       }, this);
       words(this, '再选一句（可选）', 724, 300, 15, '#c9c3ef', 6);
@@ -1077,20 +1084,23 @@
         button(this, pair[1], 724, 252 - i * 48, 220, 40, on ? GOLD : NAVY, on ? INK : WHITE, function () {
           WB.data[pair[0]] = pair[1];
           STORE.save(localStorage, WB.data);
-          later(function () { show(3); });
+          later(function () { show(4); });
         });
       }, this);
       var note = WB.data.expect ? ('记下了：' + WB.data.expect) : '点一个就行';
       words(this, note, 724, 120, 16, '#9ff0a8', 8);
 
-      button(this, '回摆关', isPhoneShell() ? 100 : 120, 30, isPhoneShell() ? 100 : 140, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show(2); }); });
-      button(this, '联机游玩', isPhoneShell() ? 360 : 420, 32, isPhoneShell() ? 160 : 180, isPhoneShell() ? 48 : 48, GOLD, INK, function () {
+      button(this, '回装备', isPhoneShell() ? 90 : 110, 30, isPhoneShell() ? 100 : 130, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show(3); }); });
+      button(this, '联机游玩', isPhoneShell() ? 300 : 360, 32, isPhoneShell() ? 140 : 160, isPhoneShell() ? 48 : 48, GOLD, INK, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c37&net=1';
+        location.href = 'custom-play.html?v=c36&net=1';
       });
-      button(this, '去玩这一关', isPhoneShell() ? 720 : 760, 32, isPhoneShell() ? 240 : 220, isPhoneShell() ? 50 : 48, GREEN, WHITE, function () {
+      button(this, '去听选', isPhoneShell() ? 520 : 560, 32, isPhoneShell() ? 120 : 140, isPhoneShell() ? 48 : 46, NAVY, WHITE, function () {
+        later(function () { show(5); });
+      });
+      button(this, '去玩这一关', isPhoneShell() ? 760 : 800, 32, isPhoneShell() ? 200 : 200, isPhoneShell() ? 50 : 48, GREEN, WHITE, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c37';
+        location.href = 'custom-play.html?v=c36';
       });
       this._t = 0;
       this.scheduleUpdate();
@@ -1105,10 +1115,110 @@
     }
   });
 
+
+  /* ---------- ④ 装备 ---------- */
+  var EquipLayer = cc.Layer.extend({
+    ctor: function () {
+      this._super();
+      WB.sceneName = 'equip';
+      addChrome(this, 3);
+      ART.fill(this, ART.tex.night, 0);
+      words(this, '④ 装备 · 用钱包买武器', W / 2, 470, 24, '#ffe7a0', 8);
+      words(this, '钱不够买不了 · 已买再点是装备 · 没装备仍是手里剑', W / 2, 436, 14, '#c9c3ef', 8);
+      var wal = WB.data.wallet || { coins: 0, weapons: [], equipped: null };
+      ART.panel(this, W / 2, 300, 820, 260, ccColor(18, 26, 58), 235, 2, 18);
+      ART.frame(this, W / 2, 300, 820, 260, cc.color(255, 255, 255), 70, 3, 18);
+      words(this, '💰 金币 ' + ((wal.coins) | 0), W / 2, 390, 22, '#ffe07a', 8);
+      var self = this;
+      ['dart', 'blade', 'gun'].forEach(function (id, i) {
+        var spec = STORE.WEAPONS[id];
+        var owned = wal.weapons.indexOf(id) >= 0;
+        var on = wal.equipped === id;
+        var label = on ? (spec.name + ' · 使用中') : (owned ? (spec.name + ' · 点击装备') : (spec.name + ' · ' + spec.price + '币'));
+        var cx = 220 + i * 260;
+        button(self, label, cx, 300, 220, 56, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+          var res = STORE.buy(WB.data, id);
+          WB.ui.flash = res.flash || '';
+          if (res.ok) STORE.save(localStorage, WB.data);
+          later(function () { show(3); });
+        });
+        words(self, owned ? '已拥有' : ('价格 ' + spec.price), cx, 250, 14, '#a8a0c8', 8);
+      });
+      words(this, WB.ui.flash || '点一张卡购买或装备', W / 2, 200, 16, '#9ff0a8', 8);
+      addFootTrio(this,
+        '回摆关', function () { later(function () { show(2); }); },
+        '刷新装备', function () { later(function () { show(3); }); },
+        '去觉察', function () { later(function () { show(4); }); }
+      );
+      return true;
+    }
+  });
+
+  /* ---------- ⑥ 听选音频 ---------- */
+  var AudioLayer = cc.Layer.extend({
+    ctor: function () {
+      this._super();
+      WB.sceneName = 'audio';
+      WB.ui.audioOpen = true;
+      addChrome(this, 5);
+      ART.fill(this, ART.tex.night, 0);
+      words(this, '⑥ 听选音频 · 先听后选', W / 2, 470, 24, '#ffe7a0', 8);
+      words(this, '用右上角喇叭抽屉试听/选用 · Kevin MacLeod / Kenney · 不用 Mixkit', W / 2, 436, 13, '#c9c3ef', 8);
+      ART.panel(this, W / 2, 270, 860, 240, ccColor(18, 26, 58), 235, 2, 18);
+      ART.frame(this, W / 2, 270, 860, 240, cc.color(255, 255, 255), 70, 3, 18);
+      var AUDIO = window.WBAudio || null;
+      var tracks = AUDIO && AUDIO.BGM ? AUDIO.BGM.map(function (b) {
+        return { id: b.id, name: b.name };
+      }) : [
+        { id: 'explore', name: '探险' },
+        { id: 'tense', name: '紧张' },
+        { id: 'win', name: '过关' },
+        { id: 'fail', name: '失败' }
+      ];
+      var cur = '';
+      if (WB.data && WB.data.audio && WB.data.audio.bgmId) cur = WB.data.audio.bgmId;
+      var self = this;
+      tracks.forEach(function (t, i) {
+        var on = cur === t.id;
+        var col = i % 2;
+        var row = (i / 2) | 0;
+        var cx = 280 + col * 400;
+        var cy = 340 - row * 70;
+        button(self, (on ? '✓ ' : '') + t.name, cx, cy, 280, 48, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+          if (!WB.data.audio && AUDIO && AUDIO.blankAudio) WB.data.audio = AUDIO.blankAudio();
+          if (!WB.data.audio) WB.data.audio = { bgmId: t.id, sfx: {} };
+          WB.data.audio.bgmId = t.id;
+          WB.data.music = t.id;
+          STORE.save(localStorage, WB.data);
+          if (AUDIO) {
+            try { AUDIO.unlock(); AUDIO.setBgm(t.id); } catch (eA) {}
+          }
+          WB.ui.flash = '已选：' + t.name;
+          later(function () { show(5); });
+        });
+      });
+      words(this, WB.ui.flash || (cur ? ('已选：' + cur) : '还没选曲'), W / 2, 180, 16, '#9ff0a8', 8);
+      addFootTrio(this,
+        '回觉察', function () { later(function () { show(4); }); },
+        '开喇叭', function () {
+          WB.ui.audioOpen = true;
+          later(function () { show(5); });
+        },
+        '去玩这一关', function () {
+          STORE.save(localStorage, WB.data);
+          location.href = 'custom-play.html?v=c36';
+        }
+      );
+      return true;
+    }
+  });
+
   var LookScene = cc.Scene.extend({ onEnter: function () { this._super(); this.addChild(new LookLayer()); } });
   var FreqScene = cc.Scene.extend({ onEnter: function () { this._super(); this.addChild(new FreqLayer()); } });
   var EditScene = cc.Scene.extend({ onEnter: function () { this._super(); this.addChild(new EditLayer()); } });
+  var EquipScene = cc.Scene.extend({ onEnter: function () { this._super(); this.addChild(new EquipLayer()); } });
   var ReflectScene = cc.Scene.extend({ onEnter: function () { this._super(); this.addChild(new ReflectLayer()); } });
+  var AudioScene = cc.Scene.extend({ onEnter: function () { this._super(); this.addChild(new AudioLayer()); } });
 
   function boot() {
     if (typeof cc === 'undefined' || !window.WBStore || !window.WBArt) {
@@ -1122,7 +1232,7 @@
     var step = +(q.get('step') || '0');
     if (lesson !== 'tonight') step = 0;
     if (isNaN(step)) step = 0;
-    WB.ui.step = Math.max(0, Math.min(3, step));
+    WB.ui.step = Math.max(0, Math.min(5, step));
     if (q.get('look') === '1') WB.ui.look = 1;
     cc.game.onStart = function () {
       try {
