@@ -129,7 +129,7 @@ Cocos 只出现在试玩：
 每一步单独提交并推到 `main`。
 
 1. 定正式名册。已完成：`cocos/data/roster.json`，第 3 关为影忍者，八关都取 `LEVELS[].boss.name`。游戏尚未改读此文件。
-2. Cocos 启动页和 tonight 四步场景，先把现有课文搬进去，编辑可以仍写出 v1.1。
+2. Cocos 启动页和 tonight 四步场景。已完成：`cocos/workbench.html?lesson=tonight`。看图、频率、摆关、觉察是四个场景，编辑仍写出 v1.1。试玩仍走 `custom-play.html`，这一步没有去掉 `earlyShowcase`。
 3. 编辑场景与试玩场景共用读取函数，去掉试玩对存档的覆盖。
 4. v2 存档加上 `bossId`，并让 `xy-go/?custom=1` 读同一文件。
 5. 正式八关改为读名册；对照测试：关卡数、Boss id、精灵键一致。
