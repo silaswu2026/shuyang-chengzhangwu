@@ -46,6 +46,8 @@
 
 ## 金币、武器、存档
 
+键名 `localStorage` 的 `xygo-custom-level`。版本 **1.2**。可附带 `music`、`likes`（本机）；试玩积分写 `lastScore`。
+
 键名仍是 `localStorage` 的 `xygo-custom-level`。版本 **1.2**。`tiles`、`traps`、`mine` 还在，所以旧的 v1.1 读得进来。没有 `wallet` 时当作 0 金币、没有武器。
 
 ```json
@@ -73,7 +75,7 @@
 
 预设 id：`tonight-waves-v1`（`WBStore.buildDefaultSave` / `custom-play.swampPreset` / `xy-go` 的 `tonightWavesDefault` 三处同源）。
 
-没有 `xygo-custom-level` 存档、或存档里既没有障碍 `tiles` 也没有 `mine.map` 时，用这套默认关。已有孩子改过的存档不覆盖。钱包字段仍按 v1.2 读写；额外记 `lastScore`。可视化工坊仍可读写本机 `music` / `likes`。存档里可有软字段 `audio`（给先听后选 WIP 用），本插图分支不依赖 `wb-audio.js`。
+没有 `xygo-custom-level` 存档、或存档里既没有障碍 `tiles` 也没有 `mine.map` 时，用这套默认关。已有孩子改过的存档不覆盖。钱包字段仍按 v1.2 读写；额外记 `lastScore`。可视化工坊仍可读写本机 `music` / `likes`。存档 `audio` 字段由 `wb-audio.js` / 工作台喇叭抽屉读写（先听后选 WIP）。
 
 ### 四波跑道（12 列，前两格安全）
 
@@ -110,8 +112,17 @@ HUD 显示「积分」。规则：
 
 关卡不公开。可视化工坊的点赞只记本机（`vw-likes`），给自己打气；陪伴文案在抽屉里。
 
+## 先听后选 · 音频（WIP）
+
+右上角 **喇叭** 打开抽屉（不是第五步）。选 BGM、试听并开关 SFX；写入 `xygo-custom-level` v1.2 的 `audio` 字段，不改钱包 / tiles。可视化工坊 `music` / `likes` 仍可并存。
+
+- BGM 四心情：`explore` / `tense` / `win` / `fail`（占位 wav：`audio/bgm/`）。
+- SFX：`walk` `jump` `land` `spike` `fire` `spring` `coin` `hurt` `hit`（`audio/sfx/`）。点一下先听并开关。
+- 播放：`wb-audio.js`（`cc.audioEngine`，失败则 HTMLAudio）。
+- 试玩 `custom-play` 读同一存档开 BGM，并在跳/落/陷阱/币/受伤/击中处播 SFX；失败切 `fail`，过关切 `win`。
+
 ## 还开着的口
 
-- 真音频入库后替换占位；先听后选抽屉在并行分支
+- 真音频入库后替换占位 wav
 - 摆关 / 觉察继续收成「画布在中间、控件在画布外」
 - 基础台 `workbench.html` 是否跟进紧凑条（课程 2 可保持横排）
