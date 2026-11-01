@@ -109,7 +109,7 @@
 | 3 | 关卡设计（原②③④合并） | [`LEVEL-STEPS-234-REDESIGN.md`](./LEVEL-STEPS-234-REDESIGN.md)（短链 [`LEVEL-DESIGN-234.md`](./LEVEL-DESIGN-234.md)） | **已决定合并**；一级「关卡设计」+ 二级 摆关\|设置\|关联；调研内容仍作面板素材；**产品官须按新步重签** |
 | 4 | 音乐×九关 + 角色音效 | [`MUSIC-LEVEL-BIND-UI.md`](./MUSIC-LEVEL-BIND-UI.md) | 选 BGM 关联九关；补「砍人声 / 走路声」选角色细节 |
 | 5 | 试玩最后一章换壳 | [`PLAYTEST-SHELL-PARITY.md`](./PLAYTEST-SHELL-PARITY.md) | 单机+联机机制不变；UI 对齐现 Cocos 2D 工坊壳；不跳陌生界面；只换壳 |
-| — | 口述流水账 | [`LEVEL-DESIGN-DICTATION.md`](./LEVEL-DESIGN-DICTATION.md) | 批次 1–4 原文归档（含授权口径与名锁注记） |
+| — | 口述流水账 | [`LEVEL-DESIGN-DICTATION.md`](./LEVEL-DESIGN-DICTATION.md) | 批次 1–5 原文归档（含授权口径与名锁注记） |
 
 ---
 
@@ -118,18 +118,11 @@
 | 文档 | 状态 | 代码 |
 | --- | --- | --- |
 | LOOK-STEP-SCRIPT | 方案待拍板 | 未改 LookScene |
-<<<<<<< Updated upstream
 | AWARENESS-GATE-BEFORE-DESIGN | 产品官补签 PASS · 待 Silas 拍板 | 未改 ⑤/③ |
-| LEVEL-STEPS-234-REDESIGN | 产品官补签 PASS · 待 Silas 拍板 | 未改 ②③④ |
+| LEVEL-STEPS-234-REDESIGN | **结构已确认合并+二级**；内容 PASS 仍作面板素材 · **待产品官按新步重签** | 未改 ②③④ |
 | MUSIC-LEVEL-BIND-UI | 产品官补签 PASS（含 §9b；待 Silas §10） | 未改 ⑥ / L3 |
 | PLAYTEST-SHELL-PARITY | 产品官补签 PASS · 待 Silas 拍板 | 未改玩法核心 / PeerJS |
-=======
-| AWARENESS-GATE-BEFORE-DESIGN | 方案待拍板 | 未改 ⑤/③ |
-| LEVEL-STEPS-234-REDESIGN | 结构决定=合并+二级；内容 PASS 仍有效 · 待重签合同 | 未改 ②③④ |
-| MUSIC-LEVEL-BIND-UI | 方案待拍板（含角色 SFX 增补） | 未改 ⑥ / L3 |
-| PLAYTEST-SHELL-PARITY | 方案待拍板 | 未改玩法核心 / PeerJS |
->>>>>>> Stashed changes
-| LEVEL-DESIGN-DICTATION | 流水账；批次 4 已并 | n/a |
+| LEVEL-DESIGN-DICTATION | 流水账；批次 5 已记合并确认 | n/a |
 
 ---
 
