@@ -115,3 +115,13 @@ HUD 显示「积分」。规则：
 ## 社交和点赞
 
 **没有。** 关卡不公开、没有赞、没有评论。若以后要做，先改这份文档再写代码。
+
+## 先听后选 · 音频（WIP）
+
+右上角 **喇叭** 打开抽屉（不是第五步）。选 BGM、试听并开关 SFX；写入 `xygo-custom-level` v1.2 的 `audio` 字段，不改钱包 / tiles。
+
+- BGM 四心情：`explore` / `tense` / `win` / `fail`（占位 wav：`audio/bgm/`）。
+- SFX：`walk` `jump` `land` `spike` `fire` `spring` `coin` `hurt` `hit`（`audio/sfx/`）。点一下先听并开关。
+- 播放：`wb-audio.js`（`cc.audioEngine`，失败则 HTMLAudio）。
+- 试玩 `custom-play` 读同一存档开 BGM，并在跳/落/陷阱/币/受伤/击中处播 SFX；失败切 `fail`，过关切 `win`。
+

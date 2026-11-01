@@ -2,7 +2,7 @@
  * 学习工作台 · 今晚四步（看图、频率、摆关、觉察）。
  * 画面按旧课件今晚路径的插画来拼：天空、远山、草皮、水面、钩子、鱼，
  * 道具用 ld-art 的小图。全是 Cocos 节点，不是整页截图。
- * 存档仍是 localStorage xygo-custom-level v1.1。试玩仍走 custom-play.html。
+ * 存档是 localStorage xygo-custom-level v1.2（wallet + audio）。试玩仍走 custom-play.html。
  */
 (function () {
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
@@ -11,6 +11,7 @@
   var STEPS = ['① 看图一句', '② 频率', '③ 设计一小关', '④ 玩完'];
   var STORE = window.WBStore;
   var ART = window.WBArt;
+  var AUDIO = window.WBAudio;
   var DUR = 12;
   var PAD = [2, 4, 6, 9];
   var NAVY = ccColor(59, 69, 144);
@@ -24,7 +25,7 @@
     ready: false,
     sceneName: '',
     data: null,
-    ui: { step: 0, look: 0, running: false, runT0: 0, previewDone: false, flash: '', freqDone: false },
+    ui: { step: 0, look: 0, running: false, runT0: 0, previewDone: false, flash: '', freqDone: false, audioOpen: false },
     layout: {}
   };
 
@@ -138,6 +139,82 @@
     cc.director.runScene(new scenes[step]());
   }
 
+
+  function ensureAudio() {
+    if (!AUDIO) return null;
+    if (!WB.data.audio) WB.data.audio = AUDIO.blankAudio();
+    AUDIO.apply(WB.data.audio);
+    return WB.data.audio;
+  }
+
+  function persistAudio() {
+    ensureAudio();
+    WB.data.audio = AUDIO.get();
+    STORE.save(localStorage, WB.data);
+  }
+
+  function closeAudioDrawer() {
+    WB.ui.audioOpen = false;
+  }
+
+  /** Top-right speaker drawer: BGM list + SFX grid. Not a fifth lesson step. */
+  function addAudioChrome(layer, step) {
+    if (!AUDIO) return;
+    ensureAudio();
+    var selfStep = step;
+    button(layer, '喇叭', 800, H - 26, 64, 34, WB.ui.audioOpen ? GOLD : NAVY, WB.ui.audioOpen ? INK : WHITE, function () {
+      AUDIO.unlock();
+      WB.ui.audioOpen = !WB.ui.audioOpen;
+      later(function () { show(selfStep); });
+    });
+    if (!WB.ui.audioOpen) return;
+
+    var panel = new cc.Node();
+    panel.setPosition(0, 0);
+    layer.addChild(panel, 40);
+    ART.panel(panel, W / 2, H / 2 - 10, 520, 420, ccColor(12, 18, 40), 245, 0, 18);
+    ART.frame(panel, W / 2, H / 2 - 10, 520, 420, cc.color(255, 224, 122), 180, 1, 18);
+    words(panel, '先听后选 · 音乐', W / 2, H / 2 + 180, 20, '#ffe07a', 2);
+    words(panel, '挑一首背景乐，点音效试听；选用会写进这一关', W / 2, H / 2 + 152, 13, '#c9c3ef', 2);
+
+    var audio = AUDIO.get();
+    AUDIO.BGM.forEach(function (b, i) {
+      var on = audio.bgmId === b.id;
+      var y = H / 2 + 110 - i * 42;
+      button(panel, (on ? '✓ ' : '听 ') + b.name, W / 2 - 90, y, 200, 34, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+        AUDIO.setBgm(b.id);
+        persistAudio();
+        later(function () { show(selfStep); });
+      });
+      button(panel, '选用', W / 2 + 110, y, 90, 34, GREEN, WHITE, function () {
+        AUDIO.setBgm(b.id);
+        persistAudio();
+        WB.ui.flash = '已选用：' + b.name;
+        later(function () { show(selfStep); });
+      });
+    });
+
+    words(panel, '音效：点一下先听并开关', W / 2, H / 2 - 70, 14, '#ffe7a0', 2);
+    AUDIO.SFX.forEach(function (s, i) {
+      var col = i % 3;
+      var row = (i / 3) | 0;
+      var x = W / 2 - 160 + col * 160;
+      var y = H / 2 - 110 - row * 42;
+      var on = audio.sfx[s.id] !== false;
+      button(panel, (on ? '开 ' : '关 ') + s.name, x, y, 140, 34, on ? NAVY : ccColor(60, 60, 80), WHITE, function () {
+        AUDIO.playSfx(s.id, true);
+        AUDIO.toggleSfx(s.id, !on);
+        persistAudio();
+        later(function () { show(selfStep); });
+      });
+    });
+
+    button(panel, '关闭', W / 2, H / 2 - 200, 140, 40, NAVY, WHITE, function () {
+      closeAudioDrawer();
+      later(function () { show(selfStep); });
+    });
+  }
+
   function addChrome(layer, step) {
     ART.fill(layer, ART.tex.night, 0);
     plate(layer, 0, 0, W, FOOT, ccColor(15, 18, 48, 242), 18);
@@ -175,6 +252,7 @@
         later(function () { show(i); });
       });
     });
+    addAudioChrome(layer, step);
   }
 
   function addNinja(parent, x, y, h, z) {
