@@ -12,7 +12,18 @@
 在 Silas **书面/口头明确确认**对应方案之前，禁止改动：
 
 | 区域 | 禁改 |
-| --- | --- |
+| ---
+
+## 产品官补签 · 总册 · 2026-11-01
+
+- **结论：总册口径 PASS**（设计授权已开；**Silas 确认前禁改代码**）
+- 「并 vs 不并」醒目标题与默认**不并**正确；五柱索引齐全；名锁 STT 注记正确。
+- 子篇：觉察前置 / 试玩换壳 / MUSIC（含 §9b）均已补签 PASS；LOOK / 234 此前已 PASS。
+- 实现仍须：Silas 拍板 → 产品官放行 → 小宇改代码。
+
+---
+
+ | --- |
 | ①看图 | `LookScene` 及分镜相关实现 |
 | ③摆关 | Build / 筹码 / 安全区逻辑 |
 | ⑥听选 | 喇叭抽屉 / 四心情曲库播放逻辑 |
@@ -61,10 +72,10 @@
 | 文档 | 状态 | 代码 |
 | --- | --- | --- |
 | LOOK-STEP-SCRIPT | 方案待拍板 | 未改 LookScene |
-| AWARENESS-GATE-BEFORE-DESIGN | 方案待拍板 | 未改 ⑤/③ |
+| AWARENESS-GATE-BEFORE-DESIGN | 产品官补签 PASS · 待 Silas 拍板 | 未改 ⑤/③ |
 | LEVEL-STEPS-234-REDESIGN | 产品官补签 PASS · 待 Silas 拍板 | 未改 ②③④ |
-| MUSIC-LEVEL-BIND-UI | 方案待拍板（含角色 SFX 增补） | 未改 ⑥ / L3 |
-| PLAYTEST-SHELL-PARITY | 方案待拍板 | 未改玩法核心 / PeerJS |
+| MUSIC-LEVEL-BIND-UI | 产品官补签 PASS（含 §9b；待 Silas §10） | 未改 ⑥ / L3 |
+| PLAYTEST-SHELL-PARITY | 产品官补签 PASS · 待 Silas 拍板 | 未改玩法核心 / PeerJS |
 | LEVEL-DESIGN-DICTATION | 流水账；批次 4 已并 | n/a |
 
 ---
