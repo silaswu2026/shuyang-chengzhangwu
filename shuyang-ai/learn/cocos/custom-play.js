@@ -11,6 +11,7 @@
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
  * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。
  * c42: 默认关保底可见线圈弹簧垫（ensureSprings）+ 贴图更醒目；保留 c32 power=1300；P2 HUD 去「沼泽」壳话。
+ * c45: D7 — 「发现房间，正在连接…」期间仍 A绿；guest peer 自身 open 不算客人确立；仅 conn.open（已连上房主）或 BC 同机 guest 确立后才 B蓝。保留 c44 海军冷开。
  * c44: 冷开真凶 — `_addNightBg` 整屏棕 LayerColor(90,58,36) 在 canopy 未到前当稳态；改海军 fallback；地面 bed 高度压到草线（不再 gy+2T 盖树）；匹配中 id 占用改 Guest 时延后 B蓝 chip 到 guest peer open（「匹配中」仍 A绿）。
  * c43: P2 — ?net=1 立刻乐观锁 Host→A绿（撤掉匹配前 600ms 仍读本地红皮窗口）；冷开安全床/清屏改海军蓝，避免整屏棕底闪。
  * c29: 小岩签 — 沼泽保底可踩火源+着火/灭火短提示；锤子近战/投掷明确扣血闪白。弓/飞镖不回退。
@@ -93,7 +94,7 @@
     syncCastUI();
   }
   function netLockedPalette() {
-    /* c44: guest pending (id taken, peer not open yet) still A绿 during 「匹配中」 */
+    /* c45: guest pending until guest role truly established (conn open / BC link) — stay A绿 through 「正在连接」 */
     if (typeof netRole !== 'undefined' && netRole === 'guest') {
       if (typeof netGuestPending !== 'undefined' && netGuestPending) return 'green';
       return 'blue';
@@ -2183,7 +2184,7 @@
     ] }
   };
   var netRole = null, netPeer = null, netConn = null, netLinked = false, netCode = '';
-  var netGuestPending = false; /* c44: true while guest peer not yet open — chip stays A绿 */
+  var netGuestPending = false; /* c45: true until guest truly linked (conn.open / BC) — chip stays A绿 through 「正在连接」 */
   var netTransport = null, netBcSession = '', netBC = null, netP2 = null;
   try { netBC = new BroadcastChannel('sycocos-coop-v1'); } catch (eN) { netBC = null; }
 
@@ -2289,6 +2290,11 @@
     netConn = conn;
     conn.on('open', function () {
       netLinked = true; netTransport = 'peer';
+      /* c45: guest role confirmed only when peer data channel opens — not earlier guest peer id open */
+      if (netRole === 'guest') {
+        netGuestPending = false;
+        applyRoleVisuals(); /* now B蓝 */
+      }
       netBanner(netRole === 'host' ? '玩家B已加入' : '已连上房主', true);
       if (netSoft && netRole === 'host') {
         netPanel(false);
@@ -2336,16 +2342,17 @@
     netPeer.on('connection', function (conn) { netWireConn(conn); });
     netPeer.on('error', function (err) {
       if (hosted) return;
-      /* id taken → join as guest; c44: keep A绿 through 「匹配中」 until guest peer opens */
+      /* id taken → join as guest; c45: keep A绿 through 「匹配中」/「正在连接」 until conn.open */
       try { netPeer.destroy(); } catch (e2) {}
       netRole = 'guest';
       netGuestPending = true;
       applyRoleVisuals(); /* still A绿 while pending */
       netPeer = new Peer(NET_PEER_OPTS);
       netPeer.on('open', function () {
-        netGuestPending = false;
-        applyRoleVisuals(); /* now B蓝 — joining */
+        /* guest peer got an id — still connecting to host; do NOT clear pending / do NOT B蓝 yet */
+        applyRoleVisuals(); /* still A绿 */
         netPanel(true, '发现房间，正在连接…');
+        netBanner('发现房间，正在连接…', false);
         var c = netPeer.connect(netCode, { reliable: true });
         netWireConn(c);
       });

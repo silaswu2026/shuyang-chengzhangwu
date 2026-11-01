@@ -4,7 +4,7 @@
 ## 2026-11-01 · L1 选关薄壳（ls1）
 
 **目标（产品官优先序5）**：孩子可见关卡 **1–8 + 第9「我的关卡」**；薄壳优先于纯文档。
-**做法**：新页 `level-select.html?v=ls1`（海军·金·绿 HTML 壳，非 Cocos 封面场景）。名册读 `data/roster.json`（失败用内嵌 Boss 名）。**第9关**绿卡进现网 `custom-play.html?v=c44`（可单机/联机）；**1–8** 诚实灰显「即将开放」（Cocos 正式关尚未进试玩，点按 flash，不猜接通、不重做联网、不换 PeerJS）。入口：根 `index.html`「选关」行；工坊/基础台顶栏「选关」；旁路 links。
+**做法**：新页 `level-select.html?v=ls1`（海军·金·绿 HTML 壳，非 Cocos 封面场景）。名册读 `data/roster.json`（失败用内嵌 Boss 名）。**第9关**绿卡进现网 `custom-play.html?v=c45`（可单机/联机）；**1–8** 诚实灰显「即将开放」（Cocos 正式关尚未进试玩，点按 flash，不猜接通、不重做联网、不换 PeerJS）。入口：根 `index.html`「选关」行；工坊/基础台顶栏「选关」；旁路 links。
 **未做**：1–8 真进 custom-play；Cocos 封面场景；xy-go 改写。
 **验收**：PLAYER-TEST L1-SEL-*；正式名 **伍澍暘** / **小宇**。
 
@@ -201,6 +201,7 @@
 - **c38 chip 同步 + 匹配不闪红**：开房主 / 进房客 / 选色 / tint 就绪后，HUD `hpchip` 与可见忍者同色（`applyRoleVisuals` + `updHUD` 一律读 `netLockedPalette()`）。**匹配阶段**不再把 `netRole` 置空：开房路径立刻乐观锁 Host→**A 绿**（跳过中间「C 红」）；id 占用改 Guest→**B 蓝**。闪红应 ≤~0.5s 或根本不出现（横屏曾测到 ~2.5–3.1s）。终态映射不变：房主 A 绿 / 客人 B 蓝 / 单人可选绿红蓝。
 - **c43 P2（匹配窗口 + 冷开床）**：`?net=1` 在 boot 里**立刻** `netRole=host` + `applyRoleVisuals`（含无场景时 `forceHpChip`），再 `setTimeout(0)` 开 Peer；去掉旧 600ms「先读 `sycocos-skin=red` 再锁房主」窗口（横屏曾 ~0.6–0.9s C红）。冷开 `#stagePad`/`.shell`/清屏色改海军 `#0f1230`，关内 dirt 仍画土带——减少整屏棕底一闪。正式名 **伍澍暘** / 助手 **小宇**。
 - **c44（冷开棕床真凶 + 匹配中 chip）**：Jobs c43 仍 FAIL——CSS/清屏已海军，但 `_addNightBg` 仍用整屏 `LayerColor(90,58,36)` 作 canopy 未到前的 fallback，首交互帧整舞台棕床当稳态。现 fallback 改海军 `(15,18,48)`；地面 `bed` 高度压到草线 `gy`（原 `gy+2T` 会在草上画一条棕带盖住树干）。另：id 占用改 Guest 后、「匹配中」到 guest peer open 前 chip 仍 **A 绿**（`netGuestPending`）；peer open / 已加入后再 **B 蓝**。正式名 **伍澍暘** / 助手 **小宇**。
+- **c45（D7「正在连接」误漂 B 蓝）**：玩家测 c44 FAIL——单页在「发现房间，正在连接…」时 chip/身已 **B 蓝**。根因：c44 在 **guest Peer 自身 `open`（拿到临时 id）** 就清 `netGuestPending` 并 `applyRoleVisuals`→B蓝，此时尚未 `connect`/`conn.open`。现：**guest peer open 仍 pending→A绿**；仅 **`netWireConn` 的 `conn.open`（已连上房主）** 或 BC `bc-offer` 真确立 guest 后才清 pending→**B 蓝**。保留 c44 海军冷开。正式名 **伍澍暘** / 助手 **小宇**。
 - 工坊演示跑图目前默认绿忍者（三色子集，合格）；不引入绿色小人头像当主控。
 - 备路 `xy-go` 本身已有三色 tint；仍标过渡（见上表）。
 
