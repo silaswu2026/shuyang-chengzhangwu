@@ -1,0 +1,17 @@
+/* 五树杨的 AI 办学小屋 · 全站色板 / 字体提示
+   与 shuyang-ai/learn/cocos/visual-workbench.html :root 对齐。
+   首页、旧螺丝页、工坊壳共用这套海军蓝·金·绿。 */
+:root{
+  --navy:#0f1230;
+  --navy2:#161b3d;
+  --gold:#ffe07a;
+  --gold2:#e6b422;
+  --green:#3ecf6a;
+  --green2:#2aa85a;
+  --ink:#f4f0ff;
+  --muted:#a8a0c8;
+  --card:#161b3d;
+  --stroke:rgba(255,224,122,.32);
+  --bg-deep:#0b0e24;
+  --family-font:"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
+}
