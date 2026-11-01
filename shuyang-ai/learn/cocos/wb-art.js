@@ -1,5 +1,5 @@
 /**
- * 今晚四步的小图。按旧课件 ld-art.js / level-design 今晚画布的配色和零件来画，
+ * 今晚六步的小图。按旧课件 ld-art.js / level-design 今晚画布的配色和零件来画，
  * 再交给 Cocos 精灵拼进场景。这里没有整页截图。
  */
 (function () {

@@ -1,9 +1,9 @@
 /**
- * 学习工作台 · 今晚四步（看图、频率、摆关、觉察）。
+ * 学习工作台 · 今晚六步（①看图 ②频率 ③摆关 ④装备 ⑤觉察 ⑥听选）。
  * 画面按旧课件今晚路径的插画来拼：天空、远山、草皮、水面、钩子、鱼，
  * 道具用 wb-art 小图。全是 Cocos 节点，不是整页截图。
  * 存档 localStorage xygo-custom-level v1.2（wallet + audio）。试玩 custom-play.html。
- * wb74: 正式六步 ①→⑥（④装备/⑥听选升格）· wb73 叠字/窄屏壳 · 联机入口。
+ * wb76: 壳文案「今晚六步」对齐 visual · wb74: 正式六步 ①→⑥ · wb73 叠字/窄屏壳 · 联机入口。
  */
 (function () {
   var W = 960, H = 540, FOOT = 64, CHROME = 52;
@@ -1324,8 +1324,8 @@
             scene.addChild(layer);
             ART.fill(layer, ART.tex.night, 0);
             words(layer, '这一课还没迁进工作台', W / 2, H / 2 + 20, 28, '#ffe7a0', 2);
-            words(layer, '今晚四步已经可以打开', W / 2, H / 2 - 30, 20, '#ffffff', 2);
-            button(layer, '打开今晚四步', W / 2, H / 2 - 90, 240, 52, GREEN, WHITE, function () {
+            words(layer, '今晚六步已经可以打开', W / 2, H / 2 - 30, 20, '#ffffff', 2);
+            button(layer, '打开今晚六步', W / 2, H / 2 - 90, 240, 52, GREEN, WHITE, function () {
               location.search = '?lesson=tonight&step=0';
             });
             cc.director.runScene(scene);
