@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><!-- ldtonight:v11 --><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="ld-build" content="ldt14">
+<meta name="ld-build" content="ldt15">
 <title>关卡设计台 · 伍澍暘</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;height:100%}
@@ -149,17 +149,17 @@ body.tonight #expectAsk{flex-shrink:0;width:100%;max-width:100%;box-sizing:borde
   body.tonight .pp{font-size:8px}
   body.tonight .pathhint{font-size:12px}
 }
-/* 竖屏：①②③ 画布铺满下半可视区（ldt8/ldt9：②③同① fill，消 #6ec8ff 空条）；横屏保持原限高 */
+/* 竖屏：①②③ wrap 吃满下半；②③ 横版缓冲+object-fit:fill（ldt15 禁抬高 _lh，否则空蓝+底条）；横屏保持原限高 */
 @media (orientation:portrait){
   body.tonight main{padding:4px 8px;gap:6px}
   body.tonight .stage.on{flex:1;min-height:0}
-  /* ①②③ 同策：wrap 吃满下半 + canvas object-fit:fill（禁 contain 夹成中间一条） */
+  /* ①②③：wrap 吃满下半 + canvas object-fit:fill（禁 contain 夹成中间一条） */
   body.tonight #s0.stage.on .cvwrap,
   body.tonight #sF.stage.on .cvwrap,
   body.tonight #sM.stage.on .cvwrap{
     flex:1 1 auto;
     max-height:none;
-    min-height:0;
+    min-height:min(42vh,320px);
     width:100%;
     background:#0e1e34;
     align-items:stretch;
@@ -256,7 +256,7 @@ body.tonight #expectAsk{flex-shrink:0;width:100%;max-width:100%;box-sizing:borde
   body.tonight main{gap:4px}
 }
 
-/* ldt14：短修 — 去玩链到 c27（cocos 改 body 加载，修手机 _initSys appendChild null / Layer.extend）；无地板/联机大改 */
+/* ldt15：竖屏②③预览铺满 — 横版逻辑缓冲+CSS fill，消抬高_lh导致的空蓝底条；电脑布局不回退。ldt14 去玩链 c27 保留 */
 body.tonight #play{
   background:linear-gradient(180deg,#78d484,#4ea85c)!important;
   color:#fff!important;
@@ -716,15 +716,16 @@ function crisp(cv){if(!cv.clientWidth)return;if(!cv._lw){cv._lw=CWD.get.call(cv)
  CWD.set.call(cv,Math.round(cv._lw*k));CHD.set.call(cv,Math.round(cv._lh*k));const g=cv.getContext('2d');g.setTransform(k,0,0,k,0,0);g.imageSmoothingQuality='high';}
 function crispAll(){document.querySelectorAll('.stage.on canvas').forEach(crisp);}addEventListener('resize',()=>setTimeout(crispAll,50));
 
-/* ldt9：①②③ 竖屏逻辑高随 wrap，object-fit:fill 铺满（ldt8 不回退） */
+/* ldt15：① 竖屏可抬逻辑高适配幻灯；②③ 保持横版 960×baseH，靠 CSS object-fit:fill 铺满（抬高_lh→天空吃满、关卡压底条） */
 function fitTonightCanvas(cvId, stId, baseH){
   if(typeof TONIGHT==='undefined'||!TONIGHT) return;
   const cv=$(cvId), st=$(stId);
   if(!cv||!st||!st.classList.contains('on')) return;
   const portrait=window.matchMedia('(orientation:portrait)').matches;
   const wrap=cv.parentElement;
-  if(!portrait){
-    if(cv._s0Tall){ cv._lw=960; cv._lh=baseH; cv._k=0; cv._s0Tall=0; crisp(cv); }
+  const sideScroll=(cvId==='cvF'||cvId==='cvM');
+  if(!portrait||sideScroll){
+    if(cv._s0Tall||(cv._lw&&(cv._lw!==960||cv._lh!==baseH))){ cv._lw=960; cv._lh=baseH; cv._k=0; cv._s0Tall=0; crisp(cv); }
     return;
   }
   const cw=wrap&&wrap.clientWidth||cv.clientWidth||400;
