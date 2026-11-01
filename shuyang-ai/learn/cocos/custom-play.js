@@ -11,6 +11,7 @@
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
  * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。
  * c42: 默认关保底可见线圈弹簧垫（ensureSprings）+ 贴图更醒目；保留 c32 power=1300；P2 HUD 去「沼泽」壳话。
+ * c49: 真机仍见「小颗粒滑屏」— c48 Retina 保留；主因是 14 颗 4×4 硬边 LayerColor 萤火虫横向快漂 + 亚像素 cam 卷像素泥土。改为软光晕萤火虫（手机/DPR≥2 更少更淡更慢）、世界层 camX 取整、fitStage 后复核 retina 缓冲。不改玩法/联机。
  * c48: 手机横屏颗粒滑屏 — enableRetina(true)（Cocos 上限 min(2,dpr)）+ fitStage 引擎就绪后不再手写 canvas.width/height（交给 _setupContainer 写 DPR 缓冲）；根因是 c47 及更早 enableRetina(false)+手机 WebGL antialias:false 导致 1× 缓冲被 CSS 放大成颗粒，叠 canopy 视差/萤火虫漂移像「滑屏沙粒」。不改玩法/联机。
  * c46: D7-3 — 同窗两标签真连：乐观 Host 不再挡 BroadcastChannel；host 脉冲重发 bc-offer；guest 发 bc-want；PeerJS ICE 同机常挂时走同机兜底。保留 c45「正在连接」仍 A绿、仅真连上才 B蓝。
  * c45: D7 — 「发现房间，正在连接…」期间仍 A绿；guest peer 自身 open 不算客人确立；仅 conn.open（已连上房主）或 BC 同机 guest 确立后才 B蓝。保留 c44 海军冷开。
@@ -309,6 +310,59 @@
   function bootErr(m) { var b = $('boot'); if (!b) return; b.textContent = m; b.className = 'err'; }
   function mkColor(w, h, r, g, b, a) { return new cc.LayerColor(cc.color(r, g, b, a == null ? 255 : a), w, h); }
   function texFromCanvas(cv) { var tex = new cc.Texture2D(); tex.initWithElement(cv); tex.handleLoadedTexture(); return tex; }
+  var fireflyTex = null;
+  function buildFireflyTex() {
+    /* soft radial glow — hard 4×4 LayerColor read as sand grains on phone night sky */
+    var s = 28;
+    var cv = document.createElement('canvas');
+    cv.width = s;
+    cv.height = s;
+    var g = cv.getContext('2d');
+    var grd = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+    grd.addColorStop(0, 'rgba(255,255,190,0.75)');
+    grd.addColorStop(0.28, 'rgba(234,255,154,0.38)');
+    grd.addColorStop(0.65, 'rgba(180,220,120,0.12)');
+    grd.addColorStop(1, 'rgba(234,255,154,0)');
+    g.fillStyle = grd;
+    g.fillRect(0, 0, s, s);
+    var tex = texFromCanvas(cv);
+    try { if (tex && tex.setAntiAliasTexParameters) tex.setAntiAliasTexParameters(); } catch (eFf) {}
+    return tex;
+  }
+  function wantSoftSky() {
+    try {
+      if (typeof cc !== 'undefined' && cc.sys && cc.sys.isMobile) return true;
+    } catch (eM) {}
+    return (window.devicePixelRatio || 1) >= 1.5;
+  }
+  function ensureRetinaBuffer(aw, ah) {
+    /* c49: keep backing store ≥ CSS×min(2,dpr) after fitStage / EXACT_FIT */
+    try {
+      if (typeof cc === 'undefined' || !cc.view) return;
+      if (cc.view.enableRetina) cc.view.enableRetina(true);
+      var cv = (cc.game && cc.game.canvas) || document.getElementById('gameCanvas');
+      if (!cv) return;
+      var dprWant = Math.min(2, window.devicePixelRatio || 1);
+      if (dprWant <= 1.01) return;
+      var cssW = Math.max(2, cv.clientWidth || aw || 0);
+      var cssH = Math.max(2, cv.clientHeight || ah || 0);
+      var needW = Math.round(cssW * dprWant);
+      var needH = Math.round(cssH * dprWant);
+      if (cv.width + 2 >= needW && cv.height + 2 >= needH) return;
+      /* re-run resolution policy so _setupContainer rewrites DPR buffer */
+      if (cc.view.setDesignResolutionSize && W && H) {
+        cc.view.setDesignResolutionSize(W, H, cc.ResolutionPolicy.EXACT_FIT);
+      }
+      cv = (cc.game && cc.game.canvas) || cv;
+      if (cv.width + 2 < needW || cv.height + 2 < needH) {
+        cv.width = needW;
+        cv.height = needH;
+        try {
+          if (cc._renderContext && cc._renderContext.resetCache) cc._renderContext.resetCache();
+        } catch (eRc) {}
+      }
+    } catch (eRet) {}
+  }
 
   function updateOrientTip() {
     var tip = $('orientTip');
@@ -374,6 +428,7 @@
     } catch (e0) {}
     if (typeof cc === 'undefined' || !cc.view) { lastFitKey = fitKey; return; }
     try {
+      if (cc.view.enableRetina) cc.view.enableRetina(true);
       if (cc.view.setFrameSize) cc.view.setFrameSize(aw, ah);
       /* EXACT_FIT: stretch to fill — no black SHOW_ALL bars on widescreen */
       cc.view.setDesignResolutionSize(W, H, cc.ResolutionPolicy.EXACT_FIT);
@@ -382,6 +437,7 @@
         cc.director.setClearColor(cc.color(15, 18, 48, 255)); /* c43: navy bed, not full-screen brown */
       }
       if (cc.view._resizeEvent) cc.view._resizeEvent();
+      ensureRetinaBuffer(aw, ah);
     } catch (e) {}
     lastFitKey = fitKey;
     if (changed && sceneRef && !rebuilding && window.__playSceneCtor) {
@@ -1184,6 +1240,7 @@
           var tex = new cc.Texture2D();
           tex.initWithElement(forestImg);
           tex.handleLoadedTexture();
+          try { if (tex.setAntiAliasTexParameters) tex.setAntiAliasTexParameters(); } catch (eAA0) {}
           var sp = new cc.Sprite(tex);
           sp.setAnchorPoint(0, 0);
           this.addChild(sp, -5);
@@ -1203,15 +1260,33 @@
       var vig = mkColor(W, H, 8, 16, 28, 40);
       vig.setPosition(0, 0);
       this.addChild(vig, -3);
-      /* fireflies (screen space) */
+      /* c49: soft fireflies (screen space) — hard 4×4 squares read as sliding sand on phone */
       this.ffLayer = new cc.Node();
       this.addChild(this.ffLayer, -2);
+      if (!fireflyTex) fireflyTex = buildFireflyTex();
+      var softSky = wantSoftSky();
+      var nFly = softSky ? 5 : 8;
       var i;
-      for (i = 0; i < 14; i++) {
-        var dot = mkColor(4, 4, 234, 255, 154, 200);
-        dot.setPosition(Math.random() * W, Math.random() * H * 0.7);
+      for (i = 0; i < nFly; i++) {
+        var dot;
+        try {
+          dot = new cc.Sprite(fireflyTex);
+          dot.setAnchorPoint(0.5, 0.5);
+          /* phone: larger soft blob, lower alpha; desktop a bit brighter */
+          var sc = softSky ? (0.55 + Math.random() * 0.35) : (0.45 + Math.random() * 0.3);
+          dot.setScale(sc);
+          dot.setOpacity(softSky ? 70 : 110);
+        } catch (eDot) {
+          dot = mkColor(6, 6, 234, 255, 154, softSky ? 90 : 140);
+        }
+        dot.setPosition(Math.random() * W, Math.random() * H * 0.65);
         this.ffLayer.addChild(dot);
-        this.fireflies.push({ n: dot, phase: Math.random() * 6, spd: 0.6 + Math.random() });
+        this.fireflies.push({
+          n: dot,
+          phase: Math.random() * 6,
+          spd: softSky ? (0.25 + Math.random() * 0.35) : (0.35 + Math.random() * 0.45),
+          soft: softSky
+        });
       }
     },
     /* c39: night forest may arrive after first playable frame — attach without rebuild. */
@@ -1225,6 +1300,7 @@
         var tex = new cc.Texture2D();
         tex.initWithElement(forestImg);
         tex.handleLoadedTexture();
+        try { if (tex.setAntiAliasTexParameters) tex.setAntiAliasTexParameters(); } catch (eAA1) {}
         var sp = new cc.Sprite(tex);
         sp.setAnchorPoint(0, 0);
         this.addChild(sp, -5);
@@ -1259,6 +1335,7 @@
             var texB = new cc.Texture2D();
             texB.initWithElement(forestImg);
             texB.handleLoadedTexture();
+            try { if (texB.setAntiAliasTexParameters) texB.setAntiAliasTexParameters(); } catch (eAA2) {}
             spB = new cc.Sprite(texB);
           } else {
             spB = new cc.Sprite(BG);
@@ -1561,7 +1638,7 @@
       applyNinjaFrame(this.ninja, this.palette, 'idle');
       this.ninja.setOpacity(255);
       this.camX = Math.max(0, this.px - W * camBias());
-      this.world.setPosition(-this.camX, 0);
+      this.world.setPosition(-Math.round(this.camX), 0); /* c49: integer cam — stop pixel-dirt shimmer */
       this._layoutBg(this.camX);
       hideResult();
       updHUD(this.hp, this.coins);
@@ -1805,7 +1882,7 @@
       this.ninja.setOpacity(255);
       applyNinjaFrame(this.ninja, this.palette, 'idle');
       this.camX = Math.max(0, this.px - W * camBias());
-      this.world.setPosition(-this.camX, 0);
+      this.world.setPosition(-Math.round(this.camX), 0); /* c49: integer cam — stop pixel-dirt shimmer */
       this._layoutBg(this.camX);
       hideResult();
       updHUD(this.hp, this.coins);
@@ -1921,13 +1998,16 @@
         var elapsed = now - this.t0;
         var i;
 
-        /* fireflies drift */
+        /* c49: fireflies — gentle bob, slow drift (was speed 14 hard squares = sliding sand) */
         for (i = 0; i < this.fireflies.length; i++) {
           var ff = this.fireflies[i];
-          var ox = (i * 97 + elapsed * 14 * ff.spd) % (W + 30) - 10;
-          var oy = H * 0.38 + Math.sin(elapsed * 2 + ff.phase) * 24 + (i % 5) * 16;
+          var drift = (ff.soft ? 3.2 : 5.5) * ff.spd;
+          var ox = (i * 97 + elapsed * drift) % (W + 40) - 12;
+          var oy = H * 0.42 + Math.sin(elapsed * 1.15 + ff.phase) * 16 + (i % 5) * 18;
           ff.n.setPosition(ox, oy);
-          ff.n.setOpacity(90 + Math.floor((Math.sin(elapsed * 5 + i) * 0.5 + 0.5) * 140));
+          var base = ff.soft ? 45 : 70;
+          var amp = ff.soft ? 55 : 80;
+          ff.n.setOpacity(base + Math.floor((Math.sin(elapsed * 2.2 + i) * 0.5 + 0.5) * amp));
         }
 
         var MOVE_N = 200, MOVE_S = 90; /* ≈ xy-go MOVE; swamp slow */
@@ -2304,7 +2384,7 @@
         if (target < 0) target = 0;
         if (target > this.worldW - W) target = Math.max(0, this.worldW - W);
         this.camX += (target - this.camX) * Math.min(1, dt * 8);
-        this.world.setPosition(-this.camX, 0);
+        this.world.setPosition(-Math.round(this.camX), 0); /* c49: integer cam — stop pixel-dirt shimmer */
         this._layoutBg(this.camX);
       } catch (e) { bootErr(String(e && e.message || e)); }
     }
@@ -2734,12 +2814,13 @@
     function startEngine() {
       cc.game.onStart = function () {
         try {
-          /* c48: match Cocos iOS default + xy-go dpr cap — sharp on phone landscape.
-           * false forced 1× buffer; mobile WebGL also ships antialias:false → grainy upscale. */
+          /* c48/c49: Retina on (Cocos min(2,dpr)); c49 also softens fireflies + snaps cam. */
           cc.view.enableRetina(true);
           cc.view.adjustViewPort(true);
           fitStage();
           cc.view.setDesignResolutionSize(W, H, cc.ResolutionPolicy.EXACT_FIT);
+          ensureRetinaBuffer(W, H);
+          fireflyTex = buildFireflyTex();
           if (cc.director && cc.director.setClearColor) {
             cc.director.setClearColor(cc.color(15, 18, 48, 255)); /* c43: navy bed, not full-screen brown */
           }

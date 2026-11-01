@@ -1,7 +1,7 @@
 /**
  * ldt31: §8 电/凹/大/箱真可摆 + 落石预兆/金币三档/练习金110/弹簧前两格可/中点切设置/宝箱动画 · was ldt30/ldt29。
  * 学习工作台 · 四芯片；关卡设计二级摆关|设置|关联；切片4 音乐绑九关+走路/砍击。
- * 存档 localStorage xygo-custom-level v1.2（wallet + audio）。试玩 custom-play.html?v=c48。
+ * 存档 localStorage xygo-custom-level v1.2（wallet + audio）。试玩 custom-play.html?v=c49。
  * wb80: 关卡设计合并 · wb79 觉察闸 · wb78 看图三阶段。
  */
 (function () {
@@ -1399,14 +1399,14 @@
       button(this, '回关卡', isPhoneShell() ? 90 : 110, 30, isPhoneShell() ? 100 : 130, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show((WB.ui.ldStep | 0) || 2); }); });
       button(this, '联机游玩', isPhoneShell() ? 300 : 360, 32, isPhoneShell() ? 140 : 160, isPhoneShell() ? 48 : 48, GOLD, INK, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c48&net=1';
+        location.href = 'custom-play.html?v=c49&net=1';
       });
       button(this, '去听选', isPhoneShell() ? 520 : 560, 32, isPhoneShell() ? 120 : 140, isPhoneShell() ? 48 : 46, NAVY, WHITE, function () {
         later(function () { show(5); });
       });
       button(this, '去玩这一关', isPhoneShell() ? 760 : 800, 32, isPhoneShell() ? 200 : 200, isPhoneShell() ? 50 : 48, GREEN, WHITE, function () {
         STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c48';
+        location.href = 'custom-play.html?v=c49';
       });
       this._t = 0;
       this.scheduleUpdate();
@@ -1541,7 +1541,7 @@
         '去⑥听选', function () { later(function () { show(5); }); },
         '去玩第9关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c48';
+          location.href = 'custom-play.html?v=c49';
         }
       );
       return true;
@@ -1624,7 +1624,7 @@
         },
         '去玩这一关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c48';
+          location.href = 'custom-play.html?v=c49';
         }
       );
       return true;
