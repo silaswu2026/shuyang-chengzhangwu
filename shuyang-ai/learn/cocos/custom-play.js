@@ -16,7 +16,7 @@
     BG, SC + 'dirt-tile.png', SC + 'grass-cap.png'
   ];
   var T = 40;
-  var CHAR_FRAC = 0.20; /* wb5: bigger ninja (~20% viewport) */
+  var CHAR_FRAC = 0.22; /* wb6: bigger ninja (~22% viewport) */
   var DRAW_H = 78; /* recomputed each fit/build from H * CHAR_FRAC */
   var idleTexH = 256; /* real idle.png height once loaded — NEVER fall back to 100 */
   var EXP = 6;
