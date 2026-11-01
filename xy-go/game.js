@@ -1387,19 +1387,59 @@
   }
   function installCustomLevel(d) {
     const def = buildCustomDef(d);
+    /* tonight-waves only: monsters at end near boss (design cells have no slime tiles) */
+    if (d && d.presetId === 'tonight-waves-v1' && def.boss) {
+      const bc = def.boss.c;
+      const r = 11;
+      if (!def.slimes.some((s) => s[0] === bc - 8)) def.slimes.push([Math.max(8, bc - 8), r]);
+      if (!def.slimes.some((s) => s[0] === bc - 4)) def.slimes.push([Math.max(10, bc - 4), r]);
+    }
     if (customIndex >= 0) LEVELS[customIndex] = def;
     else { LEVELS.push(def); customIndex = LEVELS.length - 1; }
     return customIndex;
+  }
+  /** Same tonight-waves-v1 default as WBStore.buildDefaultSave / custom-play swampPreset. */
+  function tonightWavesDefault() {
+    const DC = 12, DR = 4;
+    const map = [null, null, 'coin', 'spike', 'fire', 'spring', 'coin', 'mist', 'rock', 'coin', 'spike', 'fire'];
+    const tiles = [];
+    for (let x = 0; x < DC; x++) tiles.push({ x, y: DR - 1, type: 'g' });
+    /* late gap before exam wave (col 9) */
+    const gap = tiles.findIndex((t) => t.x === 9 && t.y === DR - 1);
+    if (gap >= 0) tiles.splice(gap, 1);
+    map.forEach((k, i) => { if (k) tiles.push({ x: i, y: DR - 2, type: k }); });
+    return {
+      version: '1.2', theme: 'swamp', cols: DC, rows: DR, tiles,
+      traps: {
+        spike: { interval: 3, up: 1, damage: 1 },
+        fire: { damage: 1, dur: 3, burn: 3 },
+        rock: { damage: 1 },
+        mist: { slow: 1.6 },
+        spring: { power: 820 }
+      },
+      mine: { map: map.slice(), mp: { spike: { interval: 3, up: 1, damage: 1 }, fire: { dur: 3, damage: 1 } } },
+      wallet: { coins: 0, weapons: [], equipped: null },
+      lastScore: 0,
+      by: '',
+      presetId: 'tonight-waves-v1'
+    };
+  }
+  function ensureCustomPayload(d) {
+    if (!d || typeof d !== 'object') return tonightWavesDefault();
+    const hasTiles = Array.isArray(d.tiles) && d.tiles.some((t) => t && t.type && t.type !== 'g' && t.type !== 'p');
+    const hasMine = d.mine && Array.isArray(d.mine.map) && d.mine.map.some(Boolean);
+    if (!hasTiles && !hasMine) return tonightWavesDefault();
+    return d;
   }
   let customData = null;
   var netClSnaps = 0;
   try {
     if (new URLSearchParams(location.search).get('custom') === '1') {
-      customData = JSON.parse(localStorage.getItem(CUSTOM_KEY) || 'null') || {};
+      customData = ensureCustomPayload(JSON.parse(localStorage.getItem(CUSTOM_KEY) || 'null'));
       installCustomLevel(customData);
       netPickLv = customIndex;
     }
-  } catch (e) { customData = {}; try { installCustomLevel(customData); } catch (e2) {} }
+  } catch (e) { customData = tonightWavesDefault(); try { installCustomLevel(customData); } catch (e2) {} }
   function loadLevel(i) {
     if (!LEVELS[i]) i = 0;
     levelIndex = i;

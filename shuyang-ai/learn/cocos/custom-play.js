@@ -115,32 +115,59 @@
     }
   }
 
-  /** Swamp preset ≈ level-design preset('swamp') when JSON empty — long runway content. */
+  /**
+   * Shared default with WBStore.buildDefaultSave (tonight-waves-v1).
+   * Safe 0–1 · 教 coin+spike · 练 fire+spring · 变 mist+rock · 考 denser spike+fire.
+   * Monsters/boss are placed after the design runway in loadLevel — not in early view.
+   */
   function swampPreset(DC, DR) {
+    DC = DC || 12;
+    DR = DR || 4;
+    if (typeof WBStore !== 'undefined' && WBStore.buildDefaultSave) {
+      var packed = WBStore.buildDefaultSave({});
+      /* Allow alternate cols/rows only by scaling map positions when DC==12 */
+      if ((packed.cols | 0) === DC && (packed.rows | 0) === DR) return packed;
+    }
     var tiles = [];
     var x;
     for (x = 0; x < DC; x++) tiles.push({ x: x, y: DR - 1, type: 'g' });
-    /* 断坑放展示区之后（约 40%/70%），开局镜头先看火/旗/鳄 */
-    [Math.max(5, Math.floor(DC * 0.42)), Math.max(7, Math.floor(DC * 0.72))].forEach(function (gx) {
-      tiles = tiles.filter(function (t) { return !(t.x === gx && t.y === DR - 1); });
-    });
-    var at = function (f) { return Math.min(DC - 1, Math.max(0, Math.round(f * DC))); };
-    /* 设计列仅作补充；真正开局可见位由 loadLevel earlyShowcase 钉死 */
-    tiles.push({ x: at(0.06), y: DR - 2, type: 'coin' });
-    tiles.push({ x: at(0.10), y: DR - 2, type: 'fire' });
-    tiles.push({ x: at(0.16), y: DR - 2, type: 'fire' });
-    tiles.push({ x: at(0.22), y: DR - 2, type: 'flag' });
-    tiles.push({ x: at(0.50), y: DR - 2, type: 'spike' });
-    tiles.push({ x: at(0.58), y: DR - 2, type: 'coin' });
-    tiles.push({ x: at(0.78), y: DR - 2, type: 'spike' });
+    /* late gap before exam wave */
+    var gapX = Math.min(DC - 1, Math.max(6, Math.floor(DC * 0.75)));
+    tiles = tiles.filter(function (t) { return !(t.x === gapX && t.y === DR - 1); });
+    function put(xi, type) {
+      var x0 = Math.min(DC - 1, Math.max(0, xi));
+      tiles.push({ x: x0, y: DR - 2, type: type });
+    }
+    /* Scale the 12-col wave layout across DC */
+    var sx = DC / 12;
+    put(Math.round(2 * sx), 'coin');
+    put(Math.round(3 * sx), 'spike');
+    put(Math.round(4 * sx), 'fire');
+    put(Math.round(5 * sx), 'spring');
+    put(Math.round(6 * sx), 'coin');
+    put(Math.round(7 * sx), 'mist');
+    put(Math.round(8 * sx), 'rock');
+    put(Math.round(9 * sx), 'coin');
+    put(Math.round(10 * sx), 'spike');
+    put(Math.round(11 * sx), 'fire');
     return {
-      version: '1.1', theme: 'swamp', cols: DC, rows: DR, tiles: tiles,
-      traps: { spike: { interval: 3, up: 1, damage: 1 }, fire: { damage: 1, dur: 2, burn: 2 } },
-      by: ''
+      version: '1.2', theme: 'swamp', cols: DC, rows: DR, tiles: tiles,
+      traps: {
+        spike: { interval: 3, up: 1, damage: 1 },
+        fire: { damage: 1, dur: 3, burn: 3 },
+        rock: { damage: 1 },
+        mist: { slow: 1.6 },
+        spring: { power: 820 }
+      },
+      mine: null,
+      wallet: { coins: 0, weapons: [], equipped: null },
+      lastScore: 0,
+      by: '',
+      presetId: 'tonight-waves-v1'
     };
   }
 
-  /** Mirror xy-go buildCustomDef X mapping. */
+  /** Mirror xy-go buildCustomDef X mapping. Boss/critters after design runway. */
   function loadLevel() {
     var d;
     try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { d = null; }
@@ -161,10 +188,12 @@
     if (!tiles.length) {
       var pre = swampPreset(DC, DR);
       tiles = pre.tiles;
-      traps = pre.traps;
+      traps = pre.traps || traps;
       d.theme = 'swamp';
+      d.version = pre.version || d.version;
+      if (pre.wallet && !d.wallet) d.wallet = pre.wallet;
     }
-    var cols = PAD + DC * EXP + PAD + 10;
+    var cols = PAD + DC * EXP + PAD + 24;
     var gx = function (x) { return PAD + (x | 0) * EXP + 2; };
     var groundCols = [];
     var x;
@@ -180,69 +209,30 @@
       if ((tt.y | 0) >= DR - 1) return;
       items.push({ type: tt.type, c: gx(tt.x | 0), designX: tt.x | 0 });
     });
-    /* 断坑：缺则补在展示区之后，避免开局掉坑 */
+    /* 断坑：若完全没有，在变/考交界补一个，不挡安全出生与前两波 */
     var holeN = groundCols.filter(function (g) { return !g; }).length;
-    if (holeN === 0 && DC >= 6) {
-      groundCols[Math.max(5, Math.floor(DC * 0.42))] = false;
-      groundCols[Math.max(7, Math.floor(DC * 0.72))] = false;
+    if (holeN === 0 && DC >= 8) {
+      groundCols[Math.min(DC - 1, Math.max(6, Math.floor(DC * 0.75)))] = false;
     }
-    if (!traps.fire) traps.fire = { damage: 1, dur: 2, burn: 2 };
+    if (!traps.fire) traps.fire = { damage: 1, dur: 3, burn: 3 };
     if (!traps.spike) traps.spike = { interval: 3, up: 1, damage: 1 };
+    if (!traps.rock) traps.rock = { damage: 1 };
+    if (!traps.mist) traps.mist = { slow: 1.6 };
+    if (!traps.spring) traps.spring = { power: 820 };
 
     /*
-     * c21/c20：竖屏开局一眼「整鳄 + 旗布」。宽屏保持 c17 列位；
-     * 窄屏按像素钉鳄右缘入镜；旗在鳄左上方且 z 高于鳄，布不被嘴挡住。
+     * Waves first, monsters last: boss sits after the expanded design columns.
+     * Mid flag marks the approach to the boss arena (not an early showcase pin).
      */
-    var visCols = Math.max(5, Math.floor(W / T));
-    var earlyFire1, earlyFire2, earlyFlag, earlyBoss, earlyCut;
-    var portrait = isPortrait();
-    if (visCols < 14) {
-      var crocHalf = 48 * crocDrawScale();
-      var flagHalf = 14 * 1.55;
-      var spawnPx = 2 * T + T * 0.5;
-      var camX0 = Math.max(0, spawnPx - W * camBias());
-      var viewR0 = camX0 + W;
-      /* Whole croc on-screen at cold start */
-      var bossX = viewR0 - crocHalf - (portrait ? 12 : 8);
-      bossX = Math.max(camX0 + crocHalf + T * 0.6, bossX);
-      /* Flag left of croc (clear of flipped mouth); leave room for fire×2 */
-      var flagX = bossX - crocHalf - flagHalf - (portrait ? 4 : 10);
-      flagX = Math.max(spawnPx + T * 1.6, flagX);
-      var gap = Math.max(T * 0.9, flagX - spawnPx);
-      var fire1X = spawnPx + gap * 0.32;
-      var fire2X = spawnPx + gap * 0.62;
-      earlyFire1 = (fire1X - T * 0.5) / T;
-      earlyFire2 = (fire2X - T * 0.5) / T;
-      earlyFlag = (flagX - T * 0.5) / T;
-      earlyBoss = (bossX - T * 0.5) / T;
-      if (earlyFire2 <= earlyFire1) earlyFire2 = earlyFire1 + 0.55;
-      if (earlyFlag <= earlyFire2) earlyFlag = earlyFire2 + 0.55;
-      if (earlyBoss <= earlyFlag) earlyBoss = earlyFlag + 0.9;
-      earlyCut = earlyBoss + 3;
-    } else {
-      earlyFire1 = 5; earlyFire2 = 8; earlyFlag = 10; earlyBoss = 12;
-      earlyCut = 18;
-    }
-    items = items.filter(function (it) {
-      if (it.type === 'fire' || it.type === 'flag') return false;
-      if (it.type === 'spike' && (it.c | 0) < earlyCut) return false;
-      return true;
-    });
-    items.push({ type: 'fire', c: earlyFire1, designX: -1 });
-    items.push({ type: 'fire', c: earlyFire2, designX: -1 });
-    items.push({ type: 'flag', c: earlyFlag, designX: -1, showcase: true });
-    /* 展示后再给刺，保证可玩压力仍在 */
-    var hasLateSpike = items.some(function (it) { return it.type === 'spike'; });
-    if (!hasLateSpike) {
-      items.push({ type: 'spike', c: Math.max(earlyCut + 2, gx(Math.floor(DC * 0.50))), designX: -1 });
-      items.push({ type: 'spike', c: Math.max(earlyCut + 8, gx(Math.floor(DC * 0.78))), designX: -1 });
-    }
-
-    var bossC = earlyBoss;
-    var goalC = Math.min(cols - 5, Math.max(bossC + 14, gx(Math.floor(DC * 0.85))));
+    var designEnd = gx(DC - 1) + EXP;
+    var bossC = Math.min(cols - 8, designEnd + 10);
+    var goalC = Math.min(cols - 5, bossC + 12);
+    var flagC = Math.max(designEnd + 2, bossC - 6);
+    var hasFlag = items.some(function (it) { return it.type === 'flag'; });
+    if (!hasFlag) items.push({ type: 'flag', c: flagC, designX: -1 });
 
     return {
-      version: d.version || '1.1',
+      version: d.version || '1.2',
       theme: d.theme || 'swamp',
       DC: DC, DR: DR, cols: cols, groundCols: groundCols,
       items: items, traps: traps,
@@ -252,7 +242,9 @@
       spawnC: 2,
       goalC: goalC,
       bossC: bossC,
-      wallet: readWallet(d.wallet)
+      wallet: readWallet(d.wallet),
+      lastScore: (typeof d.lastScore === 'number' && d.lastScore >= 0) ? (d.lastScore | 0) : 0,
+      presetId: d.presetId || ''
     };
   }
 
@@ -394,6 +386,17 @@
       localStorage.setItem(KEY, JSON.stringify(d));
     } catch (eW) {}
   }
+  function writeLastScore(score) {
+    try {
+      var d = JSON.parse(localStorage.getItem(KEY) || '{}') || {};
+      if (!d || typeof d !== 'object') d = {};
+      d.version = '1.2';
+      d.lastScore = score | 0;
+      localStorage.setItem(KEY, JSON.stringify(d));
+    } catch (eS) {}
+  }
+  /** Run score is separate from wallet coins. */
+  var SCORE = { coin: 10, slime: 50, boss: 200, hp: 100, clear: 150 };
 
   function updHUD(hp, coins) {
     var left = Math.max(0, hp);
@@ -405,6 +408,8 @@
     }
     var c = $('coins');
     if (c) c.textContent = '🪙 ' + coins;
+    var sc = $('score');
+    if (sc && sceneRef) sc.textContent = '积分 ' + (sceneRef.score | 0);
     var we = $('weapon');
     if (we && sceneRef) {
       var id = sceneRef.weapon;
@@ -432,9 +437,11 @@
     r.classList.add('show');
     $('resultBig').textContent = win ? '🎉 过关！' : '😵 再试一次';
     $('resultBig').style.color = win ? '#9ff0a8' : '#ffb4b4';
+    var sc = (sceneRef && (sceneRef.score | 0)) || 0;
     var hint = (level && level.vs_expect) ? ('你预计：' + level.vs_expect) : '回上一页答：和预计一样吗？';
-    $('resultSub').innerHTML = '<span class="sub-hp">剩 <b>' + hp + '❤</b> · 金币 <b style="color:#ffe7a0">' + coins + '</b></span>' +
+    $('resultSub').innerHTML = '<span class="sub-hp">剩 <b>' + hp + '❤</b> · 金币 <b style="color:#ffe7a0">' + coins + '</b> · 积分 <b style="color:#9ff0a8">' + sc + '</b></span>' +
       '<span class="sub-hint">' + hint + '</span>';
+    writeLastScore(sc);
   }
 
   function bindControls() {
@@ -763,7 +770,7 @@
       var lvEl = $('lvlChip');
       if (lvEl) lvEl.textContent = '第9关 我的关卡';
       var iv = (level.traps.spike && +level.traps.spike.interval) || 3;
-      $('msg').textContent = (level.by ? level.by + ' · ' : '') + '沼泽·刺每' + iv + '秒 · 跳/投打鳄王';
+      $('msg').textContent = (level.by ? level.by + ' · ' : '') + '四波沼泽·刺每' + iv + '秒 · 怪在最后 · 跳/投打鳄王';
     },
     reset: function () {
       this.px = level.spawnC * T + T * 0.5;
@@ -774,6 +781,7 @@
       this.face = 1;
       this.hp = MAX_HP;
       this.coins = this.walletCoins || 0;
+      this.score = 0;
       this.cool = 0;
       this.slowT = 0;
       if (this.fog) this.fog.setOpacity(0);
@@ -840,8 +848,9 @@
           this.boss.alive = false;
           this.bossSp.setVisible(false);
           this._earn(8);
+          this.score = (this.score | 0) + SCORE.boss;
           this._coinBurst(this.boss.x, this.boss.y + 40);
-          $('msg').textContent = '鳄王倒下！+8';
+          $('msg').textContent = '鳄王倒下！+8币 +' + SCORE.boss + '分';
           var bb = $('bossBar'); if (bb) bb.classList.remove('on');
         }
         updHUD(this.hp, this.coins);
@@ -858,7 +867,8 @@
               cr.alive = false;
               cr.sp.setVisible(false);
               this._earn(1);
-              $('msg').textContent = '小怪 +1';
+              this.score = (this.score | 0) + SCORE.slime;
+              $('msg').textContent = '小怪 +1币 +' + SCORE.slime + '分';
             }
             updHUD(this.hp, this.coins);
             return true;
@@ -1052,6 +1062,7 @@
           if (Math.abs(this.px - cn.x) < T * 0.7 && this.py < this.gy + DRAW_H) {
             cn.got = true; cn.sp.setVisible(false);
             this.coins += cn.star ? 0 : 1;
+            if (!cn.star) this.score = (this.score | 0) + SCORE.coin;
             if (cn.star) this.invuln = Math.max(this.invuln, 3);
             updHUD(this.hp, this.coins);
           }
@@ -1126,8 +1137,9 @@
 
         if (!this.won && this.px >= this.goalX - T * 0.4 && (!this.boss || !this.boss.alive)) {
           this.won = true; this.playing = false;
+          this.score = (this.score | 0) + SCORE.clear + SCORE.hp * Math.max(0, this.hp | 0);
           showResult(true, this.hp, this.coins);
-          $('msg').textContent = '到旗了！';
+          $('msg').textContent = '到旗了！积分 ' + (this.score | 0);
         } else if (!this.won && this.px >= this.goalX - T * 0.4 && this.boss && this.boss.alive) {
           $('msg').textContent = '先投中鳄王再冲旗！';
         }
