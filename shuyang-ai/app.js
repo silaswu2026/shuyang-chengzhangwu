@@ -1,4 +1,4 @@
-/* 五树杨 · 第 1 月 · 异地微信语音课 */
+/* 伍澍暘 · 第 1 月 · 异地微信语音课 */
 const V = '11';
 const STORE = 'shuyang_ai_month_v1';
 const REWARD_STORE = 'shuyang_ai_rewards_v1';
@@ -7,12 +7,13 @@ const PEOPLE = {
   '小雨': { src: 'avatars/xiaoyu.jpg', cls: 'xiaoyu', name: '小宇' }, // legacy alias
   '爸爸': { src: 'avatars/dad-wuxin.jpg', cls: 'dad', name: '爸爸' },
   '妈妈': { src: 'avatars/mom-chunyan.jpg', cls: 'mom', name: '妈妈' },
-  '五树杨': { src: 'avatars/pengpeng.jpg', cls: 'son', name: '五树杨' },
-  '澍暘': { src: 'avatars/pengpeng.jpg', cls: 'son', name: '五树杨' }, // legacy alias
+  '伍澍暘': { src: 'avatars/pengpeng.jpg', cls: 'son', name: '伍澍暘' },
+  '澍暘': { src: 'avatars/pengpeng.jpg', cls: 'son', name: '伍澍暘' }, // legacy alias
+  '五树杨': { src: 'avatars/pengpeng.jpg', cls: 'son', name: '伍澍暘' }, // legacy wrong formal
 };
 const WHO = {
-  son: ['五树杨这边', '五树杨自己做，再用语音或摄像头给爸爸看'],
-  dad: ['爸爸打字', '爸爸在这边打字，五树杨用嘴指挥'],
+  son: ['伍澍暘这边', '伍澍暘自己做，再用语音或摄像头给爸爸看'],
+  dad: ['爸爸打字', '爸爸在这边打字，伍澍暘用嘴指挥'],
   call: ['语音一起', '微信语音里一起做，各看各的屏幕'],
 };
 const POSE_OPTS = ['站好', '抬左脚', '抬右脚', '蹲下', '跳起', '挥手'];
@@ -30,7 +31,7 @@ const DEFAULT_REWARDS = [
   { id: 'r2', name: '多看一集喜欢的动画', cost: 5, emoji: '📺' },
   { id: 'r3', name: '周末多玩 20 分钟游戏', cost: 7, emoji: '🎮' },
   { id: 'r4', name: '爸爸陪做「新关卡想法」一晚', cost: 10, emoji: '🗺️' },
-  { id: 'r5', name: '五树杨导演日：用 AI 画一个角色', cost: 12, emoji: '🎬' },
+  { id: 'r5', name: '伍澍暘导演日：用 AI 画一个角色', cost: 12, emoji: '🎬' },
   { id: 'r6', name: '月度大奖：他选的一次小奖励（约定好）', cost: 20, emoji: '🏆' },
 ];
 
@@ -182,14 +183,14 @@ function peopleToday(day) {
   const has = new Set((day.talk || []).map((t) => t[0]));
   has.add('小宇');
   (day.steps || []).forEach((s) => {
-    if (s.who === 'son') has.add('五树杨');
+    if (s.who === 'son') has.add('伍澍暘');
     if (s.who === 'dad') has.add('爸爸');
-    if (s.who === 'call') { has.add('小宇'); has.add('爸爸'); has.add('五树杨'); }
+    if (s.who === 'call') { has.add('小宇'); has.add('爸爸'); has.add('伍澍暘'); }
   });
-  return ['小宇', '爸爸', '妈妈', '五树杨'].filter((k) => has.has(k));
+  return ['小宇', '爸爸', '妈妈', '伍澍暘'].filter((k) => has.has(k));
 }
 function stepPeople(day, step) {
-  if (step.who === 'son') return ['五树杨'];
+  if (step.who === 'son') return ['伍澍暘'];
   if (step.who === 'dad') return ['爸爸'];
   return peopleToday(day);
 }
@@ -564,7 +565,7 @@ function linkHtml(step) {
 function syncBoxHtml() {
   return `<section class="card" id="sec-sync">
     <h3>同步到另一台手机</h3>
-    <p>爸爸点生成，把整段发到微信。五树杨一点开，输入家庭密码，打卡、星星和成果会合并。链接里是进度，不是密码。</p>
+    <p>爸爸点生成，把整段发到微信。伍澍暘一点开，输入家庭密码，打卡、星星和成果会合并。链接里是进度，不是密码。</p>
     <button type="button" class="primary" data-act="sync-make">生成同步链接</button>
     <textarea id="syncOut" rows="3" readonly placeholder="链接会出现在这里"></textarea>
     <button type="button" data-act="sync-copy">复制链接</button>
@@ -591,7 +592,7 @@ function chatHtml() {
   </section>`;
 }
 function bubbleHtml(m, i) {
-  const who = m.from === 'xy' ? '小宇' : '五树杨';
+  const who = m.from === 'xy' ? '小宇' : '伍澍暘';
   return `<div class="bubble ${m.from === 'xy' ? 'xy' : 'me'}">${faceImg(who)}<p>${esc(m.text)}</p></div>`;
 }
 function ensureGreet() {
@@ -601,7 +602,7 @@ function ensureGreet() {
   chatByKey[key] = [{
     from: 'xy',
     text: day
-      ? `五树杨，我是小宇。今天《${day.title}》。要我告诉你原理，还是直接说下一步？`
+      ? `伍澍暘，我是小宇。今天《${day.title}》。要我告诉你原理，还是直接说下一步？`
       : '嗨，我是小宇。这门课带你一点点看清游戏和 AI 的世界。你可以问怎么上课、怎么同步、月末交出什么。',
   }];
 }
@@ -628,11 +629,11 @@ function replyTo(text) {
     const step = day.steps.find((s) => !saved.steps?.[s.id]?.on) || day.steps[0];
     return `没关系。只做这一件：${step.title}。做完跟我说。`;
   }
-  if (/同步|手机|微信/.test(t)) return '做完后点「生成同步链接」，爸爸发到微信。五树杨点开，输入家庭密码，就能看到同一份成果。链接里没有密码。';
+  if (/同步|手机|微信/.test(t)) return '做完后点「生成同步链接」，爸爸发到微信。伍澍暘点开，输入家庭密码，就能看到同一份成果。链接里没有密码。';
   if (/星星|奖励|兑换/.test(t)) return '打卡完成一天得一颗星。星星可以在成就兑换里换成和爸爸约好的奖励。';
   if (/视频|动画/.test(t)) return day ? `先看今天的小动画「${day.video.title}」。看完告诉我你看见了什么。爸爸以后也可以贴上真正的视频链接。` : '每一课都有一段约 1 分钟的小动画，在开场之后。';
-  if (/月末|发表|交出/.test(t)) return '月末要交出的是五树杨自己的一关：名字、规矩、地图和声音，并讲给家人听。';
-  if (/妈妈/.test(t)) return '妈妈可以在语音里一起听、一起看成果、夸一件你真的做成的事。没有妈妈在，爸爸和五树杨也能把这节做完。';
+  if (/月末|发表|交出/.test(t)) return '月末要交出的是伍澍暘自己的一关：名字、规矩、地图和声音，并讲给家人听。';
+  if (/妈妈/.test(t)) return '妈妈可以在语音里一起听、一起看成果、夸一件你真的做成的事。没有妈妈在，爸爸和伍澍暘也能把这节做完。';
   if (day && day.keys) {
     for (const [word, ans] of day.keys) if (t.includes(word)) return ans;
   }
@@ -640,11 +641,11 @@ function replyTo(text) {
   const clip = t.slice(0, 36);
   return day
     ? `我听到「${clip}」。今天先抓住实践：${day.practice}`
-    : `我在。你可以问：这门课学什么、怎么上课、怎么同步到五树杨的手机。`;
+    : `我在。你可以问：这门课学什么、怎么上课、怎么同步到伍澍暘的手机。`;
 }
 function coachText(day) {
   return [
-    '你是小宇，在微信语音里陪 9 岁的五树杨和他爸爸上课。妈妈可能也在听。',
+    '你是小宇，在微信语音里陪 9 岁的伍澍暘和他爸爸上课。妈妈可能也在听。',
     `今天是第 ${day.d} 天《${day.title}》。`,
     `原理：${day.principle}`,
     `学习方法：${day.method}`,
@@ -652,7 +653,7 @@ function coachText(day) {
     '用很短的口语，一次只问一个问题，带他做完今天的动手步骤。',
     '他做完要夸具体做了什么。',
     '爸爸和孩子不在同一个城市，不要安排他们共用一张桌子上的材料。',
-    '材料只限五树杨自己家里的手机、纸和铅笔。',
+    '材料只限伍澍暘自己家里的手机、纸和铅笔。',
   ].join('\n');
 }
 
@@ -667,8 +668,8 @@ function homeHtml() {
   ensureGreet();
   return `${takeFlash()}
   <header class="hero">
-    <img class="hero-group" src="avatars/cast-four.jpg?v=${V}" alt="小宇、爸爸伍欣、妈妈祝春燕和五树杨">
-    <p class="cast-caption"><span>小宇</span><span>爸爸</span><span>妈妈</span><span>五树杨</span></p>
+    <img class="hero-group" src="avatars/cast-four.jpg?v=${V}" alt="小宇、爸爸伍欣、妈妈祝春燕和伍澍暘">
+    <p class="cast-caption"><span>小宇</span><span>爸爸</span><span>妈妈</span><span>伍澍暘</span></p>
     <p class="tag">第 ${META.month} 月 · 每次 ${META.minutes} 分钟 · 微信语音</p>
     <h1>${esc(META.title)}</h1>
     <p class="lead">${esc(META.lead)}</p>
@@ -680,11 +681,11 @@ function homeHtml() {
     <p class="progress">已完成 <b>${done}</b> / 30 天 · 可用星星 <b>${st.bal}</b></p>
     <div class="bar"><i style="width:${(done / 30) * 100}%"></i></div>
     <button type="button" class="primary go" data-act="day" data-day="${cont}">今天从 Day ${cont} 开始</button>
-    <a class="kid-entry" href="kid.html?v=mc8">五树杨上课首页</a>
+    <a class="kid-entry" href="kid.html?v=mc8">伍澍暘上课首页</a>
     <button type="button" class="shop-btn" data-act="shop">⭐ 成就兑换（${st.bal} 星可用）</button>
     <button type="button" data-act="guide">这门课怎么上</button>
   </header>
-  ${recent ? `<section class="card result ${recent.s.done ? 'celebrate' : ''}"><h3>最近的成果 · Day ${recent.d.d} ${esc(recent.d.title)}</h3><pre>${esc(recent.text)}</pre><button type="button" data-act="day" data-day="${recent.d.d}">打开这一天</button></section>` : `<section class="card"><h3>最近的成果</h3><p>还没有。上完一节，这里会出现五树杨做成的东西。微信同步之后，另一部手机也能看见。</p></section>`}
+  ${recent ? `<section class="card result ${recent.s.done ? 'celebrate' : ''}"><h3>最近的成果 · Day ${recent.d.d} ${esc(recent.d.title)}</h3><pre>${esc(recent.text)}</pre><button type="button" data-act="day" data-day="${recent.d.d}">打开这一天</button></section>` : `<section class="card"><h3>最近的成果</h3><p>还没有。上完一节，这里会出现伍澍暘做成的东西。微信同步之后，另一部手机也能看见。</p></section>`}
   <section class="card">
     <h3>世界地图</h3>
     <p>一块一块看清游戏和 AI 的世界，不一次倒光。</p>
@@ -700,7 +701,7 @@ function homeHtml() {
     <h3>每节怎么上</h3>
     <ol class="caps"><li>讲清今天的原理、学法、要做的事</li><li>看约 1 分钟小动画</li><li>动手做完剩下的时间</li><li>打卡，并把同步链接发到微信</li></ol>
     <p>三个角色：<b>家长</b>陪着问，<b>孩子</b>动手并看见自己做成了什么，<b>AI</b>把课带下去。家长暂时不在，孩子仍然能学、能打卡、能攒星星。内容围着游戏和孩子的兴趣。</p>
-    <p>${esc(META.how)} 这一家：爸爸妈妈是家长，五树杨是孩子，小宇是 AI。</p>
+    <p>${esc(META.how)} 这一家：爸爸妈妈是家长，伍澍暘是孩子，小宇是 AI。</p>
   </section>
   <section class="weeks">${WEEKS.map((w) => `<article class="week-card">
       <h2>第 ${w.id} 周 · ${esc(w.name)} <small>${weekCount(data, w.id)}/7</small>${weekCount(data, w.id) === 7 ? `<em class="badge">${BADGES.find((b) => b.w === w.id).emoji}</em>` : ''}</h2>
@@ -734,18 +735,18 @@ function guideHtml() {
   </section>
   <section class="card"><h3>三个角色</h3>
     <p>以后换一家，仍然是这三个人：<b>家长</b>陪着问和记，<b>孩子</b>动手并得到成就感，<b>AI</b>把课带下去。家长暂时不在，孩子仍然能学、能打卡、能看见自己做成了什么。内容围着游戏和孩子自己的兴趣，不围着课文。</p>
-    <p>这一家就套在这三个角色上：爸爸和妈妈是家长，五树杨是孩子，小宇是 AI。</p>
+    <p>这一家就套在这三个角色上：爸爸和妈妈是家长，伍澍暘是孩子，小宇是 AI。</p>
   </section>
   <section class="card"><h3>谁在上课</h3>
     <div class="roles">
-      <div>${faceImg('五树杨', 'inline-face')}<b>五树杨 · 孩子</b> 出主意、动手、大声说结果。做成了就有星星。</div>
+      <div>${faceImg('伍澍暘', 'inline-face')}<b>伍澍暘 · 孩子</b> 出主意、动手、大声说结果。做成了就有星星。</div>
       <div>${faceImg('爸爸', 'inline-face')}<b>爸爸伍欣 · 家长</b> 在另一个城市开语音、打字、把同步链接发到微信。</div>
       <div>${faceImg('妈妈', 'inline-face')}<b>妈妈祝春燕 · 家长</b> 可以一起听、一起看成果、夸一件做成的事。不在也能上课。</div>
       <div>${faceImg('小宇', 'inline-face')}<b>小宇 · AI</b> 家长不在旁边时，这一页仍带着做。语音里也可以再拉一个 AI，用每课的提示词。</div>
     </div>
   </section>
   <section class="card"><h3>人在两个城市</h3>
-    <p>微信语音不要挂。各看各的屏幕，需要时开视频给对方看。五树杨自己桌上只用手机、纸和铅笔。不要安排两个人同时碰同一张纸。</p>
+    <p>微信语音不要挂。各看各的屏幕，需要时开视频给对方看。伍澍暘自己桌上只用手机、纸和铅笔。不要安排两个人同时碰同一张纸。</p>
   </section>
   <section class="card"><h3>每一节的三层</h3>
     <div class="layers">
@@ -758,7 +759,7 @@ function guideHtml() {
     <p>做完并打卡得一颗星。每周七天都完成，月历亮一枚章。月末发表自己的一关。星星去兑换页换成约好的奖励。</p>
   </section>
   <section class="card"><h3>手机怎么对齐</h3>
-    <p>上课可以爸爸操作这一页，五树杨在电话里说。结束时生成同步链接发到微信。五树杨点开，先输入家庭密码，然后看到同一份打卡和成果。两台都改过的勾会合并，不会把已打的勾弄丢。</p>
+    <p>上课可以爸爸操作这一页，伍澍暘在电话里说。结束时生成同步链接发到微信。伍澍暘点开，先输入家庭密码，然后看到同一份打卡和成果。两台都改过的勾会合并，不会把已打的勾弄丢。</p>
   </section>`;
 }
 
@@ -789,7 +790,7 @@ function dayHtml(n) {
   </nav>
   <section class="card">
     <h3>开场：今天学什么</h3>
-    <p class="hint">爸爸读下面三块，五树杨用自己的话重复原理。</p>
+    <p class="hint">爸爸读下面三块，伍澍暘用自己的话重复原理。</p>
     <div class="layers">
       <article class="layer"><b>原理</b>${esc(day.principle)}</article>
       <article class="layer method"><b>学法</b>${esc(day.method)}</article>
@@ -798,7 +799,7 @@ function dayHtml(n) {
     <p>${esc(day.goalSpeak)}</p>
     <button type="button" class="primary" data-act="speak-goal">小宇读开场</button>
     <p class="hint">${esc(day.kit)}</p>
-    <label class="field">我的原理（五树杨的话，爸爸打字）
+    <label class="field">我的原理（伍澍暘的话，爸爸打字）
       <textarea data-act="pnote" rows="2" placeholder="用自己的话说，不要只抄上面">${esc(saved.principleNote || '')}</textarea>
     </label>
   </section>
@@ -842,7 +843,7 @@ function dayHtml(n) {
   <section class="card result ${saved.done ? 'celebrate' : ''}" id="sec-done">
     <h3>今天的成果</h3>
     <p class="hint">${esc(day.reflect)}</p>
-    <p><b>原理（五树杨的话）</b> <span id="pnoteView">${esc(saved.principleNote || '还没写。')}</span></p>
+    <p><b>原理（伍澍暘的话）</b> <span id="pnoteView">${esc(saved.principleNote || '还没写。')}</span></p>
     <p><b>学法</b> ${esc(day.method)}</p>
     <p><b>做成了</b></p>
     <pre id="artifactPreview">${esc(saved.artifact || '做完上面的步骤，成果会出现在这里。')}</pre>
@@ -854,7 +855,7 @@ function dayHtml(n) {
       <button type="button" data-act="speak-sum">朗读总结</button>
     </div>
     <label class="check"><input type="checkbox" id="doneBox" data-act="done" ${saved.done ? 'checked' : ''}> 今天打卡完成</label>
-    <p class="saved" id="savedMsg">${saved.done ? '这颗星已经记下。生成同步链接，五树杨的手机就能看到。' : ''}</p>
+    <p class="saved" id="savedMsg">${saved.done ? '这颗星已经记下。生成同步链接，伍澍暘的手机就能看到。' : ''}</p>
   </section>
   ${syncBoxHtml()}
   <div class="nav">
@@ -1081,8 +1082,8 @@ async function makeSync() {
   const hint = byId('syncHint');
   if (box) box.value = url;
   if (hint) hint.textContent = url.length > 1800
-    ? '链接比较长。请整段复制发到微信。五树杨打开后如果没有自动同步，把整段粘进下面的框。'
-    : '把链接发到微信。五树杨一点开并输入密码，就能看到同一份成果。';
+    ? '链接比较长。请整段复制发到微信。伍澍暘打开后如果没有自动同步，把整段粘进下面的框。'
+    : '把链接发到微信。伍澍暘一点开并输入密码，就能看到同一份成果。';
 }
 async function applySync(text) {
   const incoming = await ShuyangSync.unpackState(text);
@@ -1389,7 +1390,7 @@ function finishDay() {
   const stepsOn = day.steps.filter((s) => getDay(view.day).steps?.[s.id]?.on).length;
   if (msg) msg.textContent = stepsOn < day.steps.length
     ? '已打卡，星星记下了。还有步骤没勾，下次可以补。记得生成同步链接。'
-    : '已打卡。这颗星是做出来的。生成同步链接发给五树杨。';
+    : '已打卡。这颗星是做出来的。生成同步链接发给伍澍暘。';
   speak('今天的星星到手了。');
 }
 function onInput(e) {

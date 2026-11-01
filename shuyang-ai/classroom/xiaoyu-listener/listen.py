@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-小雨同房旁听：先听，不抢话。
+小宇同房旁听：先听，不抢话。
 - 加入 LiveKit room（默认 chengzhangwu）身份 xiaoyu-listener
 - 订阅家人音频 → LiveKit Inference STT
-- 始终旁听并 publish {t:'heard'}；开口（TTS + 小雨 chat）须教室页点小雨激活（开口）
+- 始终旁听并 publish {t:'heard'}；开口（TTS + 小宇 chat）须教室页点小宇激活（开口）
 - 默认 _speak_active=False（静音）：进房不 TTS，直到教室页发布 {t:'xiaoyu_active',on:true}
 - 静音：STT 继续，但不回复 / 不 TTS；中途关静音会中止正在推的 TTS 帧
 - TTS：xAI Grok voice **liora**（用户口中的 Lyora；与 Grok Bot 通话音色一致）via LiveKit Inference
 - 唤醒后用 Inference LLM 生成真实回复；说话期间静音 STT，防回声循环
-- 与 Grok Bot 电话同时用教室页时：请保持网页静音（教室默认静音 / 「关掉小雨声音」）
+- 与 Grok Bot 电话同时用教室页时：请保持网页静音（教室默认静音 / 「关掉小宇声音」）
 
 Secrets: .env or LIVEKIT_* env — never commit.
 """
@@ -52,7 +52,7 @@ ENABLE_TTS = os.environ.get("ENABLE_TTS", "1").strip() not in ("0", "false", "no
 ENABLE_LLM = os.environ.get("ENABLE_LLM", "1").strip() not in ("0", "false", "no")
 # After TTS ends, keep ignoring STT for this many seconds (echo / room reverb)
 ECHO_COOLDOWN_S = float(os.environ.get("ECHO_COOLDOWN_S", "1.2"))
-# Keep conversation open after wake without re-saying 小雨
+# Keep conversation open after wake without re-saying 小宇 (legacy wake 小雨 still matched)
 CONV_HOLD_S = float(os.environ.get("CONV_HOLD_S", "90"))
 
 WAKE_RE = re.compile(r"(小雨|小宇|xiaoyu|xiao.?yu)", re.I)
@@ -71,7 +71,7 @@ ROLE_LABEL = {
 }
 
 SYSTEM_PROMPT = (
-    "你是「小雨」，五树杨成长屋里的陪伴姐姐，语气亲切、简短、适合亲子口语。"
+    "你是「小宇」，伍澍暘成长屋里的陪伴助手，语气亲切、简短、适合亲子口语。"
     "用中文回复，一两句即可（一般不超过40字），不要复读唤醒词，不要自称AI。"
     "根据家人刚才说的话自然回应，像通电话一样聊天。"
 )
@@ -102,7 +102,7 @@ def mint_token() -> str:
     return (
         api.AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET)
         .with_identity(IDENTITY)
-        .with_name("小雨")
+        .with_name("小宇")
         .with_grants(grant)
         .to_jwt()
     )
@@ -220,7 +220,7 @@ class XiaoyuListener:
         # Durable default: announce 静音 so all classroom tabs sync playback off
         self._speak_active = False
         await self._publish({"t": "xiaoyu_active", "on": False})
-        await self._publish_system("小雨已进同房旁听（默认静音；点小雨「开口」才说话；Grok 电话时请保持静音）")
+        await self._publish_system("小宇已进同房旁听（默认静音；点小宇「开口」才说话；Grok 电话时请保持静音）")
         for p in self.room.remote_participants.values():
             for pub in p.track_publications.values():
                 if pub.track and pub.track.kind == rtc.TrackKind.KIND_AUDIO:
@@ -250,7 +250,7 @@ class XiaoyuListener:
             log.info("speak mode %s → %s (from %s)  # 开口=%s 静音=%s", prev, on, who or "?", on, not on)
             if not on:
                 self._conv_until = 0.0
-                # Drop mid-utterance TTS ASAP (phone-call clash / 关掉小雨声音)
+                # Drop mid-utterance TTS ASAP (phone-call clash / 关掉小宇声音)
                 if self._speaking:
                     self._mark_speaking(False, cooldown=0.3)
                     log.info("abort speaking on 静音")
@@ -417,7 +417,7 @@ class XiaoyuListener:
             await self._publish(
                 {
                     "t": "chat",
-                    "who": "小雨",
+                    "who": "小宇",
                     "id": "xiaoyu",
                     "text": text,
                     "mood": mood,

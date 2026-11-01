@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>关卡设计台 · 五树杨</title>
+<title>关卡设计台 · 伍澍暘</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;height:100%}
 body{font-family:-apple-system,"PingFang SC","Noto Sans SC",sans-serif;color:#f7f4ff;background:linear-gradient(180deg,#0f1230,#24305f);display:flex;flex-direction:column;height:100dvh;overflow:hidden}
@@ -34,7 +34,7 @@ svg{width:100%;height:100%;min-height:0}
 </style></head><body>
 <div class="bar"><img src="../avatars/xiaoyu.jpg" alt="小宇">
 <div class="st" data-s="0">① 看图</div><div class="st" data-s="1">② 动手</div><div class="st" data-s="2">③ 预览</div><div class="st" data-s="3">④ 设计</div><div class="st" data-s="4">⑤ 联网玩</div>
-<img src="../avatars/pengpeng.jpg" alt="五树杨"></div>
+<img src="../avatars/pengpeng.jpg" alt="伍澍暘"></div>
 <main>
 <section class="stage" id="s0"><h2>好关卡：先简单，再变难</h2>
 <div class="row">
@@ -118,7 +118,7 @@ $('grid').onclick=e=>{const c=e.target.closest('.cell');if(!c)return;const x=+c.
  st.tiles=st.tiles.filter(t=>!(t.x===x&&t.y===y&&(brush==='x'||(terr?t.type==='g'||t.type==='p':t.type!=='g'&&t.type!=='p'))));
  if(brush!=='x')st.tiles.push({x,y,type:brush});design();};
 function save(){const used=new Set(st.tiles.map(t=>t.type)),tr={};for(const k in st.traps)if(used.has(k))tr[k]=st.traps[k];
- localStorage.setItem(KEY,JSON.stringify({theme:st.theme,cols:COLS,rows:ROWS,tiles:st.tiles,traps:tr,curve:st.curve,savedAt:new Date().toISOString(),by:'五树杨'}));
+ localStorage.setItem(KEY,JSON.stringify({theme:st.theme,cols:COLS,rows:ROWS,tiles:st.tiles,traps:tr,curve:st.curve,savedAt:new Date().toISOString(),by:'伍澍暘'}));
  $('sum').textContent=TH[st.theme][1].map(k=>E[k]).join('');$('sumt').textContent=TH[st.theme][0]+'关 · 难度 '+CURVE.join('-');$('saved').textContent='已保存 ✅';}
 $('play').onclick=save;
 

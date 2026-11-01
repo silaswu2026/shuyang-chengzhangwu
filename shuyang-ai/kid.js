@@ -1,4 +1,4 @@
-/* 五树杨的简单版。一天三拍：知识点 → 小视频 → 互动（含甜点）。
+/* 伍澍暘的简单版。一天三拍：知识点 → 小视频 → 互动（含甜点）。
    新的一晚：往 LESSONS 末尾加一课。kid.html 默认打开最后一课，?lesson=id 可指定。
    进度写进和完整版相同的 localStorage，键是 kid:<课id>，不占用 30 天课程的天数。
    带 #sync= 打开时，用同一套合并规则接上。 */
@@ -10,17 +10,18 @@
     '小雨': { src: 'avatars/xiaoyu.jpg', cls: 'xiaoyu', name: '小宇' }, // legacy alias
     '爸爸': { src: 'avatars/dad-wuxin.jpg', cls: 'dad', name: '爸爸' },
     '妈妈': { src: 'avatars/mom-chunyan.jpg', cls: 'mom', name: '妈妈' },
-    '五树杨': { src: 'avatars/pengpeng.jpg', cls: 'son', name: '五树杨' },
-    '澍暘': { src: 'avatars/pengpeng.jpg', cls: 'son', name: '五树杨' }, // legacy alias
+    '伍澍暘': { src: 'avatars/pengpeng.jpg', cls: 'son', name: '伍澍暘' },
+    '澍暘': { src: 'avatars/pengpeng.jpg', cls: 'son', name: '伍澍暘' }, // legacy alias
+    '五树杨': { src: 'avatars/pengpeng.jpg', cls: 'son', name: '伍澍暘' }, // legacy wrong formal
   };
-  const HOME_CAST = ['小宇', '爸爸', '妈妈', '五树杨'];
+  const HOME_CAST = ['小宇', '爸爸', '妈妈', '伍澍暘'];
 
   const LESSONS = [
     {
       id: '2026-10-28',
       kicker: '昨晚',
       title: '人怎么动',
-      with: ['小宇', '爸爸', '妈妈', '五树杨'],
+      with: ['小宇', '爸爸', '妈妈', '伍澍暘'],
       principle: '2D 是很多张画一张一张换；3D 是骨头架子在摆，皮跟着动。',
       skeleton: { url: 'learn/skeleton.html?v=mc12', label: '拖一拖：3D骨头人' },
       // 2D/3D explainer (relative to kid.html).
@@ -44,7 +45,7 @@
       id: '2026-10-29',
       kicker: '昨晚',
       title: '逐帧动画',
-      with: ['小宇', '爸爸', '妈妈', '五树杨'],
+      with: ['小宇', '爸爸', '妈妈', '伍澍暘'],
       principle: '一张张画好的图按顺序换，就「动」起来了——像翻书一样。人物、怪物、陷阱都一样。',
       lab: { url: 'learn/frame-anim.html?v=mc12', label: '打开动手页 · 换帧试试' },
       skeleton: { url: 'learn/skeleton.html?v=mc12', label: '拖一拖：3D骨头人' },
@@ -68,7 +69,7 @@
       id: '2026-10-30',
       kicker: '今晚',
       title: '道具和关卡是怎么设计的',
-      with: ['小宇', '爸爸', '五树杨'],
+      with: ['小宇', '爸爸', '伍澍暘'],
       principle: '一关 = 地形 + 陷阱 + 道具 + 节奏（先易后难）；每个陷阱都有躲法。道具 = 作用 + 代价 + 什么时候用。',
       lab: { url: 'learn/level-design.html?v=ld27', label: '打开关卡设计台' },
       video: null,

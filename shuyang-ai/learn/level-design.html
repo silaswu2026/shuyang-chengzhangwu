@@ -2,7 +2,7 @@
 <html lang="zh-CN"><!-- ldtonight:v11 --><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="ld-build" content="ldt14">
-<title>关卡设计台 · 五树杨</title>
+<title>关卡设计台 · 伍澍暘</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;height:100%}
 body{font-family:-apple-system,"PingFang SC","Noto Sans SC",sans-serif;color:#f7f4ff;background:linear-gradient(180deg,#0f1230,#24305f);display:flex;flex-direction:column;height:100dvh;overflow:hidden}
@@ -445,7 +445,7 @@ $('grid').onclick=e=>{const c=e.target.closest('.cell');if(!c)return;const x=+c.
  st.tiles=st.tiles.filter(t=>!(t.x===x&&t.y===y&&(brush==='x'||(terr?t.type==='g'||t.type==='p':t.type!=='g'&&t.type!=='p'))));
  if(brush!=='x')st.tiles.push({x,y,type:brush});design();};
 function save(){const used=new Set(st.tiles.map(t=>t.type)),tr={};for(const k in st.traps)if(used.has(k)){const q=st.traps[k];tr[k]=Object.assign({},q,{burn:q.dur,sink:q.dur,slow:Math.min(90,q.dur*10),height:q.speed>4?3:2});}
- localStorage.setItem(KEY,JSON.stringify({theme:st.theme,cols:COLS,rows:ROWS,tiles:st.tiles,traps:tr,curve:st.curve,savedAt:new Date().toISOString(),by:'五树杨'}));
+ localStorage.setItem(KEY,JSON.stringify({theme:st.theme,cols:COLS,rows:ROWS,tiles:st.tiles,traps:tr,curve:st.curve,savedAt:new Date().toISOString(),by:'伍澍暘'}));
  const r=simulate(),sh=[0,0,0,0,0,0];r.forEach(x=>sh[SEG(x.x)]+=x.h);const tot=sh.reduce((a,b)=>a+b,0);
  $('sumt').textContent=TH[st.theme][0]+'关 · '+COLS+'格 · 预计掉血';
  $('sumseg').innerHTML=sh.map((v,i)=>`<div class="seg"><div style="font-size:12px;color:#c9c3ef">第${i+1}段</div><div style="font-size:18px;color:${v?'#ff6b6b':'#9ff0a8'}">${v?'-'+v+'❤':'✓'}</div></div>`).join('');
@@ -961,7 +961,7 @@ function persistLevel(extra){
   d.reflectHook=REFLECT.hook_seen;d.hook_seen=REFLECT.hook_seen;
   d.reflectExpect=REFLECT.vs_expect;d.vs_expect=REFLECT.vs_expect;
   d.best_fun=REFLECT.best_fun;d.hardest=REFLECT.hardest;d.add_one=REFLECT.add_one;d.who=REFLECT.who||'小宇';
-  d.savedAt=new Date().toISOString();d.by=d.by||'五树杨';
+  d.savedAt=new Date().toISOString();d.by=d.by||'伍澍暘';
   localStorage.setItem(KEY,JSON.stringify(d));
   return d;
 }
