@@ -1,5 +1,20 @@
 # 今晚工作台 · 设计记录
 
+## 产品结构（权威：PRODUCT.md）
+
+权威需求见同目录 [PRODUCT.md](./PRODUCT.md)。
+
+| 层 | 含义 |
+| --- | --- |
+| L0 封面 | 「伍澍暘的 AI 办学小屋」 |
+| L1 选课件/关卡 | 四门课等 |
+| L2 教程六步 | ①看图 ②频率 ③摆关 ④装备 ⑤觉察 ⑥听选；旧四步映射 ①②③⑤ |
+| L3 试玩 | 单机 + 联网（旧 PeerJS 栈，不换）；绿/红/蓝三忍者；风格统一 |
+
+正式名：**伍澍暘**（禁五树杨/伍树杨当正式名）；助手：**小宇**。  
+主验设备含 **手机横屏**。
+
+
 这份文档跟着 `cursor/tonight-cocos-illustration-acb7`（PR #14）走。设计变了就改这里，和代码一起提交。对照页 `shuyang-ai/learn/level-design.html?path=tonight` 保持不动。GitHub Pages 看 **main**；今晚切片推完 PR 分支后也推 main（允许 WIP）。
 
 引擎是已经入库的 Cocos2d-JS Lite v3.13（`renderMode: 1`）。不用 Cocos Creator，也不用 TMX。画面是场景里的节点和小图，不是整页截图或 PNG 幻灯片。
