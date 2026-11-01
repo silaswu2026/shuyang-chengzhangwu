@@ -85,12 +85,14 @@
 
 | 入口 | 路径 | 说明 |
 | --- | --- | --- |
-| 课程试玩联机（主） | `shuyang-ai/learn/cocos/custom-play.html`（`?net=1` 自动开面板） | 玩今晚存档关；房主/客人同步；实现在 `custom-play.js` |
+| 课程试玩联机（主） | `shuyang-ai/learn/cocos/custom-play.html`（`?net=1` **单人先开打**） | 玩今晚存档关；`?net=1` 只软邀请（顶栏/横幅匹配，**不**弹「等另一位」挡关）；点「联机游玩」才开房间卡；实现在 `custom-play.js` |
 | 工坊露出 | `visual-workbench` 顶栏「联机」+ 右轨 🤝；`workbench` 顶栏「联机」；④步「联机游玩」 | 只跳进上面的真路径，不假匹配 |
 | 完整公园联网 | `xy-go/`（`?custom=1` 自制关） | 首页「联机游玩」；同 PeerJS 家族 |
 | 旧副本 | `xy-net/` · `xiaoyu-play/` · `xiao-yu/` | 同源旧包，**不作为课程3主入口** |
 
 没有自建房间服务器：靠 PeerJS 公共信令。微信内置浏览器常拦 WebRTC——页面已提示用系统浏览器。不要做「假在线」动画。
+**单人优先（2026-11）**：联机是可选项。`custom-play.html?net=1` 与工坊「联机」入口默认立刻可玩；PeerJS 在后台匹配。房间等待 UI 不得挡住移动；取消房间卡 = 关掉卡片，不是必须终止单人局。`xy-go/?net=1` 同样：先 `start` 单机，再 soft match。
+
 
 ## 陷阱
 

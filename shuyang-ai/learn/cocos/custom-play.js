@@ -1228,9 +1228,19 @@
     b.classList.toggle('on', !!t);
     b.style.color = ok ? '#9ff0a8' : '#ffe7a0';
   }
+  var netSoft = false; /* soft invite: never gate solo play behind peer wait */
   function netPanel(on, wait) {
     var p = $('netPanel');
     if (!p) return;
+    /* Soft mode: banner only — full-screen wait must not block movement */
+    if (netSoft && on) {
+      if (wait) netBanner(wait, false);
+      p.classList.remove('on');
+      p.style.display = 'none';
+      var st = $('netStart');
+      if (st) st.style.display = 'none';
+      return;
+    }
     if (on) {
       p.classList.add('on');
       p.style.display = 'flex';
@@ -1287,8 +1297,15 @@
       netTransport = 'bc'; netBcSession = msg.session || netBcSession;
       netLinked = true;
       netBanner('玩家B已加入·同机', true);
-      netPanel(true, '队友已到！点「开始游戏」');
-      netSend({ t: 'hello', role: 'host' });
+      if (netSoft) {
+        netPanel(false);
+        netBanner('联机中 · 同机房主', true);
+        netSend({ t: 'hello', role: 'host' });
+        netSend({ t: 'go' });
+      } else {
+        netPanel(true, '队友已到！点「开始游戏」');
+        netSend({ t: 'hello', role: 'host' });
+      }
     }
   }
   function netWireConn(conn) {
@@ -1296,6 +1313,23 @@
     conn.on('open', function () {
       netLinked = true; netTransport = 'peer';
       netBanner(netRole === 'host' ? '玩家B已加入' : '已连上房主', true);
+      if (netSoft && netRole === 'host') {
+        netPanel(false);
+        netBanner('联机中 · 房主（单人未停）', true);
+        netSend({ t: 'hello', role: 'host' });
+        netSend({ t: 'go' });
+        if (sceneRef && !sceneRef.p2) {
+          try {
+            var sp = new cc.Sprite(SP + 'idle.png');
+            sp.setAnchorPoint(0.5, 0);
+            sp.setScale(sceneRef.nScale);
+            sp.setOpacity(200);
+            sceneRef.world.addChild(sp, 9);
+            sceneRef.p2 = { sp: sp, x: sceneRef.px - 40, y: sceneRef.py, _nl: false, _nr: false, _nj: false, _nt: false };
+          } catch (eSoft) {}
+        }
+        return;
+      }
       netPanel(true, netRole === 'host' ? '队友已到！点「开始游戏」' : '已准备！等房主开始');
       if (netRole === 'host') netSend({ t: 'hello', role: 'host' });
     });
@@ -1320,7 +1354,7 @@
     var hosted = false;
     netPeer.on('open', function (id) {
       hosted = true; netRole = 'host'; netCode = id;
-      netPanel(true, '开房成功 · 等另一位也点「联机游玩」');
+      netPanel(true, netSoft ? '开房成功 · 单人可继续，队友稍后可加入' : '开房成功 · 等另一位也点「联机游玩」');
       netBanner('房主 · ' + id.slice(-6), false);
       netBcSession = 's' + Date.now();
       if (netBC) netBC.postMessage({ t: 'bc-offer', session: netBcSession, id: netCode });
@@ -1347,13 +1381,22 @@
     if (btn) {
       btn.onclick = function (ev) {
         if (ev) ev.preventDefault();
+        /* Explicit 联机: show room card, but Cancel only closes UI — solo stays playable */
+        netSoft = false;
         netPanel(true, '正在打开联机…');
         netStartMatch();
       };
     }
     var cancel = $('netCancel');
     if (cancel) cancel.onclick = function () {
-      netPanel(false); netBanner('', false);
+      netPanel(false);
+      /* Keep soft background invite instead of hard abort when coming from ?net=1 */
+      if (netSoft || (location.search || '').indexOf('net=1') >= 0) {
+        netSoft = true;
+        netBanner('已关房间卡 · 单人可继续 · 后台仍可被加入', false);
+        return;
+      }
+      netBanner('', false);
       try { if (netPeer) netPeer.destroy(); } catch (e) {}
       netRole = null; netLinked = false;
     };
@@ -1428,9 +1471,11 @@
     try {
       var q = new URLSearchParams(location.search || '');
       if (q.get('net') === '1') {
+        /* Solo-first: play immediately; Peer match is soft invite in background */
         setTimeout(function () {
-          var b = $('btnNet');
-          if (b) b.click();
+          netSoft = true;
+          netBanner('联机邀请中（可继续单人）·点「联机游玩」看房间', false);
+          netStartMatch();
         }, 600);
       }
     } catch (eNet) {}
