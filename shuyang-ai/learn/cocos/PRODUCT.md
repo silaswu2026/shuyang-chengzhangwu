@@ -72,13 +72,15 @@
 | ③ | 摆关 | 放陷阱与金币，遵守前两格安全；方案见上（待批）·「设计关卡」列内分摆放+单关设置 | 短筹码横滑：刺/火/弹/雾/石/币/擦（扩容见方案） |
 | ④ | 装备 | 用钱包买/装备武器（**不吞回③**）；方案见上（待批） | 飞镖15 / 砍刀35 / 枪60；钱不够买不了 |
 | ⑤ | 觉察 | 玩完问一句；准备去玩 | 问句 + 去玩 + 联机游玩入口 |
-| ⑥ | 听选音频 | 先听后选 BGM/SFX（喇叭抽屉升格为第六步或与⑤并列可进） | 四心情 BGM + SFX；署名 Kevin MacLeod / Kenney；禁 Mixkit |
+| ⑥ | 听选音频 | 先听后选 BGM/SFX（喇叭抽屉升格为第六步或与⑤并列可进）；**音乐×九关结合方案见 [`docs/MUSIC-LEVEL-BIND-UI.md`](docs/MUSIC-LEVEL-BIND-UI.md)（待批）** | 四心情 BGM + SFX；署名 Kevin MacLeod / Kenney；禁 Mixkit；BGM↔关卡为可选关联 |
 
 说明：相对旧「四步」——①②③⑤ 对应旧看图/频率/摆关/觉察；④从摆关内武器店拆成显式一步；⑥把「先听后选」收成可验收步骤。若 Silas 要换⑥内容，改标题与验收表，不改 L3 试玩合同。
 
 > **口述中（未定稿）**：关卡设计菜单=摆放关卡+单关设置；金币三档小/大/宝箱；陷阱各自有属性（火/刺/烟雾/电/掉石头/沼泽）— 流水账 [`docs/LEVEL-DESIGN-DICTATION.md`](docs/LEVEL-DESIGN-DICTATION.md)。
 >
 > **②③④综合重设（待批）**：调研+方案 [`docs/LEVEL-STEPS-234-REDESIGN.md`](docs/LEVEL-STEPS-234-REDESIGN.md)（短链 [`docs/LEVEL-DESIGN-234.md`](docs/LEVEL-DESIGN-234.md)）；六步不删不并；④不吞回③；只文档未改代码。
+
+> **⑥音乐×九关（待批）**：选 BGM 可关联正式1–8+第9我的关卡；主表面仍在⑥；见 [`docs/MUSIC-LEVEL-BIND-UI.md`](docs/MUSIC-LEVEL-BIND-UI.md)。只文档未改代码。
 
 ### 壳与横屏
 - 电脑壳 / 手机壳可切；**手机横屏为今晚主验分辨率**（约 844×390）：画布必须落在金框/壳内，禁止 `fixed` 飞出视口；16:9 槽不得被巨大空边挤没互动区。
