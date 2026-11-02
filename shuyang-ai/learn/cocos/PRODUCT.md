@@ -9,7 +9,7 @@
 
 ## 2026-11-02 · 关卡编辑器 MVP（实现注，待产品官复签）
 
-- 工坊 `visual-workbench.html?v=ldt37&step=2&scene=1`：纯编辑器。角色、五张背景、9 首曲子、音效开关、全部零件和起终点、地刺/火焰的秒数和伤害、5 种怪物 × 小/大都是点名选择。选关 `level-select.html?v=ls7`。试玩 `custom-play.html?v=c55&scene=N`。前两格仍禁危险。
+- 工坊 `visual-workbench.html?v=ldt38&step=2&scene=1`：纯编辑器。手机壳「设置」`?v=ldt38&step=1` 画布按设备像素缓冲。角色、五张背景、9 首曲子、音效开关、全部零件和起终点、地刺/火焰的秒数和伤害、5 种怪物 × 小/大都是点名选择。选关 `level-select.html?v=ls7`。试玩 `custom-play.html?v=c55&scene=N`。前两格仍禁危险。
 - 试玩 `custom-play.html?v=c52&level=9`。保存「我的第 1 关」进 `xygo-my-levels`，与正式进度 `sycocos-level-progress` 隔离。选关 `level-select.html?v=ls3` 第9先灌当前槽再玩。
 - 正式名 **伍澍暘** / **小宇**。未换 PeerJS。未做撤销、多关、联机分享。
 
