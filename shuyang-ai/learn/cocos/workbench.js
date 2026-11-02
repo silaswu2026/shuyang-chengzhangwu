@@ -1,4 +1,5 @@
 /**
+ * ldt38: 手机壳「设置」不再马赛克 — 画布缓冲 = CSS × min(3, devicePixelRatio)，槽不圆角裁切。
  * ldt31: §8 电/凹/大/箱真可摆 + 落石预兆/金币三档/练习金110/弹簧前两格可/中点切设置/宝箱动画 · was ldt30/ldt29。
  * 学习工作台 · 四芯片；关卡设计二级摆关|设置|关联；切片4 音乐绑九关+走路/砍击。
  * 存档 localStorage xygo-custom-level v1.2（wallet + audio）。试玩 custom-play.html?v=c52&level=9。
@@ -1814,16 +1815,18 @@
           }
         }
         var slotPolicy = makeSlotPolicy();
-        cc.view.enableRetina(false);
+        /* ldt38: 1× buffer stretched by phone DPR looked like mosaic on 设置. */
+        if (window.WBDpr) WBDpr.patch(cc);
+        cc.view.enableRetina(true);
         cc.view.adjustViewPort(true);
         cc.view.setDesignResolutionSize(W, H, slotPolicy);
         cc.view.resizeWithBrowserSize(true);
 
         if (cc.director.setClearColor) cc.director.setClearColor(cc.color(15, 18, 48, 255));
-        var fitCanvasInSlot = function (forcePolicy) {
+        var pinCanvasInSlot = function () {
           var c = document.getElementById('gameCanvas');
           var cont = document.getElementById('Cocos2dGameContainer');
-          if (!c) return;
+          if (!c) return null;
           var slot = null;
           if (cont && cont.parentNode) slot = cont.parentNode;
           else if (c.parentNode && c.parentNode.id === 'Cocos2dGameContainer') slot = c.parentNode.parentNode;
@@ -1831,15 +1834,8 @@
           if (slot && slot.classList && slot.classList.contains('canvas-slot')) {
             try { cc.view._frame = slot; } catch (eF) {}
           }
-          if (forcePolicy && cc.view && cc.view._originalDesignResolutionSize) {
-            var od = cc.view._originalDesignResolutionSize;
-            if (od.width > 0) {
-              try {
-                cc.view.setDesignResolutionSize(od.width, od.height, makeSlotPolicy());
-              } catch (eP) {}
-            }
-          }
-          /* Never viewport-fixed — stay inside .canvas-slot / phone bezel */
+          /* Never viewport-fixed — stay inside .canvas-slot / phone bezel.
+             Width/height stay whatever _setupContainer wrote (CSS × dpr buffer). */
           c.style.position = 'absolute';
           c.style.left = '0px';
           c.style.top = '0px';
@@ -1856,17 +1852,43 @@
             cont.style.padding = '0';
             cont.style.transform = 'none';
             cont.style.webkitTransform = 'none';
-            if (slot && slot.classList && slot.classList.contains('canvas-slot')) {
-              var sw = slot.clientWidth | 0;
-              var sh = slot.clientHeight | 0;
-              if (sw > 40 && sh > 40) {
-                cont.style.width = sw + 'px';
-                cont.style.height = sh + 'px';
-                c.style.width = sw + 'px';
-                c.style.height = sh + 'px';
-              }
-            }
           }
+          return { c: c, cont: cont, slot: slot };
+        }
+        var fitCanvasInSlot = function () {
+          if (window.WBDpr) WBDpr.patch(cc);
+          if (cc.view.enableRetina) cc.view.enableRetina(true);
+          var host = pinCanvasInSlot();
+          if (!host) return;
+          try {
+            cc.view.setDesignResolutionSize(W, H, makeSlotPolicy());
+          } catch (eP) {}
+          host = pinCanvasInSlot() || host;
+          var c = host.c;
+          var dpr = 1;
+          try {
+            if (cc.view.isRetinaEnabled && cc.view.isRetinaEnabled()) {
+              dpr = window.WBDpr ? window.WBDpr.cap(window.devicePixelRatio) : Math.min(2, window.devicePixelRatio || 1);
+            }
+            cc.view._devicePixelRatio = dpr;
+          } catch (eDpr) {}
+          var cssW = c.clientWidth || 0;
+          var cssH = c.clientHeight || 0;
+          var needW = Math.round(cssW * dpr);
+          var needH = Math.round(cssH * dpr);
+          if (cssW > 40 && cssH > 40 && (c.width + 2 < needW || c.height + 2 < needH)) {
+            c.width = needW;
+            c.height = needH;
+            try {
+              if (cc._renderContext && cc._renderContext.resetCache) cc._renderContext.resetCache();
+            } catch (eRc) {}
+            try { cc.view.setDesignResolutionSize(W, H, makeSlotPolicy()); } catch (eP2) {}
+            pinCanvasInSlot();
+          }
+          try {
+            c.setAttribute('data-wb-dpr', String(dpr));
+            c.setAttribute('data-wb-buf', c.width + 'x' + c.height);
+          } catch (eAttr) {}
         };
         window.__wbFitCanvas = fitCanvasInSlot;
         cc.view.setResizeCallback(function () {
