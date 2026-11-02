@@ -5,7 +5,7 @@
 <meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0f1230">
-<meta name="wb-build" content="ldt34">
+<meta name="wb-build" content="ldt35">
 <title>AI办学小屋 · 课程3 · 可视化关卡工坊</title>
 <style>
 :root{
@@ -123,14 +123,42 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   #rail{top:auto;bottom:6px;right:6px;transform:none;flex-direction:row;gap:4px}
   .rail-btn{width:40px;height:40px;border-radius:12px;font-size:16px}
 }
+html.pure-editor #stage{padding-top:36px}
+html.pure-editor #topbar{align-items:center;justify-content:flex-start;gap:10px}
+html.pure-editor .pure-back,html.pure-editor .pure-more{
+  border:0;border-radius:999px;padding:6px 12px;font-weight:900;font-size:13px;cursor:pointer;text-decoration:none
+}
+html.pure-editor .pure-back{background:#3ecf6a;color:#062014}
+html.pure-editor .pure-more{background:#161b3d;color:#ffe07a;border:1px solid rgba(255,224,122,.32);margin-left:auto}
+html.pure-editor .pure-lvl{color:#ffe07a;font-weight:900;font-size:15px}
+html.pure-editor #rail.tucked{display:none}
 </style>
 <script>document.ccConfig={debugMode:0,frameRate:60,id:"gameCanvas",renderMode:1,showFPS:false};</script>
+<script>
+(function () {
+  var n = 0;
+  try { n = parseInt(new URLSearchParams(location.search).get('scene') || '', 10) || 0; } catch (e) {}
+  if (!(n >= 1 && n <= 5)) return;
+  var names = ['', '林间晨跑', '苔岩小径', '萤火树冠', '尖刺走廊', '雷鸣对战'];
+  document.documentElement.classList.add('pure-editor');
+  document.addEventListener('DOMContentLoaded', function () {
+    var bar = document.getElementById('topbar');
+    if (bar) {
+      bar.innerHTML = '<a class="pure-back" href="../../../index.html">回小屋</a><a class="pure-back" href="level-select.html?v=ls5">选关</a><span class="pure-lvl">第' + n + '关 · ' + names[n] + '</span><button type="button" class="pure-more" id="pureMore">更多</button>';
+    }
+    var rail = document.getElementById('rail');
+    if (rail) rail.classList.add('tucked');
+    var more = document.getElementById('pureMore');
+    if (more && rail) more.onclick = function () { rail.classList.toggle('tucked'); };
+  });
+})();
+</script>
 </head>
 <body>
 <div id="topbar">
   <div class="chip"><span>🏡 伍澍暘 · 课程3</span>
     <a href="../../../index.html">回小屋</a>
-    <a href="level-select.html?v=ls4">选关</a>
+    <a href="level-select.html?v=ls5">选关</a>
     <a href="custom-play.html?v=c53&amp;scene=5&amp;net=1">联机</a>
     <a href="../../../xy-go/?custom=1">xy-go联网</a>
   </div>
@@ -201,7 +229,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   </div>
 </aside>
 
-<!-- ldt34: 五关弧线 + 顶栏不叠 + 四步心跳 + 24格跑道 · was ldt33 -->
+<!-- ldt35: scene=N 纯编辑器，藏课程芯片 · was ldt34 -->
 <script>
 (function(){
   var cleared=false;
@@ -243,12 +271,12 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
 })();
 </script>
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
-<script src="wb-chrome-layout.js?v=ldt34"></script>
-<script src="wb-store.js?v=ldt34"></script>
-<script src="wb-art.js?v=ldt34"></script>
+<script src="wb-chrome-layout.js?v=ldt35"></script>
+<script src="wb-store.js?v=ldt35"></script>
+<script src="wb-art.js?v=ldt35"></script>
 <script src="wb-ninja-walk.js?v=walk1"></script>
 <script src="wb-audio.js?v=ldt19"></script>
-<script src="visual-workbench.js?v=ldt34"></script>
+<script src="visual-workbench.js?v=ldt35"></script>
 <script>
 (function () {
   var shell = document.getElementById('shell');

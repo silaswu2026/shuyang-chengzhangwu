@@ -1,13 +1,13 @@
 # 伍澍暘成长屋 · 玩家测试用例
 
-> 实现进度：五关弧线 tip `c53` / 工坊 `ldt34` / 选关 `ls4`。进度键 `xygo-scene5-progress`（不写旧 Boss `sycocos-level-progress`）。此前 c52 / ldt33 / ls3 仍可作历史对照。
+> 实现进度：纯编辑器 tip `ldt35` · 选关 `ls5` · 试玩仍 `c53`。`scene=` 入口不画看图/原理/觉察/听选。此前 ldt34 / ls4 仍可作历史对照。
 
 ## S5. 五关弧线（ls4 / ldt34 / c53）
 
 | ID | 步骤 | 期望 | 级 |
 | --- | --- | --- | --- |
 | S5-1 | 打开 `level-select.html?v=ls4` 横屏 | 5 张卡，每张先是金色「编辑」再是绿色「再玩」 | P0 |
-| S5-2 | 点第 1 关编辑 | 进工坊摆关，跑道长于 12 格可横滑，顶栏芯片不叠字，看见四步心跳 | P0 |
+| S5-2 | 点第 1 关编辑 | 只有关名、四步心跳、零件架和格子。没有看图/原理/觉察/听选，没有「下一张」 | P0 |
 | S5-3 | 第 4 关编辑里打开武器店 | 可以买。第 1–3 关商店写「第4关才用积分买武器」 | P0 |
 | S5-4 | 第 5 关「联网对战」 | 进 `custom-play.html?v=c53&scene=5&net=1`，PeerJS 入口还在 | P0 |
 | S5-5 | 玩任一 scene 后看 localStorage | 有 `xygo-scene5-progress`，`sycocos-level-progress` 不被这次写入 | P0 |
