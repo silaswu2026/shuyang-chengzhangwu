@@ -4,9 +4,10 @@
 - 用法：爸爸对着微信语音念。一句一句说。伍澍暘看着自己的工坊点。
 - 今天不安装 LDtk，也不安装 Tiled。思路借来，手只碰自己的页面。
 - 线上页（硬刷记号在 `v=` 里，整段打开，别用旧书签）：
-  - 工坊摆关 **ldt33**：`visual-workbench.html?v=ldt33&step=2`
-  - 试玩 **c52**：`custom-play.html?v=c52&level=9`
-  - 选关 **ls3**：`level-select.html?v=ls3`
+  - 选关 **ls4**：`level-select.html?v=ls4`（五关，先编辑再玩）
+  - 工坊 **ldt34**：`visual-workbench.html?v=ldt34&step=2&scene=1`
+  - 试玩 **c53**：`custom-play.html?v=c53&scene=1`
+  - 第5关联网：`custom-play.html?v=c53&scene=5&net=1`
 - 课上十步仍以 [`COURSE-2026-11-02-LEVEL-EDITOR.md`](./COURSE-2026-11-02-LEVEL-EDITOR.md) 为准。
 - 三键规则以 [`LEVEL-EDITOR-PLAN-2026-11-02.md`](./LEVEL-EDITOR-PLAN-2026-11-02.md) 为准。
 
