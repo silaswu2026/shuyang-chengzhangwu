@@ -68,7 +68,7 @@
     }
   };
 
-  var PLAY_V = 'c54';
+  var PLAY_V = 'c55';
   function goPlayLevel9(net) {
     try { STORE.save(localStorage, WB.data); } catch (eSv) {}
     if (WB.ui) WB.ui.heartPlay = true;
@@ -305,7 +305,7 @@
     return '第' + n + '关 · ' + name;
   }
   function goSelect() {
-    location.href = 'level-select.html?v=ls6';
+    location.href = 'level-select.html?v=ls7';
   }
 
   function show(step) {
@@ -337,13 +337,14 @@
 
 
 
-  function addTrapChipStrip(parent, tools, y) {
+  function addTrapChipStrip(parent, tools, y, opt) {
+    opt = opt || {};
     var phone = isPhoneShell();
-    var chipW = phone ? 52 : 64;
-    var chipH = phone ? 26 : 28;
-    var gap = phone ? 58 : 72;
-    var viewX = 12;
-    var viewW = 700;
+    var chipW = opt.chipW || (phone ? 52 : 64);
+    var chipH = opt.chipH || (phone ? 26 : 28);
+    var gap = opt.gap || (phone ? 58 : 72);
+    var viewX = opt.viewX == null ? 12 : opt.viewX;
+    var viewW = opt.viewW || 700;
     var strip = new cc.Node();
     strip.setAnchorPoint(0, 0);
     strip.setContentSize(viewW, chipH + 20);
@@ -412,6 +413,7 @@
               return;
             }
             WB.data.tool = c.id;
+            WB.ui.monFrom = null;
             if (c.id !== 'coin' && c.id !== 'del') WB.data.sel = c.id;
             WB.data.moving = false;
             WB.ui.heartDef = true;
@@ -1212,6 +1214,152 @@
     }), strip);
   }
 
+  function monsterBrush() {
+    if (!WB.ui.monBrush || !WB.ui.monBrush.id) {
+      var list = (WB.data && WB.data.monsters) || [];
+      var first = list[0] || null;
+      WB.ui.monBrush = {
+        id: (first && first.id) || 'boar',
+        size: (first && first.size === 'big') ? 'big' : 'small'
+      };
+    }
+    return WB.ui.monBrush;
+  }
+  function persistEdit(flash) {
+    if (flash) WB.ui.flash = flash;
+    try { STORE.save(localStorage, WB.data); } catch (eSv) {}
+    later(function () { show(2); });
+  }
+  function pickBgm(id) {
+    var next = STORE.setBgm ? STORE.setBgm(WB.data, id) : null;
+    var name = (next && next.name) || id;
+    try {
+      if (next && window.WBAudio) { WBAudio.unlock(); WBAudio.setBgm(next.fileId || next.id); }
+    } catch (eHear) {}
+    persistEdit('本关音乐：' + name);
+  }
+  function pickMonsterKind(id) {
+    var brush = monsterBrush();
+    brush.id = id;
+    if (WB.ui.monFrom != null && STORE.placeMonster) {
+      var swapped = STORE.placeMonster(WB.data, WB.ui.monFrom, brush.id, brush.size);
+      persistEdit((swapped && swapped.flash) || '换成这种怪物');
+      return;
+    }
+    WB.data.tool = 'monster';
+    WB.data.moving = false;
+    WB.ui.monFrom = null;
+    var nm = STORE.monsterName ? STORE.monsterName(id) : '怪物';
+    persistEdit('选了' + (brush.size === 'big' ? '大' : '小') + nm + '。点空格放下');
+  }
+  function pickMonsterSize(size) {
+    var brush = monsterBrush();
+    brush.size = size === 'big' ? 'big' : 'small';
+    if (WB.ui.monFrom != null && STORE.placeMonster) {
+      var swapped = STORE.placeMonster(WB.data, WB.ui.monFrom, brush.id, brush.size);
+      persistEdit((swapped && swapped.flash) || '换成大小');
+      return;
+    }
+    WB.data.tool = 'monster';
+    WB.data.moving = false;
+    var nm = STORE.monsterName ? STORE.monsterName(brush.id) : '怪物';
+    persistEdit('选了' + (brush.size === 'big' ? '大' : '小') + nm + '。点空格放下');
+  }
+  function chipOn(layer, label, cx, cy, w, h, on, fn) {
+    button(layer, label, cx, cy, w, h, on ? GOLD : NAVY, on ? INK : WHITE, fn);
+  }
+  function addPurePickers(layer) {
+    var brush = monsterBrush();
+    var armed = WB.data.tool === 'monster' || WB.ui.monFrom != null;
+    var cast = [
+      { id: 'green', name: '绿忍者' },
+      { id: 'red', name: '红忍者' },
+      { id: 'blue', name: '蓝忍者' }
+    ];
+    var who = (WB.data && WB.data.character) || 'green';
+    words(layer, '角色', 28, 474, 14, '#ffe07a', 33);
+    cast.forEach(function (c, i) {
+      chipOn(layer, c.name, 108 + i * 92, 474, 86, 28, who === c.id, function () {
+        var next = STORE.setCharacter ? STORE.setCharacter(WB.data, c.id) : null;
+        persistEdit(next ? ('角色：' + next.name) : '角色已换');
+      });
+    });
+    var sfxOn = STORE.sfxEnabled ? STORE.sfxEnabled(WB.data) : true;
+    words(layer, '音效', 400, 474, 14, '#ffe07a', 33);
+    chipOn(layer, '开', 458, 474, 52, 28, !!sfxOn, function () {
+      if (STORE.setSfx) STORE.setSfx(WB.data, true);
+      persistEdit('音效开着（全关共用）');
+    });
+    chipOn(layer, '关', 516, 474, 52, 28, !sfxOn, function () {
+      if (STORE.setSfx) STORE.setSfx(WB.data, false);
+      persistEdit('音效关掉了');
+    });
+    words(layer, '💰' + ((WB.data.wallet && WB.data.wallet.coins) | 0), 620, 474, 14, '#ffe07a', 33);
+    words(layer, '背景', 28, 442, 14, '#ffe07a', 33);
+    var bgs = (STORE.BACKDROPS && STORE.BACKDROPS.length) ? STORE.BACKDROPS : [];
+    var curBg = (WB.data && WB.data.backdrop) || 'forest';
+    bgs.forEach(function (b, i) {
+      chipOn(layer, b.name, 168 + i * 148, 442, 138, 28, curBg === b.id, function () {
+        var next = STORE.setBackdrop ? STORE.setBackdrop(WB.data, b.id) : null;
+        persistEdit(next ? ('背景：' + next.name) : '背景已换');
+      });
+    });
+    words(layer, '音乐', 28, 410, 14, '#ffe07a', 33);
+    var tracks = (STORE.BGM_POOL && STORE.BGM_POOL.length) ? STORE.BGM_POOL : [];
+    var curBgm = (WB.data && WB.data.bgmId) || 'explore';
+    tracks.forEach(function (t, i) {
+      chipOn(layer, t.name, 118 + i * 92, 410, 86, 28, t.id === curBgm, function () {
+        pickBgm(t.id);
+      });
+    });
+    words(layer, '怪物', 28, 378, 14, '#ffe07a', 33);
+    var kinds = (STORE.MONSTERS && STORE.MONSTERS.length) ? STORE.MONSTERS : [];
+    kinds.forEach(function (m, i) {
+      chipOn(layer, m.name, 118 + i * 100, 378, 94, 28, armed && brush.id === m.id, function () {
+        pickMonsterKind(m.id);
+      });
+    });
+    chipOn(layer, '小怪', 640, 378, 72, 28, armed && brush.size !== 'big', function () {
+      pickMonsterSize('small');
+    });
+    chipOn(layer, '大怪', 720, 378, 72, 28, armed && brush.size === 'big', function () {
+      pickMonsterSize('big');
+    });
+    words(layer, '点空格放下或换掉', 860, 378, 13, '#9ff0a8', 33);
+  }
+  function addPureNumbers(layer) {
+    var y = 274;
+    var mp = (WB.data && WB.data.mp) || { spike: { interval: 3, damage: 1 }, fire: { dur: 3, damage: 1 } };
+    var spikeIv = mp.spike.interval;
+    var fireDur = mp.fire.dur;
+    var spikeD = mp.spike.damage || 1;
+    var fireD = mp.fire.damage || 1;
+    words(layer, '地刺', 28, y, 13, '#ffe07a', 33);
+    [1, 3, 5].forEach(function (v, i) {
+      chipOn(layer, v + '秒', 78 + i * 50, y, 46, 26, spikeIv === v, function () {
+        if (STORE.setSpikeInterval && STORE.setSpikeInterval(WB.data, v)) persistEdit('地刺每 ' + v + ' 秒冒一次');
+      });
+    });
+    words(layer, '伤', 236, y, 13, '#ffe07a', 33);
+    [1, 2, 3].forEach(function (v, i) {
+      chipOn(layer, String(v), 268 + i * 40, y, 36, 26, spikeD === v, function () {
+        if (STORE.setTrapDamage && STORE.setTrapDamage(WB.data, 'spike', v)) persistEdit('地刺伤害 ' + v);
+      });
+    });
+    words(layer, '火焰', 430, y, 13, '#ffe07a', 33);
+    [1, 3, 5].forEach(function (v, i) {
+      chipOn(layer, v + '秒', 490 + i * 50, y, 46, 26, fireDur === v, function () {
+        if (STORE.setFireDur && STORE.setFireDur(WB.data, v)) persistEdit('着火烧 ' + v + ' 秒');
+      });
+    });
+    words(layer, '伤', 648, y, 13, '#ffe07a', 33);
+    [1, 2, 3].forEach(function (v, i) {
+      chipOn(layer, String(v), 680 + i * 40, y, 36, 26, fireD === v, function () {
+        if (STORE.setTrapDamage && STORE.setTrapDamage(WB.data, 'fire', v)) persistEdit('火焰伤害 ' + v);
+      });
+    });
+  }
+
   /* ---------- 摆关 ---------- */
   var EDIT = { L: 12, cw: 46, gy: 150 };
   var EditLayer = cc.Layer.extend({
@@ -1219,10 +1367,10 @@
       this._super();
       WB.sceneName = 'edit';
       addChrome(this, 2);
-      var gy = pure ? 210 : EDIT.gy;
+      var pure = pureEditor();
+      var gy = pure ? 124 : EDIT.gy;
       var cols = (WB.data && WB.data.map && WB.data.map.length) || STORE.MC;
       var cw = pure ? 56 : EDIT.cw;
-      var pure = pureEditor();
       var viewL = 12;
       var viewW = pure ? 936 : 760;
       this._cols = cols;
@@ -1233,20 +1381,29 @@
       this._pan = 0;
       this._gy = gy;
       this._sky = ART.dressScene ? ART.dressScene(this, gy + 6, null, WB.data && WB.data.backdrop) : ART.dressSky(this, gy + 6);
-      this._heartNow = addHeartStrip(this);
-      var plateB = (WB.layout.chrome && WB.layout.chrome.plateBottom) || 469;
-      addCheckStrip(this, pure ? (plateB - 62) : 400);
+      this._heartNow = pure ? null : addHeartStrip(this);
+      if (pure) {
+        addPurePickers(this);
+        addPureNumbers(this);
+      } else addCheckStrip(this, 400);
       var self = this;
-      var tools = [['start', '起'], ['spike', '刺'], ['fire', '火'], ['spring', '弹'], ['mist', '沼'], ['rock', '石'], ['electric', '电'], ['groove', '凹'], ['coin', '小'], ['coinBig', '大'], ['chest', '箱'], ['goal', '终'], ['del', '擦']];
-      var trayY = pure ? (plateB - 108) : 358;
-      addTrapChipStrip(self, tools, trayY);
-      words(this, '💰' + ((WB.data.wallet && WB.data.wallet.coins) | 0), 760, trayY, 14, '#ffe07a', 8);
-      if (this._panMax > 0) words(this, '←滑跑道→', 400, gy + 118, 12, '#1a2744', 8);
+      var tools = pure ? [
+        ['start', '起点'], ['goal', '终点'], ['spike', '地刺'], ['fire', '火焰'],
+        ['spring', '弹簧'], ['mist', '沼泽'], ['rock', '落石'], ['electric', '电击'],
+        ['groove', '凹槽'], ['coin', '小币'], ['coinBig', '大币'], ['chest', '宝箱'],
+        ['del', '擦掉']
+      ] : [['start', '起'], ['spike', '刺'], ['fire', '火'], ['spring', '弹'], ['mist', '沼'], ['rock', '石'], ['electric', '电'], ['groove', '凹'], ['coin', '小'], ['coinBig', '大'], ['chest', '箱'], ['goal', '终'], ['del', '擦']];
+      var trayY = pure ? 324 : 358;
+      addTrapChipStrip(self, tools, trayY, pure ? { viewW: 936, chipW: 66, gap: 70, chipH: 28, viewX: 12 } : null);
+      if (!pure) words(this, '💰' + ((WB.data.wallet && WB.data.wallet.coins) | 0), 760, trayY, 14, '#ffe07a', 8);
+      if (this._panMax > 0) words(this, '←滑跑道→', 400, gy + 108, 12, '#1a2744', 8);
       this._shop = function () {};
       this.paramRow = new cc.Node();
       this.addChild(this.paramRow, 31);
-      WB.layout.paramY = pure ? 342 : 300;
-      this._params();
+      if (!pure) {
+        WB.layout.paramY = 300;
+        this._params();
+      }
       var track = new cc.Node();
       this.addChild(track, 6);
       this._track = track;
@@ -1288,7 +1445,7 @@
       this._decoFlag = ART.place(track, ART.tex.flag, cols * cw - 36, gy + 6, { anchor: [0, 0], h: 64, z: 11 });
       var hit = new cc.Node();
       hit.setAnchorPoint(0, 0);
-      hit.setContentSize(viewW, pure ? 168 : 120);
+      hit.setContentSize(viewW, pure ? 128 : 120);
       hit.setPosition(viewL, gy - 8);
       this.addChild(hit, 12);
       var drag = { on: false, lastX: 0, moved: false, acc: 0 };
@@ -1297,7 +1454,7 @@
         swallowTouches: true,
         onTouchBegan: function (touch, event) {
           var loc = event.getCurrentTarget().convertToNodeSpace(touch.getLocation());
-          if (!cc.rectContainsPoint(cc.rect(0, 0, viewW, pure ? 168 : 120), loc)) return false;
+          if (!cc.rectContainsPoint(cc.rect(0, 0, viewW, pure ? 128 : 120), loc)) return false;
           drag.on = true; drag.moved = false; drag.acc = 0; drag.lastX = touch.getLocation().x;
           return true;
         },
@@ -1316,7 +1473,16 @@
           var loc = event.getCurrentTarget().convertToNodeSpace(touch.getLocation());
           var col = Math.floor((loc.x + self._pan) / cw);
           var monHere = STORE.monsterAt && STORE.monsterAt(WB.data, col);
-          if (WB.ui.monFrom != null && !WB.data.map[col] && (WB.ui.monFrom | 0) !== (col | 0)) {
+          var emptyTile = !WB.data.map[col];
+          if (WB.data.tool === 'del' && monHere && STORE.eraseMonster) {
+            var erased = STORE.eraseMonster(WB.data, col);
+            if ((WB.ui.monFrom | 0) === (col | 0)) WB.ui.monFrom = null;
+            if (erased && erased.ok && emptyTile) {
+              persistEdit(erased.flash || '怪物擦掉了');
+              return;
+            }
+          }
+          if (WB.ui.monFrom != null && emptyTile && (WB.ui.monFrom | 0) !== (col | 0)) {
             var movedM = STORE.moveMonster(WB.data, WB.ui.monFrom, col);
             WB.ui.flash = (movedM && movedM.flash) || '';
             if (movedM && movedM.ok) {
@@ -1326,9 +1492,29 @@
             later(function () { show(2); });
             return;
           }
-          if (monHere && !WB.data.map[col]) {
+          if (WB.data.tool === 'monster' && emptyTile && STORE.placeMonster) {
+            var brush = monsterBrush();
+            var same = monHere && monHere.id === brush.id &&
+              ((monHere.size === 'big' ? 'big' : 'small') === brush.size);
+            if (!same) {
+              var placed = STORE.placeMonster(WB.data, col, brush.id, brush.size);
+              WB.ui.monFrom = null;
+              if (placed && placed.ok) persistEdit(placed.flash || '放下了');
+              else {
+                WB.ui.flash = (placed && placed.flash) || '';
+                later(function () { show(2); });
+              }
+              return;
+            }
+          }
+          if (monHere && emptyTile) {
             WB.ui.monFrom = col;
-            WB.ui.flash = '选中怪物。点空格搬走，或再点「怪物」换大/小和种类';
+            var picked = monsterBrush();
+            picked.id = monHere.id;
+            picked.size = monHere.size === 'big' ? 'big' : 'small';
+            WB.data.tool = 'monster';
+            var tag = (monHere.size === 'big' ? '大' : '小') + (STORE.monsterName ? STORE.monsterName(monHere.id) : '怪');
+            WB.ui.flash = '选中' + tag + '。点空格搬走，或点上面换种类';
             later(function () { show(2); });
             return;
           }
@@ -1349,7 +1535,7 @@
           later(function () { show(2); });
         }
       }), hit);
-      this.ninja = addNinja(track, 28, gy, pure ? 156 : (isPhoneShell() ? 120 : 112));
+      this.ninja = addNinja(track, 28, gy, pure ? 96 : (isPhoneShell() ? 120 : 112));
       this._setPan(0);
       this.checkLabs = [];
       this.sumLab = words(this, '', -100, -100, 12, '#1b1b2a', 1);
@@ -1368,8 +1554,9 @@
           this.checkLabs.push(words(this, '', 872, 250 - ci * 28, 13, '#1b1b2a', 11));
         }
       }
-      ART.panel(this, 386, 96, 460, 30, cc.color(255, 244, 214), 235, 10, 12);
-      this.flashLab = words(this, WB.ui.flash || '点格子摆东西', 386, 96, 15, '#7a4e00', 11);
+      var flashY = pure ? 74 : 96;
+      ART.panel(this, 386, flashY, 460, 30, cc.color(255, 244, 214), 235, 10, 12);
+      this.flashLab = words(this, WB.ui.flash || '点格子摆东西', 386, flashY, 15, '#7a4e00', 11);
       if (!pure) {
         button(self, '跑一次', 700, 96, 100, 28, NAVY, WHITE, function () {
           WB.ui.running = true;
@@ -1378,7 +1565,7 @@
           WB.ui.midSwitchAt = 0;
         });
       }
-      button(self, '撤销', pure ? 860 : 820, 96, 72, 28, NAVY, WHITE, function () { undoPlace(); });
+      button(self, '撤销', pure ? 860 : 820, pure ? 74 : 96, 72, 28, NAVY, WHITE, function () { undoPlace(); });
       var sceneNow = (WB.data.levelId | 0);
       var saveLabel = pure ? '存本关' : ((sceneNow >= 1 && sceneNow <= 5) ? ('存第' + sceneNow + '关') : '存我的第1关');
       addFootTrio(this,
@@ -1470,9 +1657,13 @@
     },
     _syncMarks: function () {
       var up = Math.floor(Date.now() / 1000 / (WB.data.mp.spike.interval || 3) * 2) % 2 === 0;
+      var msig = '';
+      var mlist = WB.data.monsters || [];
+      var mi;
+      for (mi = 0; mi < mlist.length; mi++) msig += mlist[mi].id + mlist[mi].size + mlist[mi].x + ';';
       var sig = WB.data.map.join(',') + '|' + WB.data.selX + '|' + up + '|' + WB.ui.flash + '|' +
         WB.data.mp.spike.interval + '|' + WB.data.mp.fire.dur + '|' + (WB.ui.previewDone ? 1 : 0) +
-        '|' + (WB.ui.running ? 1 : 0);
+        '|' + (WB.ui.running ? 1 : 0) + '|' + msig + '|' + (WB.ui.monFrom == null ? '' : WB.ui.monFrom);
       if (sig === this._sig) return;
       this._sig = sig;
       var x, k, sel, sp;
@@ -1480,14 +1671,16 @@
       for (x = 0; x < nCells; x++) {
         k = WB.data.map[x];
         sel = WB.data.selX === x;
-        this.frames[x].setColor(sel ? cc.color(255, 215, 80) : cc.color(255, 255, 255));
-        this.frames[x].setOpacity(sel ? 255 : 80);
+        var monPick = (WB.ui.monFrom | 0) === x && WB.ui.monFrom != null;
+        this.frames[x].setColor(monPick ? cc.color(255, 176, 90) : (sel ? cc.color(255, 215, 80) : cc.color(255, 255, 255)));
+        this.frames[x].setOpacity((sel || monPick) ? 255 : 80);
         var mk = this.marks[x];
         mk.removeAllChildren();
         var mon = STORE.monsterAt && STORE.monsterAt(WB.data, x);
         if (mon) {
           var mname = (STORE.monsterName ? STORE.monsterName(mon.id) : '怪');
-          words(mk, (mon.size === 'big' ? '大' : '小') + mname, 0, 78, 11, '#fff4c2', 3);
+          var mhex = { boar: '#e8b07a', slime: '#b6f5a0', shadow: '#d0c4ff', bug: '#f3d56a', thunder: '#b7d4ff' };
+          words(mk, (mon.size === 'big' ? '大' : '小') + mname, 0, pureEditor() ? 86 : 78, monPick ? 13 : 12, mhex[mon.id] || '#fff4c2', 3);
         }
         if (k === 'spike') {
           plate(mk, -18, -2, 36, 6, ccColor(58, 58, 66), 0);
@@ -1541,7 +1734,9 @@
         for (gi = 0; gi < (this._cols || STORE.MC); gi++) if (WB.data.map[gi] === 'goal') goalPlaced = true;
         this._decoFlag.setVisible(!goalPlaced);
       }
-      var tip = WB.ui.flash || (WB.ui.running ? '正在跑' : (WB.ui.previewDone ? '跑完了，可以去觉察' : '前两格安全 · 摆起点、陷阱、金币、终点'));
+      var tip = WB.ui.flash || (WB.ui.running ? '正在跑' : (pureEditor()
+        ? '点上面的名字，再点格子放下'
+        : (WB.ui.previewDone ? '跑完了，可以去觉察' : '前两格安全 · 摆起点、陷阱、金币、终点')));
       reword(this.flashLab, tip);
     },
     update: function (dt) {

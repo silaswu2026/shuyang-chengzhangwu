@@ -127,10 +127,15 @@
     return BGM_POOL[0];
   }
 
-  function monsterName(id) {
+  function monsterById(id) {
     var i;
-    for (i = 0; i < MONSTERS.length; i++) if (MONSTERS[i].id === id) return MONSTERS[i].name;
-    return '怪物';
+    for (i = 0; i < MONSTERS.length; i++) if (MONSTERS[i].id === id) return MONSTERS[i];
+    return null;
+  }
+
+  function monsterName(id) {
+    var hit = monsterById(id);
+    return hit ? hit.name : '怪物';
   }
 
   function backdropById(id) {
@@ -150,18 +155,32 @@
     return next;
   }
 
+  function setBgm(state, id) {
+    var next = bgmById(id);
+    if (state) {
+      state.bgmId = next.id;
+      if (!state.audio || typeof state.audio !== 'object') state.audio = blankAudio();
+      state.audio.bgmId = next.fileId;
+      state.music = next.fileId;
+    }
+    return next;
+  }
+
   function cycleBgm(state) {
     var cur = state && state.bgmId;
     var idx = 0;
     var i;
     for (i = 0; i < BGM_POOL.length; i++) if (BGM_POOL[i].id === cur) idx = i;
     var next = BGM_POOL[(idx + 1) % BGM_POOL.length];
-    if (state) {
-      state.bgmId = next.id;
-      if (!state.audio || typeof state.audio !== 'object') state.audio = blankAudio();
-      state.audio.bgmId = next.fileId;
-    }
-    return next;
+    return setBgm(state, next.id);
+  }
+
+  function sfxEnabled(state) {
+    var sfx = state && state.audio && state.audio.sfx;
+    if (!sfx) return true;
+    var k;
+    for (k in sfx) if (sfx[k]) return true;
+    return false;
   }
 
   var CAST = [
@@ -175,19 +194,42 @@
     var i;
     for (i = 0; i < CAST.length; i++) if (CAST[i].id === cur) idx = i;
     var next = CAST[(idx + 1) % CAST.length];
-    if (state) state.character = next.id;
-    return next;
+    return setCharacter(state, next.id);
+  }
+
+  function setCharacter(state, id) {
+    var i;
+    for (i = 0; i < CAST.length; i++) {
+      if (CAST[i].id === id) {
+        if (state) state.character = CAST[i].id;
+        return CAST[i];
+      }
+    }
+    return null;
+  }
+
+  function setBackdrop(state, id) {
+    var i;
+    for (i = 0; i < BACKDROPS.length; i++) {
+      if (BACKDROPS[i].id === id) {
+        if (state) state.backdrop = BACKDROPS[i].id;
+        return BACKDROPS[i];
+      }
+    }
+    return null;
+  }
+
+  function setSfx(state, on) {
+    if (!state) return !!on;
+    if (!state.audio || typeof state.audio !== 'object') state.audio = blankAudio();
+    if (!state.audio.sfx) state.audio.sfx = blankAudio().sfx;
+    var k;
+    for (k in state.audio.sfx) state.audio.sfx[k] = !!on;
+    return !!on;
   }
 
   function toggleSfx(state) {
-    if (!state.audio || typeof state.audio !== 'object') state.audio = blankAudio();
-    if (!state.audio.sfx) state.audio.sfx = blankAudio().sfx;
-    var on = false;
-    var k;
-    for (k in state.audio.sfx) if (state.audio.sfx[k]) on = true;
-    var next = !on;
-    for (k in state.audio.sfx) state.audio.sfx[k] = next;
-    return next;
+    return setSfx(state, !sfxEnabled(state));
   }
 
   function monsterAt(state, x) {
@@ -217,8 +259,46 @@
     var hit = monsterAt(state, fromX);
     if (!hit) return { ok: false, flash: '' };
     if ((toX | 0) < SAFE0) return { ok: false, flash: '怪物别放在出生两格' };
+    if ((toX | 0) === (fromX | 0)) return { ok: true, flash: '' };
+    var other = monsterAt(state, toX);
+    if (other && other !== hit) other.x = fromX | 0;
     hit.x = toX | 0;
-    return { ok: true, flash: '怪物搬过来了' };
+    return { ok: true, flash: other ? '两只怪物换了位置' : '怪物搬过来了' };
+  }
+
+  function placeMonster(state, x, id, size) {
+    if (!state) return { ok: false, flash: '' };
+    if (!state.monsters) state.monsters = [];
+    x = x | 0;
+    var n = state.map ? state.map.length : MC;
+    if (x < 0 || x >= n) return { ok: false, flash: '' };
+    if (x < SAFE0) return { ok: false, flash: '怪物别放在出生两格' };
+    var spec = monsterById(id);
+    if (!spec) return { ok: false, flash: '没有这种怪物' };
+    var sz = size === 'big' ? 'big' : 'small';
+    var tag = (sz === 'big' ? '大' : '小') + spec.name;
+    var hit = monsterAt(state, x);
+    if (hit) {
+      hit.id = spec.id;
+      hit.size = sz;
+      return { ok: true, swapped: true, flash: '换成' + tag, monster: hit };
+    }
+    var born = { id: spec.id, size: sz, x: x };
+    state.monsters.push(born);
+    return { ok: true, flash: '放下' + tag, monster: born };
+  }
+
+  function eraseMonster(state, x) {
+    var list = (state && state.monsters) || [];
+    var i;
+    x = x | 0;
+    for (i = 0; i < list.length; i++) {
+      if ((list[i].x | 0) === x) {
+        list.splice(i, 1);
+        return { ok: true, flash: '怪物擦掉了' };
+      }
+    }
+    return { ok: false, flash: '' };
   }
 
   function templateMap(n) {
@@ -391,6 +471,8 @@
       levelTitle: '',
       character: 'green',
       backdrop: 'swamp',
+      bgmId: 'explore',
+      monsters: [],
       win: 'goal',
       mp: defaultMp(),
       wallet: blankWallet(),
@@ -523,10 +605,17 @@
       if (typeof raw.editor.character === 'string') s.character = raw.editor.character;
       if (typeof raw.editor.backdrop === 'string') s.backdrop = raw.editor.backdrop;
       if (raw.editor.win === 'goal' || raw.editor.win === 'boss' || raw.editor.win === 'coins') s.win = raw.editor.win;
-      if (typeof raw.editor.bgmId === 'string') s.bgmId = raw.editor.bgmId;
+      if (typeof raw.editor.bgmId === 'string') s.bgmId = bgmById(raw.editor.bgmId).id;
       if (typeof raw.editor.weaponUnlock === 'boolean') s.weaponUnlock = raw.editor.weaponUnlock;
       if (typeof raw.editor.net === 'boolean') s.net = raw.editor.net;
-      if (Array.isArray(raw.editor.monsters)) s.monsters = raw.editor.monsters;
+      if (Array.isArray(raw.editor.monsters)) {
+        s.monsters = [];
+        raw.editor.monsters.forEach(function (m) {
+          var spec = m && monsterById(m.id);
+          if (!spec) return;
+          s.monsters.push({ id: spec.id, size: m.size === 'big' ? 'big' : 'small', x: m.x | 0 });
+        });
+      }
     }
     if (s.levelId >= 1 && s.levelId <= SCENE_COUNT) s.levelTitle = levelTitle(s.levelId);
     var mp = (raw.mine && raw.mine.mp) || {};
@@ -891,10 +980,43 @@
 
   function setNum(state, value) {
     if (value !== 1 && value !== 3 && value !== 5) return false;
-    if (state.sel === 'spike') state.mp.spike.interval = value;
-    else if (state.sel === 'fire') state.mp.fire.dur = value;
-    else return false;
+    if (state.sel === 'spike') return setSpikeInterval(state, value);
+    if (state.sel === 'fire') return setFireDur(state, value);
+    return false;
+  }
+
+  function setSpikeInterval(state, n) {
+    if (!state || (n !== 1 && n !== 3 && n !== 5)) return false;
+    if (!state.mp) state.mp = defaultMp();
+    if (!state.mp.spike) state.mp.spike = { interval: n, up: 1, damage: 1 };
+    state.mp.spike.interval = n;
+    state.interval = n;
     return true;
+  }
+
+  function setFireDur(state, n) {
+    if (!state || (n !== 1 && n !== 3 && n !== 5)) return false;
+    if (!state.mp) state.mp = defaultMp();
+    if (!state.mp.fire) state.mp.fire = { dur: n, damage: 1 };
+    state.mp.fire.dur = n;
+    return true;
+  }
+
+  function setTrapDamage(state, kind, n) {
+    n = n | 0;
+    if (!state || (n !== 1 && n !== 2 && n !== 3)) return false;
+    if (!state.mp) state.mp = defaultMp();
+    if (kind === 'spike') {
+      if (!state.mp.spike) state.mp.spike = { interval: 3, up: 1, damage: n };
+      state.mp.spike.damage = n;
+      return true;
+    }
+    if (kind === 'fire') {
+      if (!state.mp.fire) state.mp.fire = { dur: 3, damage: n };
+      state.mp.fire.damage = n;
+      return true;
+    }
+    return false;
   }
 
 
@@ -1090,6 +1212,9 @@
     save: save,
     place: place,
     setNum: setNum,
+    setSpikeInterval: setSpikeInterval,
+    setFireDur: setFireDur,
+    setTrapDamage: setTrapDamage,
     setIntervalValue: setIntervalValue,
     mEst: mEst,
     checks: checks,
@@ -1133,15 +1258,23 @@
     colsOf: colsOf,
     templateMeta: templateMeta,
     bgmById: bgmById,
+    setBgm: setBgm,
+    monsterById: monsterById,
     monsterName: monsterName,
     backdropById: backdropById,
     cycleBackdrop: cycleBackdrop,
+    setBackdrop: setBackdrop,
     cycleBgm: cycleBgm,
     cycleCharacter: cycleCharacter,
+    setCharacter: setCharacter,
     toggleSfx: toggleSfx,
+    setSfx: setSfx,
+    sfxEnabled: sfxEnabled,
     monsterAt: monsterAt,
     cycleMonsterAt: cycleMonsterAt,
     moveMonster: moveMonster,
+    placeMonster: placeMonster,
+    eraseMonster: eraseMonster,
     weaponShopOpen: weaponShopOpen,
     markSceneProgress: markSceneProgress
   };
