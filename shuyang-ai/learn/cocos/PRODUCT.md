@@ -9,7 +9,7 @@
 
 ## 2026-11-02 · 关卡编辑器 MVP（实现注，待产品官复签）
 
-- 工坊 `visual-workbench.html?v=ldt34&step=2&scene=1`：五关预填、24 格可横滑、四步心跳。选关 `level-select.html?v=ls4`。试玩 `custom-play.html?v=c53&scene=N`。前两格仍禁危险。
+- 工坊 `visual-workbench.html?v=ldt35&step=2&scene=1`：纯编辑器（无课程芯片）。选关 `level-select.html?v=ls5`。试玩 `custom-play.html?v=c53&scene=N`。前两格仍禁危险。
 - 试玩 `custom-play.html?v=c52&level=9`。保存「我的第 1 关」进 `xygo-my-levels`，与正式进度 `sycocos-level-progress` 隔离。选关 `level-select.html?v=ls3` 第9先灌当前槽再玩。
 - 正式名 **伍澍暘** / **小宇**。未换 PeerJS。未做撤销、多关、联机分享。
 

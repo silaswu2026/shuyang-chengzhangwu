@@ -291,8 +291,29 @@
     } catch (eU) {}
   }
 
+  function sceneQuery() {
+    try {
+      var n = parseInt(new URLSearchParams(location.search).get('scene') || '', 10);
+      if (n >= 1 && n <= 5) return n;
+    } catch (eQ) {}
+    return 0;
+  }
+  function pureEditor() { return sceneQuery() > 0; }
+  function pureTitle() {
+    var n = sceneQuery();
+    var name = (STORE && STORE.levelTitle) ? STORE.levelTitle(n) : '';
+    return '第' + n + '关 · ' + name;
+  }
+  function goSelect() {
+    location.href = 'level-select.html?v=ls5';
+  }
+
   function show(step) {
     step = Math.max(0, Math.min(5, step | 0));
+    if (pureEditor()) {
+      step = 2;
+      WB.ui.gatePassed = true;
+    }
     if (isDesignStep(step) && !gateOk()) {
       WB.ui.gatePending = step;
       if (WB.ui.gateQ == null) WB.ui.gateQ = 0;
@@ -421,6 +442,16 @@
     opts = opts || {};
     var forGate = !!opts.gate;
     ART.fill(layer, ART.tex.night, 0);
+    if (pureEditor() && !forGate) {
+      var barH = 46;
+      plate(layer, 0, 0, W, FOOT, ccColor(15, 18, 48, 242), 18);
+      plate(layer, 0, FOOT - 3, W, 3, ccColor(255, 224, 122, 180), 19);
+      plate(layer, 0, H - barH, W, barH, ccColor(15, 18, 48, 242), 20);
+      button(layer, '回选关', 78, H - barH / 2, 118, 32, NAVY, WHITE, function () { goSelect(); });
+      words(layer, pureTitle(), 520, H - barH / 2, 20, '#ffe07a', 21);
+      WB.layout.chrome = { plateBottom: H - barH, chipY: H - barH / 2 };
+      return;
+    }
     var phone = isPhoneShell();
     var land = false;
     try { land = window.innerWidth > window.innerHeight && window.innerHeight < 520; } catch (eL) {}
@@ -1018,6 +1049,15 @@
     later(function () { show(2); });
   }
   function editorChecklist() {
+    if (pureEditor()) {
+      return [
+        { id: 'char', t: '角色', later: true },
+        { id: 'bg', t: '背景', later: true },
+        { id: 'bgm', t: '音乐', later: false },
+        { id: 'sfx', t: '音效', later: false },
+        { id: 'mon', t: '怪物', later: false }
+      ];
+    }
     var n = (WB.data && WB.data.levelId) | 0;
     var who = (n >= 1 && n <= 5) ? ('第' + n + '关') : '我的关';
     var cast = { green: '绿忍者', red: '红忍者', blue: '蓝忍者' };
@@ -1153,8 +1193,9 @@
       var gy = EDIT.gy;
       var cols = (WB.data && WB.data.map && WB.data.map.length) || STORE.MC;
       var cw = EDIT.cw;
+      var pure = pureEditor();
       var viewL = 12;
-      var viewW = 760;
+      var viewW = pure ? 936 : 760;
       this._cols = cols;
       this._cw = cw;
       this._viewL = viewL;
@@ -1163,10 +1204,11 @@
       this._pan = 0;
       this._sky = ART.dressSky(this, gy + 6);
       this._heartNow = addHeartStrip(this);
-      addCheckStrip(this, 400);
+      var plateB = (WB.layout.chrome && WB.layout.chrome.plateBottom) || 469;
+      addCheckStrip(this, pure ? (plateB - 62) : 400);
       var self = this;
       var tools = [['start', '起'], ['spike', '刺'], ['fire', '火'], ['spring', '弹'], ['mist', '沼'], ['rock', '石'], ['electric', '电'], ['groove', '凹'], ['coin', '小'], ['coinBig', '大'], ['chest', '箱'], ['goal', '终'], ['del', '擦']];
-      var trayY = 358;
+      var trayY = pure ? (plateB - 108) : 358;
       addTrapChipStrip(self, tools, trayY);
       words(this, '💰' + ((WB.data.wallet && WB.data.wallet.coins) | 0), 760, trayY, 14, '#ffe07a', 8);
       if (this._panMax > 0) words(this, '←滑跑道→', 400, gy + 118, 12, '#1a2744', 8);
@@ -1261,30 +1303,36 @@
       }), hit);
       this.ninja = addNinja(track, 28, gy, isPhoneShell() ? 120 : 112);
       this._setPan(0);
-      this.card = ART.panel(this, 872, 250, 160, 300, cc.color(78, 201, 107), 255, 10, 16);
-      var sceneN = (WB.data.levelId | 0);
-      var sceneName = (sceneN >= 1 && STORE.levelTitle) ? ('第' + sceneN + '关 ' + STORE.levelTitle(sceneN)) : '我的关';
-      words(this, sceneName, 872, 386, 12, '#1b1b2a', 11);
-      words(this, '一共掉', 872, 360, 14, '#1b1b2a', 11);
-      this.sumLab = words(this, '', 872, 336, 28, '#1b1b2a', 11);
-      this.moodLab = words(this, '', 872, 300, 16, '#1b1b2a', 11);
       this.checkLabs = [];
-      var rows0 = STORE.checks(WB.data.map);
-      var ci;
-      for (ci = 0; ci < rows0.length; ci++) {
-        this.checkLabs.push(words(this, '', 872, 250 - ci * 28, 13, '#1b1b2a', 11));
+      this.sumLab = words(this, '', -100, -100, 12, '#1b1b2a', 1);
+      this.moodLab = words(this, '', -100, -100, 12, '#1b1b2a', 1);
+      if (!pure) {
+        this.card = ART.panel(this, 872, 250, 160, 300, cc.color(78, 201, 107), 255, 10, 16);
+        var sceneN = (WB.data.levelId | 0);
+        var sceneName = (sceneN >= 1 && STORE.levelTitle) ? ('第' + sceneN + '关 ' + STORE.levelTitle(sceneN)) : '我的关';
+        words(this, sceneName, 872, 386, 12, '#1b1b2a', 11);
+        words(this, '一共掉', 872, 360, 14, '#1b1b2a', 11);
+        this.sumLab = words(this, '', 872, 336, 28, '#1b1b2a', 11);
+        this.moodLab = words(this, '', 872, 300, 16, '#1b1b2a', 11);
+        var rows0 = STORE.checks(WB.data.map);
+        var ci;
+        for (ci = 0; ci < rows0.length; ci++) {
+          this.checkLabs.push(words(this, '', 872, 250 - ci * 28, 13, '#1b1b2a', 11));
+        }
       }
       ART.panel(this, 386, 96, 460, 30, cc.color(255, 244, 214), 235, 10, 12);
       this.flashLab = words(this, WB.ui.flash || '点格子摆东西', 386, 96, 15, '#7a4e00', 11);
-      button(self, '跑一次', 700, 96, 100, 28, NAVY, WHITE, function () {
-        WB.ui.running = true;
-        WB.ui.runT0 = Date.now() / 1000;
-        WB.ui.midSwitchArmed = false;
-        WB.ui.midSwitchAt = 0;
-      });
-      button(self, '撤销', 820, 96, 72, 28, NAVY, WHITE, function () { undoPlace(); });
+      if (!pure) {
+        button(self, '跑一次', 700, 96, 100, 28, NAVY, WHITE, function () {
+          WB.ui.running = true;
+          WB.ui.runT0 = Date.now() / 1000;
+          WB.ui.midSwitchArmed = false;
+          WB.ui.midSwitchAt = 0;
+        });
+      }
+      button(self, '撤销', pure ? 860 : 820, 96, 72, 28, NAVY, WHITE, function () { undoPlace(); });
       var sceneNow = (WB.data.levelId | 0);
-      var saveLabel = (sceneNow >= 1 && sceneNow <= 5) ? ('存第' + sceneNow + '关') : '存我的第1关';
+      var saveLabel = pure ? '存本关' : ((sceneNow >= 1 && sceneNow <= 5) ? ('存第' + sceneNow + '关') : '存我的第1关');
       addFootTrio(this,
         '试玩', function () { goPlayLevel9(false); },
         saveLabel, function () {
@@ -1299,7 +1347,8 @@
           WB.ui.heartSave = true;
           later(function () { show(2); });
         },
-        '再打开', function () {
+        pure ? '回选关' : '再打开', function () {
+          if (pure) { goSelect(); return; }
           if (sceneNow >= 1 && sceneNow <= 5 && STORE.applyLevel) {
             STORE.applyLevel(localStorage, sceneNow);
             WB.data = STORE.load(localStorage);
@@ -1418,7 +1467,7 @@
       var hearts = STORE.mEst(WB.data.map, WB.data.mp);
       var tot = hearts.reduce(function (a, b) { return a + b; }, 0);
       var col = tot <= 2 ? cc.color(78, 201, 107) : tot <= 5 ? cc.color(255, 210, 63) : cc.color(255, 90, 90);
-      this.card.setColor(col);
+      if (this.card) this.card.setColor(col);
       reword(this.sumLab, tot + '❤');
       reword(this.moodLab, tot <= 2 ? '简单' : tot <= 5 ? '刚刚好' : '超难');
       var rows = STORE.checks(WB.data.map);

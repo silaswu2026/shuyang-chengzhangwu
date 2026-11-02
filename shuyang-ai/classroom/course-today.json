@@ -5,9 +5,9 @@
   "theme": "关卡编辑器从零：认工具 · 摆零件 · 试玩 · 存我的关",
   "overview": "明天第 4 课只教关卡编辑器（伍澍暘自选）。不回顾角色背景/序列帧/道具陷阱奖励/入迷；不讲一系列关卡与联网。从零：玩vs造 → 三连效果 → 三面板 → 零件 → 摆存 → 再打开。",
   "speakOverview": "伍澍暘你好！今天只学关卡编辑器：认工具、摆零件、试玩、把关存成自己的。别的课题以后再开。",
-  "phoneBrief": "2026-11-02 五关弧线。选关 ls4 每关先编辑再玩。工坊 ldt34。试玩 c53&scene=N。第4关买武器。第5关联网。进度 xygo-scene5-progress。",
+  "phoneBrief": "2026-11-02 选关 ls5，编辑器 ldt35 只摆关（无看图/觉察）。试玩仍 c53&scene=N。",
   "adventureMonthNote": "Silas 收窄：明日仅编辑器。正式名伍澍暘；助手小宇。双轨：日课共学 + 课件产品化见 TEACHING-SYSTEM-FOR-THIRD-PARTIES.md。",
-  "iframe": "../learn/cocos/visual-workbench.html?v=ldt34&step=2&scene=1",
+  "iframe": "../learn/cocos/visual-workbench.html?v=ldt35&step=2&scene=1",
   "doc": "../learn/cocos/docs/COURSE-2026-11-02-LEVEL-EDITOR.md",
   "planDoc": "../learn/cocos/docs/LEVEL-EDITOR-PLAN-2026-11-02.md",
   "essence": [
