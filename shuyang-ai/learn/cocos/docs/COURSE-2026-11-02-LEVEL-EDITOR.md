@@ -4,6 +4,7 @@
 - 日期：2026-11-02 · 时间盒约 **40–50 分钟** · 手机横屏约 **844×390**
 - 选题：三个课题里伍澍暘选了 **关卡编辑器**；**本课只教编辑器**，不回顾角色背景 / 序列帧 / 道具陷阱奖励 / 入迷，也不讲「一系列关卡」「联网原理」
 - 方案全文（Silas 已确认，MVP 已落地 c52 / ldt33 / ls3）：[`LEVEL-EDITOR-PLAN-2026-11-02.md`](./LEVEL-EDITOR-PLAN-2026-11-02.md)
+- 父子口述（对照 LDtk/Tiled，仍用工坊动手）：[`TEACH-LEVEL-FLOW-LDTK-2026-11-02.md`](./TEACH-LEVEL-FLOW-LDTK-2026-11-02.md)
 - 壳建议：`visual-workbench` 编辑器叙事；试玩 `custom-play`；选关 `level-select`「我的关」入口
 
 ---
