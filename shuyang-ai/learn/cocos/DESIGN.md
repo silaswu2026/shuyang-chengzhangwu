@@ -1,3 +1,20 @@
+## 2026-11-02 · 关卡编辑器 MVP（c52 / ldt33 / ls3）
+
+Silas 已确认 [`docs/LEVEL-EDITOR-PLAN-2026-11-02.md`](./docs/LEVEL-EDITOR-PLAN-2026-11-02.md)。本刀只做 MVP：看得见、立刻试、存得住。
+
+**做法**
+- 编辑壳仍是 `visual-workbench`（`workbench` 同源 `wb-store`）。摆关顶上写「零件架 → 画布 → 试玩·保存」。零件加 **起点 / 终点**，原有刺、火等挡人与金币/箱仍在。前两格仍禁危险陷阱；起点、终点、弹簧、金币可放前两格。
+- 底栏 **试玩** → `custom-play.html?v=c52&level=9`。摆了起点则从该格出发；摆了终点则跑到该格即过关（不必先打鳄王）。有起点、终点或已存「我的第 1 关」时，试玩不再偷偷补火/弹簧/沼/断坑。旧档没有这些字段时，保底逻辑不变。
+- **存我的第1关** 写入名册 `xygo-my-levels`（`{version:1, levels:[{id:"my-1", title:"我的第 1 关", savedAt, doc}]}`）。当前槽仍是 `xygo-custom-level`，version 保持 `1.2`，只追加 `editor.{startX,goalX}` 与 `myLevelId` / `myLevelTitle`。
+- 同步：摆格子和试玩只更新当前槽；名册只在点保存时覆盖 `my-1`。选关第9、「玩第9关 · 我的关卡」、工坊 `?open=my1` 把名册 `doc` 写回当前槽再开。
+- `sycocos-level-progress` 仍只记正式 1–8。`level=9` 不写该键。
+
+**验收**：PLAYER-TEST **LE-*** 与 L1-SEL（tip **ls3** / **c52**）。硬刷  
+`visual-workbench.html?v=ldt33` · `custom-play.html?v=c52&level=9` · `level-select.html?v=ls3`。  
+正式名 **伍澍暘** / **小宇**。未做撤销、多关 UI、联机分享我的关。
+
+---
+
 ## 2026-11-02 · 关卡编辑器课纲与方案（文档先行）
 
 **范围**：明天课只教关卡编辑器（伍澍暘自选）；不回顾旧四段、不讲系列关卡/联网。  
@@ -9,7 +26,7 @@
 
 **铁律**：正式名 **伍澍暘** / 助手 **小宇**；自定义关与正式 1–8 隔离。
 
-> 会话耐久备份（usage 到期保险）：[`docs/BACKUP-2026-11-01-SESSION.md`](docs/BACKUP-2026-11-01-SESSION.md) · 基线 tip c51 / ls2 / ldt32 · 等确认 LEVEL-EDITOR-PLAN 再写代码。
+> 会话耐久备份（usage 到期保险）：[`docs/BACKUP-2026-11-01-SESSION.md`](docs/BACKUP-2026-11-01-SESSION.md) · 当时基线 c51 / ls2 / ldt32。编辑器 MVP 现网 tip 为 **c52 / ls3 / ldt33**。
 
 ---
 

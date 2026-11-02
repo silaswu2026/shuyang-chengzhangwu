@@ -7,6 +7,12 @@
 主看设备：**手机横屏**（另须竖屏与桌面可玩）。
 
 
+## 2026-11-02 · 关卡编辑器 MVP（实现注，待产品官复签）
+
+- 工坊 `visual-workbench.html?v=ldt33`：零件架 / 画布 / 试玩·保存。起点、≥2 种陷阱、金币/箱、终点；前两格仍禁危险。
+- 试玩 `custom-play.html?v=c52&level=9`。保存「我的第 1 关」进 `xygo-my-levels`，与正式进度 `sycocos-level-progress` 隔离。选关 `level-select.html?v=ls3` 第9先灌当前槽再玩。
+- 正式名 **伍澍暘** / **小宇**。未换 PeerJS。未做撤销、多关、联机分享。
+
 ## 产品官补签 · 2026-11-01（ls2）
 
 - **选关一点进关**：`level-select.html?v=ls2` — 试完 1–4（`sycocos-level-progress`：优先 completed，否则 tried=进过试玩页）后，点 1–9 任一关直达 `custom-play?v=c51&level=N`；闸前 5–8 仍诚实「即将开放」。正式名 **伍澍暘** / **小宇**。未换 PeerJS；1–8 暂复用 custom-play 可玩帧。

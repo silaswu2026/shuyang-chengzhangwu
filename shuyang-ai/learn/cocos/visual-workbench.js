@@ -68,6 +68,30 @@
     }
   };
 
+  var PLAY_V = 'c52';
+  function goPlayLevel9(net) {
+    try { STORE.save(localStorage, WB.data); } catch (eSv) {}
+    location.href = 'custom-play.html?v=' + PLAY_V + '&level=9' + (net ? '&net=1' : '');
+  }
+  function saveMyFirstLevel() {
+    var res = { ok: false };
+    try { if (STORE.saveMyFirst) res = STORE.saveMyFirst(localStorage, WB.data) || res; } catch (eMy) { res = { ok: false }; }
+    WB.ui.flash = res.ok ? '已存：我的第 1 关' : '没存上，再点一次';
+    return res;
+  }
+  function reopenMyFirst() {
+    var res = { ok: false };
+    try { if (STORE.applyMyFirst) res = STORE.applyMyFirst(localStorage) || res; } catch (eOp) { res = { ok: false }; }
+    if (res.ok) {
+      WB.data = STORE.load(localStorage);
+      if (STORE.ensureDefaultMap) STORE.ensureDefaultMap(WB.data);
+      WB.ui.flash = '已打开：我的第 1 关';
+    } else {
+      WB.ui.flash = '名册里还没有我的第 1 关';
+    }
+    return res;
+  }
+
   function ccColor(r, g, b, a) { return cc.color(r, g, b, a == null ? 255 : a); }
   function $(id) { return document.getElementById(id); }
 
@@ -954,9 +978,9 @@
       var gy = EDIT.gy;
       this._sky = ART.dressSky(this, gy + 6);
       ART.addGround(this, EDIT.L, gy, STORE.MC * EDIT.cw, 4, 2);
-      words(this, '摆关 · 前两格安全 · 点格子摆东西', 360, isPhoneShell() ? 430 : 448, 16, '#1a2744', 8);
+      words(this, '①零件架 → ②画布 → ③试玩·保存', 300, isPhoneShell() ? 430 : 448, 15, '#1a2744', 8);
       var self = this;
-      var tools = [['spike', '刺'], ['fire', '火'], ['spring', '弹'], ['mist', '沼'], ['rock', '石'], ['electric', '电'], ['groove', '凹'], ['coin', '小'], ['coinBig', '大'], ['chest', '箱'], ['del', '擦']];
+      var tools = [['start', '起'], ['spike', '刺'], ['fire', '火'], ['spring', '弹'], ['mist', '沼'], ['rock', '石'], ['electric', '电'], ['groove', '凹'], ['coin', '小'], ['coinBig', '大'], ['chest', '箱'], ['goal', '终'], ['del', '擦']];
       addTrapChipStrip(self, tools, isPhoneShell() ? 412 : 416);
       var trayY = isPhoneShell() ? 412 : 416;
       button(self, '去设置', 560, trayY, 84, isPhoneShell() ? 26 : 36, GREEN, WHITE, function () {
@@ -991,7 +1015,7 @@
         this.marks.push(mk);
         this.idxLabs.push(words(this, String(x + 1), EDIT.L + (x + 0.5) * EDIT.cw, gy - 16, 12, '#ffe7a0', 7));
       }
-      ART.place(this, ART.tex.flag, EDIT.L + STORE.MC * EDIT.cw - 46, gy + 6, { anchor: [0, 0], h: 70, z: 11 });
+      this._decoFlag = ART.place(this, ART.tex.flag, EDIT.L + STORE.MC * EDIT.cw - 46, gy + 6, { anchor: [0, 0], h: 70, z: 11 });
       var grid = new cc.Node();
       grid.setAnchorPoint(0, 0);
       grid.setContentSize(STORE.MC * EDIT.cw, 130);
@@ -1025,10 +1049,22 @@
       }
       ART.panel(this, 386, 96, 460, 30, cc.color(255, 244, 214), 235, 10, 12);
       this.flashLab = words(this, WB.ui.flash || '点格子摆东西', 386, 96, 15, '#7a4e00', 11);
+      button(self, '跑一次', 800, 96, 110, 28, NAVY, WHITE, function () {
+        WB.ui.running = true;
+        WB.ui.runT0 = Date.now() / 1000;
+        WB.ui.midSwitchArmed = false;
+        WB.ui.midSwitchAt = 0;
+      });
       addFootTrio(this,
-        '回看图', function () { later(function () { show(0); }); },
-        '跑一次', function () { WB.ui.running = true; WB.ui.runT0 = Date.now() / 1000; WB.ui.midSwitchArmed = false; WB.ui.midSwitchAt = 0; },
-        '去觉察', function () { later(function () { show(4); }); }
+        '试玩', function () { goPlayLevel9(false); },
+        '存我的第1关', function () {
+          saveMyFirstLevel();
+          later(function () { show(2); });
+        },
+        '再打开', function () {
+          reopenMyFirst();
+          later(function () { show(2); });
+        }
       );
       WB.layout.editCell = function (i) {
         return { x: EDIT.L + (i + 0.5) * EDIT.cw, y: EDIT.gy + 50 };
@@ -1060,6 +1096,8 @@
       var sel = WB.data.sel;
       var self = this;
       var hint = {
+        start: '起点：忍者从这一格出发（前两格可摆）',
+        goal: '终点：跑到这一格就过关',
         spring: '弹簧：踩上去会弹起来（前两格可摆）',
         mist: '沼泽：踩上去变慢，泥水芦苇',
         rock: '落石：先晃预兆再落下',
@@ -1113,6 +1151,14 @@
           sp.setAnchorPoint(0.5, 0);
           sp.setScale(0.82);
           mk.addChild(sp, 1);
+        } else if (k === 'start') {
+          plate(mk, -16, 10, 32, 26, ccColor(62, 207, 106), 1);
+          words(mk, '起', 0, 23, 14, '#083018', 2);
+        } else if (k === 'goal') {
+          sp = new cc.Sprite(ART.tex.flag);
+          sp.setAnchorPoint(0.5, 0);
+          sp.setScale(0.42);
+          mk.addChild(sp, 1);
         } else if (k === 'coin' || k === 'coinBig' || k === 'chest' || k === 'spring' || k === 'mist' || k === 'rock' || k === 'electric' || k === 'groove') {
           var texKey = (k === 'coinBig') ? 'coinBig' : (k === 'chest' ? 'chest' : (k === 'electric' ? 'electric' : (k === 'groove' ? 'groove' : k)));
           var tex = ART.tex[texKey] || ART.tex.coin || ART.tex.rock;
@@ -1134,7 +1180,13 @@
       for (i = 0; i < rows.length; i++) {
         reword(this.checkLabs[i], (rows[i][1] ? '✓ ' : '· ') + rows[i][0]);
       }
-      var tip = WB.ui.flash || (WB.ui.running ? '正在跑' : (WB.ui.previewDone ? '跑完了，可以去觉察' : '点格子摆东西'));
+      if (this._decoFlag) {
+        var goalPlaced = false;
+        var gi;
+        for (gi = 0; gi < STORE.MC; gi++) if (WB.data.map[gi] === 'goal') goalPlaced = true;
+        this._decoFlag.setVisible(!goalPlaced);
+      }
+      var tip = WB.ui.flash || (WB.ui.running ? '正在跑' : (WB.ui.previewDone ? '跑完了，可以去觉察' : '前两格安全 · 摆起点、陷阱、金币、终点'));
       reword(this.flashLab, tip);
     },
     update: function (dt) {
@@ -1214,6 +1266,16 @@
           sp.setPosition(px, gy);
           this.addChild(sp, 8);
           placed++;
+        } else if (k === 'start') {
+          words(this, '起', px, gy + 28, 13, '#9ff0a8', 9);
+          placed++;
+        } else if (k === 'goal') {
+          sp = new cc.Sprite(ART.tex.flag);
+          sp.setAnchorPoint(0.5, 0);
+          sp.setScale(0.35);
+          sp.setPosition(px, gy);
+          this.addChild(sp, 8);
+          placed++;
         } else if (k === 'coin' || k === 'coinBig' || k === 'chest' || k === 'spring' || k === 'mist' || k === 'rock' || k === 'electric' || k === 'groove') {
           var texR = ART.tex[k === 'coinBig' ? 'coinBig' : k] || ART.tex.coin || ART.tex.rock;
           sp = new cc.Sprite(texR);
@@ -1257,15 +1319,13 @@
 
       button(this, '回关卡', isPhoneShell() ? 90 : 110, 30, isPhoneShell() ? 100 : 130, isPhoneShell() ? 40 : 44, NAVY, WHITE, function () { later(function () { show((WB.ui.ldStep | 0) || 2); }); });
       button(this, '联机游玩', isPhoneShell() ? 300 : 360, 32, isPhoneShell() ? 140 : 160, isPhoneShell() ? 48 : 48, GOLD, INK, function () {
-        STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c51&net=1';
+        goPlayLevel9(true);
       });
       button(this, '去听选', isPhoneShell() ? 520 : 560, 32, isPhoneShell() ? 120 : 140, isPhoneShell() ? 48 : 46, NAVY, WHITE, function () {
         later(function () { show(5); });
       });
       button(this, '去玩这一关', isPhoneShell() ? 760 : 800, 32, isPhoneShell() ? 200 : 200, isPhoneShell() ? 50 : 48, GREEN, WHITE, function () {
-        STORE.save(localStorage, WB.data);
-        location.href = 'custom-play.html?v=c51';
+        goPlayLevel9(false);
       });
       this._t = 0;
       this.scheduleUpdate();
@@ -1400,7 +1460,7 @@
         '去⑥听选', function () { later(function () { show(5); }); },
         '去玩第9关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c51';
+          goPlayLevel9(false);
         }
       );
       return true;
@@ -1483,7 +1543,7 @@
         '打开喇叭', function () { try { if (window.VW && VW.openMusic) VW.openMusic(); } catch (e) {} },
         '去玩这一关', function () {
           STORE.save(localStorage, WB.data);
-          location.href = 'custom-play.html?v=c51';
+          goPlayLevel9(false);
         }
       );
       return true;
@@ -1740,11 +1800,16 @@
       return;
     }
     window.addEventListener('error', function (e) { bootMsg(e.message || String(e), true); });
+    var q = new URLSearchParams(location.search);
+    if (q.get('open') === 'my1' && STORE.applyMyFirst) {
+      try { STORE.applyMyFirst(localStorage); } catch (eOpen) {}
+    }
     WB.data = STORE.load(localStorage);
     if (STORE.ensureDefaultMap) STORE.ensureDefaultMap(WB.data);
-    var q = new URLSearchParams(location.search);
     var lesson = q.get('lesson') || 'tonight';
-    var step = +(q.get('step') || '0');
+    var step = q.get('step');
+    if (step == null || step === '') step = (q.get('open') === 'my1') ? 2 : 0;
+    else step = +step;
     if (lesson !== 'tonight') step = 0;
     if (isNaN(step)) step = 0;
     WB.ui.step = Math.max(0, Math.min(5, step));

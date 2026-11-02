@@ -6,7 +6,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <meta name="theme-color" content="#0f1230"/>
-  <meta name="level-select-build" content="ls2"/>
+  <meta name="level-select-build" content="ls3"/>
   <title>选关 · 伍澍暘成长屋</title>
   <link rel="stylesheet" href="../../../brand-tokens.css"/>
   <style>
@@ -107,20 +107,21 @@
     <header class="bar">
       <h1>🗺️ 选关 · 伍澍暘 · 小宇</h1>
       <a href="../../../index.html">回小屋</a>
-      <a href="visual-workbench.html?v=ldt32">工坊</a>
+      <a id="toWb" href="visual-workbench.html?v=ldt33&amp;open=my1&amp;step=2">工坊</a>
     </header>
     <p class="lead" id="lead">先试 <b>1–4</b>；试过后，点任意关<strong>一下</strong>就进关。第 <b>9</b> 关是「我的关卡」。</p>
     <div class="grid" id="grid" aria-label="关卡 1 到 9"></div>
     <div class="foot">
-      <a class="primary" id="play9" href="custom-play.html?v=c51&amp;level=9">玩第9关 · 我的关卡</a>
-      <a href="custom-play.html?v=c51&amp;level=9&amp;net=1">第9关联机</a>
-      <a href="visual-workbench.html?v=ldt32">去工坊摆关</a>
+      <a class="primary" id="play9" href="custom-play.html?v=c52&amp;level=9">玩第9关 · 我的关卡</a>
+      <a id="net9" href="custom-play.html?v=c52&amp;level=9&amp;net=1">第9关联机</a>
+      <a id="edit9" href="visual-workbench.html?v=ldt33&amp;open=my1&amp;step=2">去工坊摆关</a>
     </div>
     <p class="note" id="note">加载名册…</p>
   </div>
+  <script src="wb-store.js?v=ldt33"></script>
   <script>
   (function () {
-    var PLAY = 'custom-play.html?v=c51';
+    var PLAY = 'custom-play.html?v=c52';
     var PROG_KEY = 'sycocos-level-progress';
     /* 试完规则（DESIGN）：L1–L4 各至少进过一次试玩页即算试过；
        若有过关 completed 戳也算。解锁后点任一关直达，无二次确认。 */
@@ -173,6 +174,23 @@
       return PLAY + '&level=' + (n | 0);
     }
 
+    function savedMine() {
+      try {
+        if (!window.WBStore || !WBStore.readRoster || !WBStore.findMyFirst) return null;
+        return WBStore.findMyFirst(WBStore.readRoster(localStorage));
+      } catch (e) { return null; }
+    }
+
+    /* 第9 / 工坊入口：名册 my-1 → 当前槽 xygo-custom-level，再跳转。不写正式进度。 */
+    function bindRosterOpen(el) {
+      if (!el) return;
+      el.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        try { if (window.WBStore && WBStore.applyMyFirst) WBStore.applyMyFirst(localStorage); } catch (e) {}
+        location.href = el.getAttribute('href');
+      });
+    }
+
     function render(levels) {
       var prog = loadProgress();
       var unlocked = gate14Open(prog);
@@ -202,14 +220,16 @@
             '</div>';
         }
       }
+      var mine = savedMine();
       html +=
-        '<a class="card playable" href="' + playHref(9) + '" data-level="9">' +
+        '<a class="card playable" href="' + playHref(9) + '" data-level="9" data-my="1">' +
           '<span class="n">9</span>' +
           '<p class="name">我的关卡</p>' +
-          '<p class="boss">自制关 · 工坊存档</p>' +
-          '<span class="st">' + (levelDone(prog, 9) ? '已试 · 再玩' : '可玩 · 进试玩') + '</span>' +
+          '<p class="boss">' + (mine ? '我的第 1 关' : '自制关 · 工坊存档') + '</p>' +
+          '<span class="st">' + (mine ? '已存 · 再玩' : '可玩 · 进试玩') + '</span>' +
         '</a>';
       grid.innerHTML = html;
+      grid.querySelectorAll('[data-my="1"]').forEach(bindRosterOpen);
       grid.querySelectorAll('.card.soon').forEach(function (el) {
         function flash() {
           el.classList.add('show-flash');
@@ -223,7 +243,7 @@
       });
       if (unlocked) {
         lead.innerHTML = '已试完 <b>1–4</b>：点任意关<strong>一下</strong>直达试玩（无二次确认）。正式名 <b>伍澍暘</b> / 助手 <b>小宇</b>。';
-        note.textContent = '解锁全开 · tip ls2 · 一点进关 → custom-play?v=c51&level=N。进度键 localStorage sycocos-level-progress。';
+        note.textContent = '解锁全开 · tip ls3 · 1–8 一点进关 → custom-play?v=c52&level=N（进度键 sycocos-level-progress）。第9读名册 xygo-my-levels 再写入当前槽，不写正式 1–8。';
       } else {
         var missing = [];
         for (var j = 1; j <= 4; j++) if (!levelDone(prog, j)) missing.push(j);
@@ -232,8 +252,12 @@
       }
     }
 
+    bindRosterOpen(document.getElementById('play9'));
+    bindRosterOpen(document.getElementById('net9'));
+    bindRosterOpen(document.getElementById('edit9'));
+    bindRosterOpen(document.getElementById('toWb'));
     render(FALLBACK);
-    fetch('data/roster.json?v=ls2', { cache: 'no-store' })
+    fetch('data/roster.json?v=ls3', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
         if (!data || !Array.isArray(data.levels) || !data.levels.length) return;

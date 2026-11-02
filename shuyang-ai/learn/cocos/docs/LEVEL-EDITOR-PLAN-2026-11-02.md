@@ -1,9 +1,9 @@
 # 关卡编辑器完整方案 · 2026-11-02（待 Silas 确认）
 
 - 学员正式名：**伍澍暘** · 助手：**小宇**
-- 状态：**方案确认优先；确认前不改玩法代码**（文档可先推）
+- 状态：**Silas 已确认。MVP 已落地**（试玩 **c52** · 工坊 **ldt33** · 选关 **ls3**）。名册键 `xygo-my-levels`。Later 未做。
 - 配套课纲：[`COURSE-2026-11-02-LEVEL-EDITOR.md`](./COURSE-2026-11-02-LEVEL-EDITOR.md)
-- 现网栈：Cocos2d-JS Lite · `visual-workbench` / `workbench` 摆关 · `custom-play` 读 `localStorage` `xygo-custom-level` v1.2 · `level-select` tip ls2 · PeerJS 联机保留 · 品牌海军/金/绿 · 三忍者绿/红/蓝 · 手机横屏 ~844×390
+- 现网栈：Cocos2d-JS Lite · `visual-workbench` / `workbench` 摆关 **ldt33** · `custom-play` **c52** 读 `localStorage` `xygo-custom-level` v1.2 · 名册 `xygo-my-levels` · `level-select` tip **ls3** · PeerJS 联机保留 · 品牌海军/金/绿 · 三忍者绿/红/蓝 · 手机横屏 ~844×390
 
 ---
 
@@ -87,14 +87,14 @@ https://www.gamedeveloper.com/design/designing-design-tools
 
 ### MVP（确认后、明天课可用）
 
-- [ ] 编辑壳三块面板叙事：零件架 / 画布 / 试玩·保存（可在现 `visual-workbench` 摆关上包一层课日步骤）
-- [ ] 零件：起点、≥2 种陷阱、金币、终点/箱（复用现筹码）
-- [ ] 前两格安全规则保持
-- [ ] 一键试玩 → `custom-play`（现链保留 tip）
-- [ ] 保存「我的第 1 关」：本地名册键（建议 `xygo-my-levels`）与 `xygo-custom-level` 当前槽同步策略写清
-- [ ] 再打开：选关或工坊入口读名册 → 写入当前槽 → 进试玩
-- [ ] 课日十步旁白与 `course-today.json` 对齐
-- [ ] 正式名 **伍澍暘** / **小宇**；品牌色；仅三忍者
+- [x] 编辑壳三块面板叙事：零件架 / 画布 / 试玩·保存（可在现 `visual-workbench` 摆关上包一层课日步骤）
+- [x] 零件：起点、≥2 种陷阱、金币、终点/箱（复用现筹码）
+- [x] 前两格安全规则保持
+- [x] 一键试玩 → `custom-play`（现链保留 tip）
+- [x] 保存「我的第 1 关」：本地名册键（建议 `xygo-my-levels`）与 `xygo-custom-level` 当前槽同步策略写清
+- [x] 再打开：选关或工坊入口读名册 → 写入当前槽 → 进试玩
+- [x] 课日十步旁白与 `course-today.json` 对齐（十步仍在课日 JSON；工坊不重做十步 UI，摆关页轻叙事覆盖第七、八步）
+- [x] 正式名 **伍澍暘** / **小宇**；品牌色；仅三忍者
 
 ### Later
 
@@ -169,13 +169,14 @@ sycocos-level-progress     — 正式 1–8 进度（不动）
 
 ## 五、明确闸门
 
-> **等 Silas 确认本方案后，再动手改 `workbench` / `custom-play` / `level-select` 代码。**  
-> 本文件 + COURSE + `course-today.json` 可先合入，作为明天课的讲义与产品对齐依据。
+> **Silas 已确认。** MVP 已改 `visual-workbench` / `workbench`（同源存档）/ `custom-play` / `level-select`。  
+> 单槽「我的第 1 关」、名册键 `xygo-my-levels`、课日零回顾旧四段。Later 清单仍未做。
 
-确认时请批：
+当前槽同步（实现与 `wb-store.js` 头注一致）：
 
-1. MVP 范围是否够（单槽「我的第 1 关」是否可接受）  
-2. 名册键名 `xygo-my-levels` 是否 OK  
-3. 明天课是否严格零回顾（当前 COURSE 已收窄）
+1. 摆放与「试玩」只写当前槽 `xygo-custom-level`（version 仍为 `1.2`，追加 `editor.startX/goalX`、`myLevelId`、`myLevelTitle`）。
+2. 点「存我的第1关」才把当前槽深拷贝进 `xygo-my-levels.levels` 中 `id: "my-1"`。之后再改格子不会悄悄改名册。
+3. 选关第9、「玩第9关 · 我的关卡」、工坊 `?open=my1` 把名册 `doc` 写回当前槽，再编辑或试玩。
+4. 两键都不写 `sycocos-level-progress`。试玩 `level=9` 不记正式 1–8。
 
 *成长屋 · 关卡编辑器方案 · 正式名伍澍暘 / 小宇*

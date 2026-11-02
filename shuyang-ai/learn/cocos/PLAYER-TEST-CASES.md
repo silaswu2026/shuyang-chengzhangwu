@@ -1,6 +1,6 @@
 # 伍澍暘成长屋 · 玩家测试用例
 
-> 实现进度：玩法 tip `c51`（去槽圆角裁切+DPR≤3）· 叠 c50/c49 软萤火虫 / c48 retina / c47 §8 八条 / c46 同窗联机 / c41 沼泽；工坊 tip `ldt32`。
+> 实现进度：玩法 tip `c52`（我的第 1 关：起点/终点 + 名册；叠 c51 清晰度）· 工坊 tip `ldt33` · 选关 tip `ls3`。此前 c51 / ldt32 / ls2 仍可作历史对照。
 
 对照需求：`PRODUCT.md`（权威）· `DESIGN.md` · Player playtest · Jobs Pages QA。  
 测环境：GitHub Pages `main` → https://silaswu2026.github.io/shuyang-chengzhangwu/  
@@ -50,21 +50,37 @@ Silas 确认：原②③④合并为顶栏 **「关卡设计」**，二级 **摆
 | A5 | 头像区 | 小宇 / 爸妈 / 伍澍暘字幕；无绿色小人顶替正式头像 | P1 |
 | A6 | 色板 | 海军蓝 / 金 / 绿与工坊一致（`brand-tokens`） | P2 |
 
-## A2. 选关薄壳 L1（ls2 · 一点进关）
+## A2. 选关薄壳 L1（ls3 · 一点进关 + 我的第 1 关）
 
-真 URL：`…/shuyang-ai/learn/cocos/level-select.html?v=ls2`
+真 URL：`…/shuyang-ai/learn/cocos/level-select.html?v=ls3`
 
 | ID | 步骤 | 期望 | 级别 |
 | --- | --- | --- | --- |
-| L1-SEL-1 | 从根页点「选关」或工坊顶栏「选关」 | 进 `level-select.html?v=ls2`；海军·金·绿壳；标题含伍澍暘 / 小宇 | P0 |
+| L1-SEL-1 | 从根页点「选关」或工坊顶栏「选关」 | 进 `level-select.html?v=ls3`；海军·金·绿壳；标题含伍澍暘 / 小宇 | P0 |
 | L1-SEL-2 | 看关卡表 | 可见 **1–8**（关名+Boss 名册）+ **第9 我的关卡**；不混假在线 | P0 |
-| L1-SEL-3 | 点第9 / 「玩第9关」 | 进 `custom-play.html?v=c51&level=9`；能动 | P0 |
-| L1-SEL-4 | 闸未开：点 1–4 | **一点**进 `custom-play.html?v=c51&level=N`（可玩帧，非空白）；回选关后该关标已试 | P0 |
+| L1-SEL-3 | 点第9 / 「玩第9关」 | 若名册有「我的第 1 关」，先写入当前槽再进 `custom-play.html?v=c52&level=9`；能动。正式 1–8 进度键不被这次写入 | P0 |
+| L1-SEL-4 | 闸未开：点 1–4 | **一点**进 `custom-play.html?v=c52&level=N`（可玩帧，非空白）；回选关后该关标已试 | P0 |
 | L1-SEL-5 | 闸未开：点 5–8 | 诚实灰显；flash「先试完第1–4关」；不白屏 | P0 |
 | L1-SEL-6 | 清进度后依次点进 1–4 再回选关 | 1–4 均已试；5–8 变绿「可玩 · 一点进关」 | P0 |
 | L1-SEL-7 | 闸已开：点 5 / 6 / 7 / 8 / 9 任一 | **一点**直达对应 `custom-play?…&level=N`；无二次确认、不经工坊多步 | P0 |
 | L1-SEL-8 | 横屏 ~844×390 | 表格可点/可滚；顶栏回小屋/工坊可读 | P1 |
+| L1-SEL-9 | 已存「我的第 1 关」后刷新选关 | 第9卡写「我的第 1 关 / 已存」；点「去工坊摆关」进 `visual-workbench.html?v=ldt33&open=my1&step=2`，零件还在 | P0 |
 
+
+---
+
+## LE. 关卡编辑器 MVP（ldt33 / c52 · 课日第七、八步）
+
+真 URL：`…/shuyang-ai/learn/cocos/visual-workbench.html?v=ldt33`（摆关步 `step=2`）
+
+| ID | 步骤 | 期望 | 级别 |
+| --- | --- | --- | --- |
+| LE-1 | 打开摆关 | 看得见三块：零件架（起/刺/火/金币/箱/终/擦）、画布、底栏「试玩 / 存我的第1关 / 再打开」。姓名仅伍澍暘 / 小宇 | P0 |
+| LE-2 | 第 1–2 格放刺或火 | 不落下，提示开头要空着。起点、终点、金币、弹簧可以放 | P0 |
+| LE-3 | 摆 1 起点 + 至少 2 种陷阱 + 金币或箱 + 1 终点，点试玩 | 进 `custom-play.html?v=c52&level=9`；忍者从起点格出发；跑到所摆终点即过关 | P0 |
+| LE-4 | 点「存我的第1关」，硬刷新后再点「再打开」或选关第9 | 零件仍在，能再跑。名册键 `localStorage xygo-my-levels`，条目标题「我的第 1 关」 | P0 |
+| LE-5 | 存完后看 `sycocos-level-progress` | 正式 1–8 的 tried/completed **没有**因为这次自定义关被写入 | P0 |
+| LE-6 | 横屏约 844×390 | 零件架可横滑，试玩与保存可点，不被顶栏挡住 | P0 |
 
 ---
 
