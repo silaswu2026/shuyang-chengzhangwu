@@ -11,6 +11,7 @@
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
  * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。
  * c42: 默认关保底可见线圈弹簧垫（ensureSprings）+ 贴图更醒目；保留 c32 power=1300；P2 HUD 去「沼泽」壳话。
+ * c55: 试玩按本关 editor.bgmId 播曲子（不跟第9关挂曲），怪物按种类上色。
  * c54: 试玩背景跟编辑器 backdrop（林间/苔岩/萤火/暖廊/雷鸣）。
  * c53: 五关弧线。?scene=1..5 读该关编辑稿（xygo-level-edits / 预填），记 xygo-scene5-progress，不写 sycocos-level-progress。第5关可 net=1。
  * c52: 我的第 1 关。起点/终点写入 v1.2 的 editor 字段；有起点或终点或 myLevelId 时按摆放跑（不补火/弹簧/沼/断坑），到达所摆终点即过关。第 9 关不写 sycocos-level-progress。
@@ -352,7 +353,28 @@
     } else {
       resolvedBgmId = (levelAudioMap[String(PLAY_LEVEL_ID)] && levelAudioMap[String(PLAY_LEVEL_ID)].bgmId) || (audioCfg && audioCfg.bgmId) || 'explore';
     }
+    /* Scene play follows this level's named track, not a leftover level-9 hang. */
+    if (SCENE_ID && raw && raw.editor && typeof raw.editor.bgmId === 'string' && raw.editor.bgmId &&
+        window.WBStore && WBStore.bgmById) {
+      var sceneTrack = WBStore.bgmById(raw.editor.bgmId);
+      if (sceneTrack && sceneTrack.fileId) resolvedBgmId = sceneTrack.fileId;
+    }
     return audioCfg;
+  }
+  function monsterColor(id) {
+    var map = {
+      boar: [196, 122, 70],
+      slime: [118, 214, 96],
+      shadow: [138, 128, 196],
+      bug: [214, 176, 64],
+      thunder: [132, 176, 255]
+    };
+    var c = map[id] || [255, 255, 255];
+    return cc.color(c[0], c[1], c[2]);
+  }
+  function critterName(cr) {
+    if (!cr || !cr.kind || !window.WBStore || !WBStore.monsterName) return '小怪';
+    return (cr.size === 'big' ? '大' : '小') + WBStore.monsterName(cr.kind);
   }
   function playSfx(id) {
     if (!AUDIO) return;
@@ -1712,10 +1734,13 @@
         this.critters = [];
         if (bossSrc) {
           this.boss.name = (window.WBStore && WBStore.monsterName) ? WBStore.monsterName(bossSrc.id) : '大怪';
+          this.boss.kind = bossSrc.id;
+          this.boss.tint = monsterColor(bossSrc.id);
           this.boss.max = 4;
           this.boss.hp = 4;
           this.boss.x = bossSrc.playC * T + T * 0.5;
           this.bossSp.setPosition(this.boss.x, this.gy);
+          this.bossSp.setColor(this.boss.tint);
         } else {
           this.boss.alive = false;
           this.bossSp.setVisible(false);
@@ -1724,12 +1749,14 @@
           if (bossSrc && m === bossSrc) return;
           var mx = m.playC * T + T * 0.5;
           var bodyM = new cc.Sprite(m.size === 'big' ? crocTex : slimeTex);
+          var tintM = monsterColor(m.id);
           bodyM.setAnchorPoint(0.5, 0);
           bodyM.setPosition(mx, this.gy);
           bodyM.setScale(m.size === 'big' ? 1.35 : 1.05);
+          bodyM.setColor(tintM);
           this.world.addChild(bodyM, 7);
           var hpM = m.size === 'big' ? 4 : 2;
-          this.critters.push({ x: mx, hp: hpM, max: hpM, alive: true, hurtT: 0, sp: bodyM, home: mx, name: m.id });
+          this.critters.push({ x: mx, hp: hpM, max: hpM, alive: true, hurtT: 0, sp: bodyM, home: mx, name: m.id, kind: m.id, size: m.size, tint: tintM });
         }, this);
       }
 
@@ -1918,9 +1945,9 @@
               cr.sp.setVisible(false);
               this._earn(1);
               this.score = (this.score | 0) + SCORE.slime;
-              $('msg').textContent = '小怪 +1币 +' + SCORE.slime + '分';
+              $('msg').textContent = critterName(cr) + ' +1币 +' + SCORE.slime + '分';
             } else if (tip) {
-              tip.textContent = '命中小怪！血 ' + cr.hp + '/' + cr.max;
+              tip.textContent = '命中' + critterName(cr) + '！血 ' + cr.hp + '/' + cr.max;
             }
             updHUD(this.hp, this.coins);
             return true;
@@ -2489,7 +2516,7 @@
             this.bossSp.setColor(bf ? cc.color(255, 255, 255) : cc.color(255, 180, 180));
           } else {
             this.bossSp.setOpacity(255);
-            this.bossSp.setColor(cc.color(255, 255, 255));
+            this.bossSp.setColor(this.boss.tint || cc.color(255, 255, 255));
           }
           var bossTouch = Math.abs(this.px - bx) < T * 1.2 && this.py < this.gy + DRAW_H;
           /* c37: airborne fall onto boss = stomp (1 dmg); side/body still hurts player */
@@ -2526,7 +2553,7 @@
               cr.sp.setColor(cc.color(255, flash, flash));
             } else {
               cr.sp.setOpacity(255);
-              cr.sp.setColor(cc.color(255, 255, 255));
+              cr.sp.setColor(cr.tint || cc.color(255, 255, 255));
             }
             var crTouch = Math.abs(this.px - cr.x) < T * 0.7 && this.py < this.gy + DRAW_H * 0.8;
             var canStompCr = !wasGrounded && fallVy < 0;
@@ -2535,8 +2562,8 @@
               if (this._hurtAt(cr.x, this.gy + 16, T, 2)) {
                 this._stompBounce();
                 var tipC = $('msg');
-                if (tipC && !cr.alive) tipC.textContent = '踩扁小怪！+1币 +' + SCORE.slime + '分';
-                else if (tipC) tipC.textContent = '踩中小怪！血 ' + cr.hp + '/' + cr.max;
+                if (tipC && !cr.alive) tipC.textContent = '踩扁' + critterName(cr) + '！+1币 +' + SCORE.slime + '分';
+                else if (tipC) tipC.textContent = '踩中' + critterName(cr) + '！血 ' + cr.hp + '/' + cr.max;
               }
             } else if (crTouch && !canStompCr && this.invuln <= 0) {
               this.hp -= 1;

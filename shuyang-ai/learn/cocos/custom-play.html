@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0f1230">
-<meta name="play-build" content="c54">
+<meta name="play-build" content="c55">
 <title>玩我的关 · 伍澍暘成长屋</title>
 <link rel="stylesheet" href="../../../brand-tokens.css"/>
 <link rel="preload" as="image" href="../../../xy-go/sprites/green/idle.png" fetchpriority="high"/>
@@ -219,8 +219,8 @@ body{
 <div class="bar">
   <div class="chip">
     <h1>🎮 伍澍暘 · 玩我的关 · 小宇</h1>
-    <a id="backWb" href="visual-workbench.html?v=ldt36&amp;step=2">← 回工坊</a>
-    <a id="backEdit" href="visual-workbench.html?v=ldt36&amp;step=2">回编辑器</a>
+    <a id="backWb" href="visual-workbench.html?v=ldt37&amp;step=2">← 回工坊</a>
+    <a id="backEdit" href="visual-workbench.html?v=ldt37&amp;step=2">回编辑器</a>
     <button class="net" id="btnNet" type="button">🤝 联机游玩</button>
   </div>
   <span class="badge">Cocos</span>
@@ -262,7 +262,7 @@ body{
               <p class="sub" id="resultSub"></p>
               <div class="ctl">
                 <button type="button" class="go" id="again">再玩一次</button>
-                <a class="go sec" href="visual-workbench.html?v=ldt36&amp;step=2">回编辑器再调</a>
+                <a class="go sec" href="visual-workbench.html?v=ldt37&amp;step=2">回编辑器再调</a>
               </div>
             </div>
           </div>
@@ -296,19 +296,19 @@ body{
     </div>
   </div>
 </div>
-<!-- c54: 试玩跟编辑器背景 · was c53: 五关弧线 -->
+<!-- c55: 试玩跟编辑器背景 · was c53: 五关弧线 -->
 <script src="../../../vendor/peerjs/peerjs.min.js"></script>
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
-<script src="wb-store.js?v=ldt36"></script>
+<script src="wb-store.js?v=ldt37"></script>
 <script src="wb-audio.js?v=c52"></script>
-<script src="custom-play.js?v=c54"></script>
+<script src="custom-play.js?v=c55"></script>
 <script>
 (function () {
   try {
     var q = new URLSearchParams(location.search);
     var n = parseInt(q.get('scene') || '', 10);
     if (!(n >= 1 && n <= 5)) return;
-    var href = 'visual-workbench.html?v=ldt36&step=2&scene=' + n;
+    var href = 'visual-workbench.html?v=ldt37&step=2&scene=' + n;
     ['backWb', 'backEdit'].forEach(function (id) {
       var a = document.getElementById(id);
       if (a) a.setAttribute('href', href);
