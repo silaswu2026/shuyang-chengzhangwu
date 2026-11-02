@@ -11,6 +11,7 @@
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
  * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。
  * c42: 默认关保底可见线圈弹簧垫（ensureSprings）+ 贴图更醒目；保留 c32 power=1300；P2 HUD 去「沼泽」壳话。
+ * c54: 试玩背景跟编辑器 backdrop（林间/苔岩/萤火/暖廊/雷鸣）。
  * c53: 五关弧线。?scene=1..5 读该关编辑稿（xygo-level-edits / 预填），记 xygo-scene5-progress，不写 sycocos-level-progress。第5关可 net=1。
  * c52: 我的第 1 关。起点/终点写入 v1.2 的 editor 字段；有起点或终点或 myLevelId 时按摆放跑（不补火/弹簧/沼/断坑），到达所摆终点即过关。第 9 关不写 sycocos-level-progress。
  * c51: 手机仍微糊 — c50 的 min(3,dpr) 已上线；横屏 `.canvas-slot` 的 border-radius+overflow:hidden 让移动 Safari/Chrome 把 WebGL 画布合成到低分图层（桌面不明显）。去掉槽圆角裁切；`_setupContainer` 一次写满 DPR 缓冲（不再先 2× 再改）。不改玩法/联机。
@@ -41,7 +42,28 @@
   var KEY = 'xygo-custom-level';
   var SP = '../../../xy-go/sprites/green/';
   var SC = '../../../xy-go/scenes/';
-  var BG = SC + 'canopy-night.jpg';
+  function resolveBackdropSpec() {
+    var id = 'canopy';
+    try {
+      var q = new URLSearchParams(location.search || '');
+      var n = parseInt(q.get('scene') || '', 10);
+      var raw = null;
+      if (n >= 1 && n <= 5 && window.WBStore && WBStore.docForLevel) {
+        try { raw = WBStore.docForLevel(localStorage, n); } catch (e1) { raw = null; }
+      }
+      if (!raw) raw = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (raw && raw.editor && raw.editor.backdrop) id = raw.editor.backdrop;
+      else if (raw && raw.theme && raw.theme !== 'swamp') id = raw.theme;
+    } catch (eB) {}
+    if (window.WBStore && WBStore.backdropById) return WBStore.backdropById(id);
+    return { id: 'canopy', name: '萤火夜', file: 'canopy-night.jpg' };
+  }
+  var BG_SPEC = resolveBackdropSpec();
+  var BG = SC + (BG_SPEC.file || 'canopy-night.jpg');
+  function applyBgTint(sp) {
+    if (!sp || !BG_SPEC || !BG_SPEC.tint) return;
+    try { sp.setColor(cc.color(BG_SPEC.tint[0], BG_SPEC.tint[1], BG_SPEC.tint[2])); } catch (eT) {}
+  }
   /* c39: critical = grass bed + idle ninja; walks/knock/jump + night BG deferred. */
   var RES_CRITICAL = [
     SP + 'idle.png', SC + 'dirt-tile.png', SC + 'grass-cap.png'
@@ -1386,6 +1408,7 @@
           sp.setAnchorPoint(0, 0);
           this.addChild(sp, -5);
           this.bgNode = sp;
+          applyBgTint(sp);
           this._layoutBg(0);
         } catch (e) {
           try {
@@ -1393,6 +1416,7 @@
             sp2.setAnchorPoint(0, 0);
             this.addChild(sp2, -5);
             this.bgNode = sp2;
+            applyBgTint(sp2);
             this._layoutBg(0);
           } catch (e2) {}
         }
@@ -1454,12 +1478,14 @@
           sp2.setAnchorPoint(0, 0);
           this.addChild(sp2, -5);
           this.bgNode = sp2;
+          applyBgTint(sp2);
           this._layoutBg(this.camX || 0);
         } catch (eRF2) {}
       }
     },
     _layoutBg: function (camX) {
       if (!this.bgNode || !forestImg) return;
+      applyBgTint(this.bgNode);
       var iw = forestImg.naturalWidth || 1600;
       var ih = forestImg.naturalHeight || 900;
       var scale = Math.max(W / iw, H / ih) * 1.08;
@@ -1484,10 +1510,12 @@
           spB.setAnchorPoint(0, 0);
           spB.setScale(scale);
           this.addChild(spB, -5);
+          applyBgTint(spB);
           this.bgNode2 = spB;
         } catch (e2) { this.bgNode2 = null; }
       }
       if (this.bgNode2) {
+        applyBgTint(this.bgNode2);
         this.bgNode2.setScale(scale);
         this.bgNode2.setPosition(ox + dw - 1, oy);
         this.bgNode2.setVisible(ox + dw < W + 2);

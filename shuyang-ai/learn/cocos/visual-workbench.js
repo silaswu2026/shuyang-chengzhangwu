@@ -68,7 +68,7 @@
     }
   };
 
-  var PLAY_V = 'c53';
+  var PLAY_V = 'c54';
   function goPlayLevel9(net) {
     try { STORE.save(localStorage, WB.data); } catch (eSv) {}
     if (WB.ui) WB.ui.heartPlay = true;
@@ -305,7 +305,7 @@
     return '第' + n + '关 · ' + name;
   }
   function goSelect() {
-    location.href = 'level-select.html?v=ls5';
+    location.href = 'level-select.html?v=ls6';
   }
 
   function show(step) {
@@ -413,6 +413,7 @@
             }
             WB.data.tool = c.id;
             if (c.id !== 'coin' && c.id !== 'del') WB.data.sel = c.id;
+            WB.data.moving = false;
             WB.ui.heartDef = true;
             later(function () { show(2); });
             return;
@@ -1051,8 +1052,8 @@
   function editorChecklist() {
     if (pureEditor()) {
       return [
-        { id: 'char', t: '角色', later: true },
-        { id: 'bg', t: '背景', later: true },
+        { id: 'char', t: '角色', later: false },
+        { id: 'bg', t: '背景', later: false },
         { id: 'bgm', t: '音乐', later: false },
         { id: 'sfx', t: '音效', later: false },
         { id: 'mon', t: '怪物', later: false }
@@ -1088,18 +1089,46 @@
     var small = 0;
     var big = 0;
     mons.forEach(function (m) { if (m && m.size === 'big') big++; else small++; });
-    if (id === 'char') WB.ui.flash = '本关预填角色。换装下节课可调';
-    else if (id === 'bg') WB.ui.flash = '本关预填背景「' + ((WB.data && WB.data.backdrop) || '') + '」。换图下节课可调';
+    if (id === 'char') {
+      var who = STORE.cycleCharacter ? STORE.cycleCharacter(WB.data) : null;
+      try { STORE.save(localStorage, WB.data); } catch (eCh) {}
+      WB.ui.flash = who ? ('角色换成「' + who.name + '」') : '角色已换';
+      later(function () { show(2); });
+      return;
+    }
+    else if (id === 'bg') {
+      var nextBg = STORE.cycleBackdrop ? STORE.cycleBackdrop(WB.data) : null;
+      try { STORE.save(localStorage, WB.data); } catch (eBg) {}
+      WB.ui.flash = nextBg ? ('背景换成「' + nextBg.name + '」') : '背景已换';
+      later(function () { show(2); });
+      return;
+    }
     else if (id === 'bgm') {
-      WB.ui.flash = '9 首曲子 · 现在是「' + bgm.name + '」';
-      try { if (window.VW && VW.openMusic) VW.openMusic(); } catch (eM) {}
+      var nextB = STORE.cycleBgm ? STORE.cycleBgm(WB.data) : null;
+      try { STORE.save(localStorage, WB.data); } catch (eBm) {}
+      try {
+        if (nextB && window.WBAudio) { WBAudio.unlock(); WBAudio.setBgm(nextB.fileId); }
+      } catch (ePlay) {}
+      WB.ui.flash = nextB ? ('曲子换成「' + nextB.name + '」') : '曲子已换';
+      later(function () { show(2); });
+      return;
     } else if (id === 'sfx') {
-      WB.ui.flash = '音效全关共用一套';
-      try { if (window.VW && VW.openMusic) VW.openMusic(); } catch (eS) {}
-    } else if (id === 'items') WB.ui.flash = '零件架：起、刺、火、金币、终';
-    else if (id === 'nums') WB.ui.flash = '金币 5/15/30 · 刺和火可调秒 · 血量下节课可调';
-    else if (id === 'place') WB.ui.flash = '先点零件，再点格子。左右滑跑道';
-    else if (id === 'mon') WB.ui.flash = mons.length ? ('已预填 ' + small + ' 小怪 ' + big + ' 大怪 · 拖动下节课可调') : '这关还没预填怪物';
+      var sfxOn = STORE.toggleSfx ? STORE.toggleSfx(WB.data) : true;
+      try { STORE.save(localStorage, WB.data); } catch (eSf) {}
+      WB.ui.flash = sfxOn ? '音效开着（全关共用）' : '音效关掉了';
+      later(function () { show(2); });
+      return;
+    } else if (id === 'mon') {
+      if (WB.ui.monFrom == null) {
+        WB.ui.flash = '先点格子上的怪物，再点这里换种类';
+      } else {
+        var flipped = STORE.cycleMonsterAt ? STORE.cycleMonsterAt(WB.data, WB.ui.monFrom) : null;
+        try { STORE.save(localStorage, WB.data); } catch (eMo) {}
+        WB.ui.flash = flipped ? ('怪物：' + (STORE.monsterName ? STORE.monsterName(flipped.id) : flipped.id) + (flipped.size === 'big' ? '·大' : '·小')) : '没选中怪物';
+      }
+      later(function () { show(2); });
+      return;
+    }
     else if (id === 'ends') WB.ui.flash = '起点和终点都要有。胜利是跑到终点';
     else if (id === 'len') WB.ui.flash = '跑道 ' + ((WB.data && WB.data.map && WB.data.map.length) || 24) + ' 格，左右滑';
     else if (id === 'curve') WB.ui.flash = '教 → 练 → 变 → 考，后面更难';
@@ -1190,9 +1219,9 @@
       this._super();
       WB.sceneName = 'edit';
       addChrome(this, 2);
-      var gy = EDIT.gy;
+      var gy = pure ? 210 : EDIT.gy;
       var cols = (WB.data && WB.data.map && WB.data.map.length) || STORE.MC;
-      var cw = EDIT.cw;
+      var cw = pure ? 56 : EDIT.cw;
       var pure = pureEditor();
       var viewL = 12;
       var viewW = pure ? 936 : 760;
@@ -1202,7 +1231,8 @@
       this._viewW = viewW;
       this._panMax = Math.max(0, cols * cw - viewW);
       this._pan = 0;
-      this._sky = ART.dressSky(this, gy + 6);
+      this._gy = gy;
+      this._sky = ART.dressScene ? ART.dressScene(this, gy + 6, null, WB.data && WB.data.backdrop) : ART.dressSky(this, gy + 6);
       this._heartNow = addHeartStrip(this);
       var plateB = (WB.layout.chrome && WB.layout.chrome.plateBottom) || 469;
       addCheckStrip(this, pure ? (plateB - 62) : 400);
@@ -1215,6 +1245,7 @@
       this._shop = function () {};
       this.paramRow = new cc.Node();
       this.addChild(this.paramRow, 31);
+      WB.layout.paramY = pure ? 342 : 300;
       this._params();
       var track = new cc.Node();
       this.addChild(track, 6);
@@ -1236,17 +1267,17 @@
       ];
       bands.forEach(function (b) {
         if (b[1] <= b[0]) return;
-        plate(track, b[0] * cw, gy + 8, (b[1] - b[0]) * cw, 86, b[2], 3);
+        plate(track, b[0] * cw, gy + 8, (b[1] - b[0]) * cw, pure ? 124 : 86, b[2], 3);
         words(track, b[3], b[0] * cw + 14, gy + 78, 13, '#1a2744', 7);
       });
-      plate(track, 0, gy + 8, STORE.SAFE0 * cw, 86, ccColor(159, 240, 168, 50), 4);
+      plate(track, 0, gy + 8, STORE.SAFE0 * cw, pure ? 124 : 86, ccColor(159, 240, 168, 50), 4);
       words(track, '出生', 18, gy + 60, 12, '#145c28', 7);
       this.frames = [];
       this.marks = [];
       this.idxLabs = [];
       var x;
       for (x = 0; x < cols; x++) {
-        var fr = ART.frame(track, (x + 0.5) * cw, gy + 48, cw - 4, 76, cc.color(255, 255, 255), 90, 6, 6);
+        var fr = ART.frame(track, (x + 0.5) * cw, gy + (pure ? 46 : 48), cw - 4, pure ? 96 : 76, cc.color(255, 255, 255), 90, 6, 6);
         this.frames.push(fr);
         var mk = new cc.Node();
         mk.setPosition((x + 0.5) * cw, gy);
@@ -1257,7 +1288,7 @@
       this._decoFlag = ART.place(track, ART.tex.flag, cols * cw - 36, gy + 6, { anchor: [0, 0], h: 64, z: 11 });
       var hit = new cc.Node();
       hit.setAnchorPoint(0, 0);
-      hit.setContentSize(viewW, 120);
+      hit.setContentSize(viewW, pure ? 168 : 120);
       hit.setPosition(viewL, gy - 8);
       this.addChild(hit, 12);
       var drag = { on: false, lastX: 0, moved: false, acc: 0 };
@@ -1266,7 +1297,7 @@
         swallowTouches: true,
         onTouchBegan: function (touch, event) {
           var loc = event.getCurrentTarget().convertToNodeSpace(touch.getLocation());
-          if (!cc.rectContainsPoint(cc.rect(0, 0, viewW, 120), loc)) return false;
+          if (!cc.rectContainsPoint(cc.rect(0, 0, viewW, pure ? 168 : 120), loc)) return false;
           drag.on = true; drag.moved = false; drag.acc = 0; drag.lastX = touch.getLocation().x;
           return true;
         },
@@ -1284,6 +1315,23 @@
           if (drag.moved) return;
           var loc = event.getCurrentTarget().convertToNodeSpace(touch.getLocation());
           var col = Math.floor((loc.x + self._pan) / cw);
+          var monHere = STORE.monsterAt && STORE.monsterAt(WB.data, col);
+          if (WB.ui.monFrom != null && !WB.data.map[col] && (WB.ui.monFrom | 0) !== (col | 0)) {
+            var movedM = STORE.moveMonster(WB.data, WB.ui.monFrom, col);
+            WB.ui.flash = (movedM && movedM.flash) || '';
+            if (movedM && movedM.ok) {
+              WB.ui.monFrom = col;
+              try { STORE.save(localStorage, WB.data); } catch (eMv) {}
+            }
+            later(function () { show(2); });
+            return;
+          }
+          if (monHere && !WB.data.map[col]) {
+            WB.ui.monFrom = col;
+            WB.ui.flash = '选中怪物。点空格搬走，或再点「怪物」换大/小和种类';
+            later(function () { show(2); });
+            return;
+          }
           var snap = WB.data.map.slice();
           var res = STORE.place(WB.data, col);
           WB.ui.flash = res.flash || '';
@@ -1301,7 +1349,7 @@
           later(function () { show(2); });
         }
       }), hit);
-      this.ninja = addNinja(track, 28, gy, isPhoneShell() ? 120 : 112);
+      this.ninja = addNinja(track, 28, gy, pure ? 156 : (isPhoneShell() ? 120 : 112));
       this._setPan(0);
       this.checkLabs = [];
       this.sumLab = words(this, '', -100, -100, 12, '#1b1b2a', 1);
@@ -1402,18 +1450,19 @@
         chest: '宝箱：打开 +30 钱包币'
       };
       if (hint[sel]) {
-        words(this.paramRow, hint[sel], 220, 300, 15, '#1a2744', 1);
+        words(this.paramRow, hint[sel], 220, (WB.layout.paramY || 300), 15, '#1a2744', 1);
         return;
       }
       if (sel !== 'spike' && sel !== 'fire') {
-        words(this.paramRow, '点一个刺或火，再选 1、3、5 秒', 250, 300, 15, '#1a2744', 1);
+        words(this.paramRow, '点一个刺或火，再选 1、3、5 秒', 250, (WB.layout.paramY || 300), 15, '#1a2744', 1);
         return;
       }
       var cur = sel === 'fire' ? WB.data.mp.fire.dur : WB.data.mp.spike.interval;
-      words(this.paramRow, sel === 'fire' ? '火停多久' : '刺每几秒冒一次', 120, 300, 15, '#1a2744', 1);
+      var py = WB.layout.paramY || 300;
+      words(this.paramRow, sel === 'fire' ? '火停多久' : '刺每几秒冒一次', 120, py, 15, '#1a2744', 1);
       [1, 3, 5].forEach(function (v, i) {
         var on = cur === v;
-        button(self.paramRow, v + '秒', 280 + i * 96, 300, 86, 32, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+        button(self.paramRow, v + '秒', 280 + i * 96, py, 86, 32, on ? GOLD : NAVY, on ? INK : WHITE, function () {
           if (STORE.setNum(WB.data, v)) STORE.save(localStorage, WB.data);
           later(function () { show(2); });
         });
@@ -1435,6 +1484,11 @@
         this.frames[x].setOpacity(sel ? 255 : 80);
         var mk = this.marks[x];
         mk.removeAllChildren();
+        var mon = STORE.monsterAt && STORE.monsterAt(WB.data, x);
+        if (mon) {
+          var mname = (STORE.monsterName ? STORE.monsterName(mon.id) : '怪');
+          words(mk, (mon.size === 'big' ? '大' : '小') + mname, 0, 78, 11, '#fff4c2', 3);
+        }
         if (k === 'spike') {
           plate(mk, -18, -2, 36, 6, ccColor(58, 58, 66), 0);
           sp = new cc.Sprite(ART.tex.spike);
@@ -1468,6 +1522,12 @@
       var tot = hearts.reduce(function (a, b) { return a + b; }, 0);
       var col = tot <= 2 ? cc.color(78, 201, 107) : tot <= 5 ? cc.color(255, 210, 63) : cc.color(255, 90, 90);
       if (this.card) this.card.setColor(col);
+      if (this.ninja) {
+        var ch = WB.data.character;
+        if (ch === 'red') this.ninja.setColor(cc.color(255, 150, 150));
+        else if (ch === 'blue') this.ninja.setColor(cc.color(140, 180, 255));
+        else this.ninja.setColor(cc.color(255, 255, 255));
+      }
       reword(this.sumLab, tot + '❤');
       reword(this.moodLab, tot <= 2 ? '简单' : tot <= 5 ? '刚刚好' : '超难');
       var rows = STORE.checks(WB.data.map);
@@ -1492,7 +1552,7 @@
       driftClouds(this._sky, this._t);
       this._syncMarks();
       if (!WB.ui.running) {
-        if (!WB.ui.previewDone) this.ninja.setPosition(28, EDIT.gy);
+        if (!WB.ui.previewDone) this.ninja.setPosition(28, this._gy || EDIT.gy);
         stepNinja(this.ninja, dt, false, true);
         return;
       }
@@ -1500,9 +1560,10 @@
       var P = 6;
       var span = Math.max(36, (this._cols || STORE.MC) * (this._cw || EDIT.cw) - 36);
       var x = 28 + Math.min(rt, P) / P * span;
-      this.ninja.setPosition(x, EDIT.gy);
+      this.ninja.setPosition(x, this._gy || EDIT.gy);
       if (this._setPan) this._setPan(x - (this._viewW || 400) * 0.35);
       stepNinja(this.ninja, dt, false, rt >= P);
+      if (pureEditor()) return;
       /* §8: 跑道中点自动切到「设置」段 + 短过渡 */
       if (rt >= P * 0.5 && !WB.ui.midSwitchArmed) {
         WB.ui.midSwitchArmed = true;

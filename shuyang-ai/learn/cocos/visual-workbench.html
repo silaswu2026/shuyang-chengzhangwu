@@ -5,7 +5,7 @@
 <meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0f1230">
-<meta name="wb-build" content="ldt35">
+<meta name="wb-build" content="ldt36">
 <title>AI办学小屋 · 课程3 · 可视化关卡工坊</title>
 <style>
 :root{
@@ -122,8 +122,16 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   }
   #rail{top:auto;bottom:6px;right:6px;transform:none;flex-direction:row;gap:4px}
   .rail-btn{width:40px;height:40px;border-radius:12px;font-size:16px}
+  html.pure-editor #stage{padding:28px 2px 2px}
+  html.pure-editor .phone-bezel{padding:4px 6px;border-radius:14px;height:calc(100vh - 32px);max-height:calc(100vh - 32px)}
+  html.pure-editor .phone-bezel .canvas-slot{max-height:100%}
 }
-html.pure-editor #stage{padding-top:36px}
+html.pure-editor #stage{padding:36px 6px 4px}
+html.pure-editor #shell{width:min(100vw,1600px);height:calc(100vh - 42px);max-height:calc(100vh - 42px)}
+html.pure-editor #shell.desktop #desktopSlot{
+  width:min(98vw,1480px,calc((100vh - 48px) * 16 / 9));
+  max-height:calc(100vh - 48px);max-width:1480px
+}
 html.pure-editor #topbar{align-items:center;justify-content:flex-start;gap:10px}
 html.pure-editor .pure-back,html.pure-editor .pure-more{
   border:0;border-radius:999px;padding:6px 12px;font-weight:900;font-size:13px;cursor:pointer;text-decoration:none
@@ -144,7 +152,7 @@ html.pure-editor #rail.tucked{display:none}
   document.addEventListener('DOMContentLoaded', function () {
     var bar = document.getElementById('topbar');
     if (bar) {
-      bar.innerHTML = '<a class="pure-back" href="../../../index.html">回小屋</a><a class="pure-back" href="level-select.html?v=ls5">选关</a><span class="pure-lvl">第' + n + '关 · ' + names[n] + '</span><button type="button" class="pure-more" id="pureMore">更多</button>';
+      bar.innerHTML = '<a class="pure-back" href="../../../index.html">回小屋</a><a class="pure-back" href="level-select.html?v=ls6">选关</a><span class="pure-lvl">第' + n + '关 · ' + names[n] + '</span><button type="button" class="pure-more" id="pureMore">更多</button>';
     }
     var rail = document.getElementById('rail');
     if (rail) rail.classList.add('tucked');
@@ -158,8 +166,8 @@ html.pure-editor #rail.tucked{display:none}
 <div id="topbar">
   <div class="chip"><span>🏡 伍澍暘 · 课程3</span>
     <a href="../../../index.html">回小屋</a>
-    <a href="level-select.html?v=ls5">选关</a>
-    <a href="custom-play.html?v=c53&amp;scene=5&amp;net=1">联机</a>
+    <a href="level-select.html?v=ls6">选关</a>
+    <a href="custom-play.html?v=c54&amp;scene=5&amp;net=1">联机</a>
     <a href="../../../xy-go/?custom=1">xy-go联网</a>
   </div>
   <div class="shell-toggle" id="shellToggle">
@@ -271,12 +279,12 @@ html.pure-editor #rail.tucked{display:none}
 })();
 </script>
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
-<script src="wb-chrome-layout.js?v=ldt35"></script>
-<script src="wb-store.js?v=ldt35"></script>
-<script src="wb-art.js?v=ldt35"></script>
+<script src="wb-chrome-layout.js?v=ldt36"></script>
+<script src="wb-store.js?v=ldt36"></script>
+<script src="wb-art.js?v=ldt36"></script>
 <script src="wb-ninja-walk.js?v=walk1"></script>
 <script src="wb-audio.js?v=ldt19"></script>
-<script src="visual-workbench.js?v=ldt35"></script>
+<script src="visual-workbench.js?v=ldt36"></script>
 <script>
 (function () {
   var shell = document.getElementById('shell');
@@ -356,7 +364,7 @@ html.pure-editor #rail.tucked{display:none}
   }
   document.getElementById('btnNet').onclick = function () {
     try { if (window.WB && window.WB.data && window.WBStore) window.WBStore.save(localStorage, window.WB.data); } catch (e0) {}
-    location.href = 'custom-play.html?v=c53&scene=5&net=1';
+    location.href = 'custom-play.html?v=c54&scene=5&net=1';
   };
   document.getElementById('btnShop').onclick = function () { openDrawer('shop'); };
   document.getElementById('btnMusic').onclick = function () { openDrawer('music'); };
