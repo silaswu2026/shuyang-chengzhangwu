@@ -1,3 +1,15 @@
+## 2026-11-02 · 五关弧线（c53 / ldt34 / ls4）
+
+编辑器顶栏两行不再叠字。摆关有四步心跳（1 定义种类 → 2 摆到格 → 3 存数据 → 4 立刻试玩）和一条可横滑的 24 格跑道。
+
+选关是 **5 个场景**，由易到难。每关先「编辑」（预填角色、背景、9 首曲子里的一首、共用音效、陷阱、怪物小/大），再「再玩」。玩完回编辑器可再调。第 4 关才打开武器商店（积分买飞镖/砍刀/枪）。第 5 关是联网对战入口（PeerJS，`scene=5&net=1`），两人从第 1 关打到第 5 关的完整大厅仍是下一步。
+
+键：`xygo-level-edits` 存 1–5 的覆盖；`xygo-scene5-progress` 只记这五关试过/过关；`xygo-my-levels` 仍是「我的第 1 关」；**不写**旧 Boss 键 `sycocos-level-progress`。存档版本 `1.3`（仍读 `1.2` 的 12 格）。
+
+硬刷：`level-select.html?v=ls4` · `visual-workbench.html?v=ldt34&step=2&scene=1` · `custom-play.html?v=c53&scene=1`。
+
+清单里「角色换装 / 换背景图 / 怪物拖放 / 杀 Boss 或收齐币才算赢」标成下节课可调。撤销一步、到终点获胜、前两格安全，已经能用。
+
 ## 2026-11-02 · 关卡编辑器 MVP（c52 / ldt33 / ls3）
 
 Silas 已确认 [`docs/LEVEL-EDITOR-PLAN-2026-11-02.md`](./docs/LEVEL-EDITOR-PLAN-2026-11-02.md)。本刀只做 MVP：看得见、立刻试、存得住。

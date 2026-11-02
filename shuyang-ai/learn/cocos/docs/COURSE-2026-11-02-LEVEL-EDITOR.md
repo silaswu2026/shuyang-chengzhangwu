@@ -123,7 +123,7 @@
 
 ## 与方案 / 代码的关系
 
-- **代码**：`visual-workbench?v=ldt33` 摆关页即第七、八步（不重做十步 UI）；试玩 `custom-play?v=c52&level=9`；名册 `xygo-my-levels`。  
+- **代码（11-02 锁定五关）**：选关 `level-select?v=ls4` 每关先编辑；工坊 `visual-workbench?v=ldt34&step=2&scene=1`；试玩 `custom-play?v=c53&scene=N`。进度 `xygo-scene5-progress`，不写旧 Boss 键。  
 - 壳仍是现有工坊 + `xygo-custom-level` v1.2（只加字段）；不新开引擎。  
 - 风格锁：海军蓝·金·绿；可玩角色仅绿/红/蓝忍者。
 

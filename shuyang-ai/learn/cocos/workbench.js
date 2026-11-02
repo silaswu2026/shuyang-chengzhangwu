@@ -1113,6 +1113,8 @@
       this._super();
       WB.sceneName = 'edit';
       addChrome(this, 2);
+      var colsFit = (WB.data && WB.data.map && WB.data.map.length) || 12;
+      if (colsFit > 14) EDIT.cw = Math.max(28, Math.floor(700 / colsFit));
       var box = { x: 14, y: 112, w: 760, h: 268 };
       this._box = box;
       var gy = EDIT.gy;

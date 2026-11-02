@@ -68,10 +68,16 @@
     }
   };
 
-  var PLAY_V = 'c52';
+  var PLAY_V = 'c53';
   function goPlayLevel9(net) {
     try { STORE.save(localStorage, WB.data); } catch (eSv) {}
-    location.href = 'custom-play.html?v=' + PLAY_V + '&level=9' + (net ? '&net=1' : '');
+    if (WB.ui) WB.ui.heartPlay = true;
+    var n = (WB.data && WB.data.levelId) | 0;
+    var sceneMax = (STORE && STORE.SCENE_COUNT) || 5;
+    var href = 'custom-play.html?v=' + PLAY_V;
+    if (n >= 1 && n <= sceneMax) href += '&scene=' + n + (net ? '&net=1' : '');
+    else href += '&level=9' + (net ? '&net=1' : '');
+    location.href = href;
   }
   function saveMyFirstLevel() {
     var res = { ok: false };
@@ -315,8 +321,8 @@
     var chipW = phone ? 52 : 64;
     var chipH = phone ? 26 : 28;
     var gap = phone ? 58 : 72;
-    var viewX = phone ? 16 : 40;
-    var viewW = phone ? 500 : 520;
+    var viewX = 12;
+    var viewW = 700;
     var strip = new cc.Node();
     strip.setAnchorPoint(0, 0);
     strip.setContentSize(viewW, chipH + 20);
@@ -340,7 +346,17 @@
       words(content, t[1], cx, cy, Math.max(13, Math.min(18, Math.floor(chipH * 0.5))), fg, 2);
       chipNodes.push({ id: t[0], x: cx, w: chipW, soon: soon });
     });
-    if (state.max > 0) words(parent, '←滑→', viewX + viewW - 24, y + 20, 11, '#8f88b8', 32);
+    function cullChips() {
+      var kids = content.getChildren();
+      var i, n, x;
+      for (i = 0; i < kids.length; i++) {
+        n = kids[i];
+        x = n.getPositionX() + state.ox;
+        n.setVisible(x > -8 && x < viewW + 8);
+      }
+    }
+    cullChips();
+    if (state.max > 0) words(parent, '←滑零件', viewX + viewW - 28, y + 18, 11, '#8f88b8', 32);
     var drag = { on: false, lastX: 0, moved: false };
     cc.eventManager.addListener(cc.EventListener.create({
       event: cc.EventListener.TOUCH_ONE_BY_ONE,
@@ -358,6 +374,7 @@
         if (Math.abs(dx) > 3) drag.moved = true;
         state.ox = Math.max(-state.max, Math.min(0, state.ox + dx));
         content.setPosition(state.ox, 0);
+        cullChips();
       },
       onTouchEnded: function (touch, event) {
         if (!drag.on) return;
@@ -375,6 +392,7 @@
             }
             WB.data.tool = c.id;
             if (c.id !== 'coin' && c.id !== 'del') WB.data.sel = c.id;
+            WB.ui.heartDef = true;
             later(function () { show(2); });
             return;
           }
@@ -408,14 +426,23 @@
     try { land = window.innerWidth > window.innerHeight && window.innerHeight < 520; } catch (eL) {}
     var onDesign = isDesignStep(step);
     if (onDesign) WB.ui.ldStep = step | 0;
-    /* 手机壳过闸后二级三钮另开一行，勿与 ①/关卡/⑤/⑥ 同带重叠（~844×390） */
-    var twoRow = phone && onDesign && !forGate;
-    var chromeH = twoRow ? (land ? 86 : 90) : CHROME;
-    var chipY = twoRow ? (H - 20) : (H - 26);
-    var chipH = phone ? (land ? 34 : (twoRow ? 36 : 40)) : 34;
+    var phaseName = '';
+    if ((step | 0) === 0 && !forGate && typeof LOOK_PAGES !== 'undefined') {
+      var li = lookClamp(WB.ui.look);
+      phaseName = (LOOK_PAGES[li] && LOOK_PAGES[li].phase) || '';
+    }
+    var plan = window.WBChromeLayout.plan({
+      step: step,
+      gate: forGate,
+      phone: phone,
+      land: land,
+      avatarXs: phone ? [24, 870, 930] : [28, 890, 940]
+    });
+    WB.layout.chrome = plan;
     plate(layer, 0, 0, W, FOOT, ccColor(15, 18, 48, 242), 18);
     plate(layer, 0, FOOT - 3, W, 3, ccColor(255, 224, 122, 180), 19);
-    plate(layer, 0, H - chromeH, W, chromeH, ccColor(15, 18, 48, 242), 20);
+    plate(layer, 0, plan.plateBottom, W, H - plan.plateBottom, ccColor(15, 18, 48, 242), 20);
+    var chipY = plan.chipY;
     var slots = phone ? [24, 870, 930] : [28, 890, 940];
     AV.forEach(function (src, i) {
       var face = ART.avatars[src];
@@ -441,16 +468,11 @@
         }, 50);
       }
     });
-    /* 四芯片：①看图 · 关卡设计 · ⑤觉察 · ⑥听选 */
-    var labels = phone ? STEPS_PHONE : STEPS;
-    var centers = phone
-      ? (land ? [100, 250, 400, 540] : [110, 280, 450, 600])
-      : [120, 340, 560, 760];
+    /* 四芯片各占一行宽，次行（原理或摆关|设置|关联）另起一行，互不叠 */
     var activeChip = step === 0 ? 0 : (onDesign ? 1 : (step === 4 ? 2 : (step === 5 ? 3 : 1)));
-    labels.forEach(function (name, i) {
+    plan.steps.forEach(function (s, i) {
       var on = i === activeChip;
-      var wBtn = phone ? (land ? 88 : 100) : (i === 1 ? 148 : 122);
-      button(layer, name, centers[i], chipY, wBtn, chipH, on ? GREEN : NAVY, WHITE, function () {
+      button(layer, s.label, s.x, s.y, s.w, s.h, on ? GREEN : NAVY, WHITE, function () {
         later(function () {
           if (i === 0) show(0);
           else if (i === 1) show((WB.ui.ldStep | 0) || 2);
@@ -459,22 +481,22 @@
         });
       });
     });
-    /* 闸门：显式 gate 旗藏二级条（不占压金句、不可点）；①看图二级由 LookLayer 画 */
-    if (forGate) {
-      words(layer, land ? '先答三问 · 再进关卡设计' : '小宇：先答三问，再进关卡设计', W / 2, H - 52, phone ? 12 : 13, '#a8a0c8', 21);
-    } else if (onDesign) {
-      /* 二级平铺：摆关 | 设置 | 关联 — 手机壳独立次行 band */
-      var tabY = twoRow ? (land ? (H - 60) : (H - 64)) : (H - 52);
-      var tabH = twoRow ? 26 : (phone ? 28 : 30);
-      var tCenters = phone ? (land ? [160, 320, 480] : [180, 360, 540]) : [240, 480, 720];
-      LD_TABS.forEach(function (tab, ti) {
+    if ((step | 0) === 0 && !forGate) {
+      plan.subs.forEach(function (s) {
+        var on = s.label === phaseName;
+        button(layer, s.label, s.x, s.y, s.w, s.h, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+          later(function () { WB.ui.look = LOOK_PHASE_FIRST[s.label]; show(0); });
+        });
+      });
+      if (plan.title) words(layer, plan.title.text, plan.title.x, plan.title.y, 13, '#e8e4ff', 21);
+    } else if (onDesign && !forGate) {
+      plan.subs.forEach(function (s, ti) {
+        var tab = LD_TABS[ti];
         var on = (step | 0) === tab.step;
-        button(layer, tab.label, tCenters[ti], tabY, phone ? (land ? 100 : 110) : 128, tabH, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+        button(layer, s.label, s.x, s.y, s.w, s.h, on ? GOLD : NAVY, on ? INK : WHITE, function () {
           later(function () { show(tab.step); });
         });
       });
-    } else if (step !== 0) {
-      words(layer, land ? '课程3 · 四芯片' : '课程3 · 可视化工坊 · 四芯片+关卡设计', W / 2, H - 52, 12, '#a8a0c8', 21);
     }
   }
 
@@ -583,25 +605,15 @@
     ctor: function () {
       this._super();
       WB.sceneName = 'look';
-      addChrome(this, 0);
       WB.ui.look = lookClamp(WB.ui.look);
+      addChrome(this, 0);
       var page = WB.ui.look;
       var spec = LOOK_PAGES[page];
       var phone = isPhoneShell();
       var land = false;
       try { land = window.innerWidth > window.innerHeight && window.innerHeight < 520; } catch (eL) {}
 
-      /* 阶段小标并入顶栏次行（H-52），避免与四芯片/闸门金句叠字；横屏 844×390 主验 */
-      var phases = ['原理', '方法', '总结'];
-      var phaseY = H - 52;
-      var pCenters = phone ? (land ? [120, 260, 400] : [140, 300, 460]) : [160, 340, 520];
-      phases.forEach(function (name, i) {
-        var on = spec.phase === name;
-        button(this, name, pCenters[i], phaseY, phone ? (land ? 88 : 100) : 120, phone ? (land ? 28 : 32) : 34, on ? GOLD : NAVY, on ? INK : WHITE, function () {
-          later(function () { WB.ui.look = LOOK_PHASE_FIRST[name]; show(0); });
-        });
-      }, this);
-      words(this, '伍澍暘 · 看图', phone ? (land ? 700 : 720) : 780, phaseY, 13, '#e8e4ff', 21);
+      /* 原理|方法|总结 已画在顶栏次行，避免和四步芯片叠在一起 */
 
       /* 左画面 / 右信息 */
       var pic = { x: 20, y: 92, w: phone && land ? 480 : 520, h: 300 };
@@ -968,77 +980,292 @@
     }
   });
 
+  function heartStageIndex() {
+    var f = [!!WB.ui.heartDef, !!WB.ui.heartPlace, !!WB.ui.heartSave, !!WB.ui.heartPlay];
+    var i = 0;
+    while (i < 4 && f[i]) i++;
+    return i;
+  }
+  function addHeartStrip(parent) {
+    var plan = WB.layout.chrome || { plateBottom: 469 };
+    var g = window.WBChromeLayout.heartGeom(plan.plateBottom, heartStageIndex());
+    ART.panel(parent, g.bar.x + g.bar.w / 2, g.bar.y, g.bar.w, g.bar.h, ccColor(12, 16, 40), 235, 28, 12);
+    words(parent, g.label.text, g.label.x, g.label.y, 13, '#ffe07a', 32);
+    var now = null;
+    g.items.forEach(function (it) {
+      if (it.kind === 'arrow') {
+        words(parent, '→', it.x, it.y, 14, '#ffe07a', 32);
+        return;
+      }
+      var bg = it.mode === 'done' ? GREEN : (it.mode === 'now' ? GOLD : ccColor(48, 56, 110));
+      var sp = ART.panel(parent, it.x, it.y, it.w, it.h - 4, bg, 255, 31, 10);
+      words(parent, it.label, it.x, it.y, 12, it.mode === 'now' ? '#222222' : '#ffffff', 32);
+      if (it.mode === 'now') now = sp;
+    });
+    words(parent, g.hint.text, g.hint.x, g.hint.y, 12, '#9ff0a8', 32);
+    return now;
+  }
+  function undoPlace() {
+    if (!WB.ui.undo) {
+      WB.ui.flash = '没有可撤销的一步';
+      later(function () { show(2); });
+      return;
+    }
+    WB.data.map = WB.ui.undo.slice();
+    WB.ui.undo = null;
+    try { STORE.save(localStorage, WB.data); } catch (eU) {}
+    WB.ui.flash = '已撤销一步';
+    later(function () { show(2); });
+  }
+  function editorChecklist() {
+    var n = (WB.data && WB.data.levelId) | 0;
+    var who = (n >= 1 && n <= 5) ? ('第' + n + '关') : '我的关';
+    var cast = { green: '绿忍者', red: '红忍者', blue: '蓝忍者' };
+    var ch = cast[(WB.data && WB.data.character) || 'green'] || '绿忍者';
+    return [
+      { id: 'char', t: '角色', sub: ch, later: true },
+      { id: 'bg', t: '背景', sub: (WB.data && WB.data.backdrop) || 'forest', later: true },
+      { id: 'bgm', t: '音乐', later: false },
+      { id: 'sfx', t: '音效', later: false },
+      { id: 'items', t: '道具', later: false },
+      { id: 'nums', t: '数值', later: false },
+      { id: 'place', t: '摆放', later: false },
+      { id: 'mon', t: '怪物', later: false },
+      { id: 'ends', t: '起终', later: false },
+      { id: 'len', t: '长度', later: false },
+      { id: 'curve', t: '分区', later: false },
+      { id: 'play', t: '试玩', later: false },
+      { id: 'check', t: '校验', later: false },
+      { id: 'undo', t: '撤销', later: false },
+      { id: 'bind', t: who, later: false },
+      { id: 'win', t: '到终点', later: false }
+    ];
+  }
+  function onCheckTap(id) {
+    var n = (WB.data && WB.data.levelId) | 0;
+    var bgm = STORE.bgmById ? STORE.bgmById(WB.data && WB.data.bgmId) : { name: '探险' };
+    var mons = (WB.data && WB.data.monsters) || [];
+    var small = 0;
+    var big = 0;
+    mons.forEach(function (m) { if (m && m.size === 'big') big++; else small++; });
+    if (id === 'char') WB.ui.flash = '本关预填角色。换装下节课可调';
+    else if (id === 'bg') WB.ui.flash = '本关预填背景「' + ((WB.data && WB.data.backdrop) || '') + '」。换图下节课可调';
+    else if (id === 'bgm') {
+      WB.ui.flash = '9 首曲子 · 现在是「' + bgm.name + '」';
+      try { if (window.VW && VW.openMusic) VW.openMusic(); } catch (eM) {}
+    } else if (id === 'sfx') {
+      WB.ui.flash = '音效全关共用一套';
+      try { if (window.VW && VW.openMusic) VW.openMusic(); } catch (eS) {}
+    } else if (id === 'items') WB.ui.flash = '零件架：起、刺、火、金币、终';
+    else if (id === 'nums') WB.ui.flash = '金币 5/15/30 · 刺和火可调秒 · 血量下节课可调';
+    else if (id === 'place') WB.ui.flash = '先点零件，再点格子。左右滑跑道';
+    else if (id === 'mon') WB.ui.flash = mons.length ? ('已预填 ' + small + ' 小怪 ' + big + ' 大怪 · 拖动下节课可调') : '这关还没预填怪物';
+    else if (id === 'ends') WB.ui.flash = '起点和终点都要有。胜利是跑到终点';
+    else if (id === 'len') WB.ui.flash = '跑道 ' + ((WB.data && WB.data.map && WB.data.map.length) || 24) + ' 格，左右滑';
+    else if (id === 'curve') WB.ui.flash = '教 → 练 → 变 → 考，后面更难';
+    else if (id === 'play') WB.ui.flash = '点下面绿色「试玩」。玩完可以再回来调';
+    else if (id === 'check') WB.ui.flash = '前两格不能放危险。要有起点和终点';
+    else if (id === 'undo') { undoPlace(); return; }
+    else if (id === 'bind') WB.ui.flash = n ? ('正在编第 ' + n + ' 关 ' + (STORE.levelTitle ? STORE.levelTitle(n) : '')) : '这是我的关，不是五关弧线';
+    else if (id === 'win') WB.ui.flash = '胜利：跑到终点。杀 Boss、收齐币下节课可调';
+    later(function () { show(2); });
+  }
+  function addCheckStrip(parent, y) {
+    var items = editorChecklist();
+    var phone = isPhoneShell();
+    var chipW = 64;
+    var chipH = 22;
+    var gap = 70;
+    var viewX = 12;
+    var viewW = 760;
+    var strip = new cc.Node();
+    strip.setAnchorPoint(0, 0);
+    strip.setContentSize(viewW, chipH + 16);
+    strip.setPosition(viewX, y - chipH / 2 - 8);
+    parent.addChild(strip, 31);
+    ART.panel(strip, viewW / 2, (chipH + 16) / 2, viewW, chipH + 10, ccColor(12, 16, 40), 210, 0, 10);
+    var content = new cc.Node();
+    strip.addChild(content, 2);
+    var state = { ox: 0, max: Math.max(0, items.length * gap + 16 - viewW) };
+    var nodes = [];
+    items.forEach(function (it, i) {
+      var cx = 8 + i * gap + chipW / 2;
+      var cy = (chipH + 16) / 2;
+      var bg = it.later ? cc.color(55, 60, 90) : GREEN;
+      ART.panel(content, cx, cy, chipW, chipH, bg, it.later ? 210 : 255, 1, 8);
+      words(content, it.t, cx, cy, 11, it.later ? '#d5d0ea' : '#ffffff', 2);
+      nodes.push({ id: it.id, x: cx, w: chipW });
+    });
+    function cullChecks() {
+      var kids = content.getChildren();
+      var i, n, x;
+      for (i = 0; i < kids.length; i++) {
+        n = kids[i];
+        x = n.getPositionX() + state.ox;
+        n.setVisible(x > -8 && x < viewW + 8);
+      }
+    }
+    cullChecks();
+    if (state.max > 0) words(parent, '清单←滑', viewX + viewW - 36, y + 16, 11, '#ffe07a', 32);
+    var drag = { on: false, lastX: 0, moved: false };
+    cc.eventManager.addListener(cc.EventListener.create({
+      event: cc.EventListener.TOUCH_ONE_BY_ONE,
+      swallowTouches: true,
+      onTouchBegan: function (touch, event) {
+        var loc = event.getCurrentTarget().convertToNodeSpace(touch.getLocation());
+        if (!cc.rectContainsPoint(cc.rect(0, 0, viewW, chipH + 16), loc)) return false;
+        drag.on = true; drag.moved = false; drag.lastX = touch.getLocation().x;
+        return true;
+      },
+      onTouchMoved: function (touch) {
+        if (!drag.on || state.max <= 0) return;
+        var dx = touch.getLocation().x - drag.lastX;
+        drag.lastX = touch.getLocation().x;
+        if (Math.abs(dx) > 3) drag.moved = true;
+        state.ox = Math.max(-state.max, Math.min(0, state.ox + dx));
+        content.setPosition(state.ox, 0);
+        cullChecks();
+      },
+      onTouchEnded: function (touch, event) {
+        if (!drag.on) return;
+        drag.on = false;
+        if (drag.moved) return;
+        var loc = event.getCurrentTarget().convertToNodeSpace(touch.getLocation());
+        var px = loc.x - state.ox;
+        var i;
+        for (i = 0; i < nodes.length; i++) {
+          if (Math.abs(px - nodes[i].x) <= nodes[i].w / 2 + 4) {
+            onCheckTap(nodes[i].id);
+            return;
+          }
+        }
+      }
+    }), strip);
+  }
+
   /* ---------- 摆关 ---------- */
-  var EDIT = { L: 14, cw: 62, gy: 156 };
+  var EDIT = { L: 12, cw: 46, gy: 150 };
   var EditLayer = cc.Layer.extend({
     ctor: function () {
       this._super();
       WB.sceneName = 'edit';
       addChrome(this, 2);
       var gy = EDIT.gy;
+      var cols = (WB.data && WB.data.map && WB.data.map.length) || STORE.MC;
+      var cw = EDIT.cw;
+      var viewL = 12;
+      var viewW = 760;
+      this._cols = cols;
+      this._cw = cw;
+      this._viewL = viewL;
+      this._viewW = viewW;
+      this._panMax = Math.max(0, cols * cw - viewW);
+      this._pan = 0;
       this._sky = ART.dressSky(this, gy + 6);
-      ART.addGround(this, EDIT.L, gy, STORE.MC * EDIT.cw, 4, 2);
-      words(this, '①零件架 → ②画布 → ③试玩·保存', 300, isPhoneShell() ? 430 : 448, 15, '#1a2744', 8);
+      this._heartNow = addHeartStrip(this);
+      addCheckStrip(this, 400);
       var self = this;
       var tools = [['start', '起'], ['spike', '刺'], ['fire', '火'], ['spring', '弹'], ['mist', '沼'], ['rock', '石'], ['electric', '电'], ['groove', '凹'], ['coin', '小'], ['coinBig', '大'], ['chest', '箱'], ['goal', '终'], ['del', '擦']];
-      addTrapChipStrip(self, tools, isPhoneShell() ? 412 : 416);
-      var trayY = isPhoneShell() ? 412 : 416;
-      button(self, '去设置', 560, trayY, 84, isPhoneShell() ? 26 : 36, GREEN, WHITE, function () {
-        later(function () { show(1); });
-      });
-      button(self, '去关联', 660, trayY, 84, isPhoneShell() ? 26 : 36, NAVY, WHITE, function () {
-        later(function () { show(3); });
-      });
-      /* shop lives in HTML drawer; keep a tiny wallet chip on canvas */
-      words(this, '💰' + ((WB.data.wallet && WB.data.wallet.coins) | 0), 720, trayY, 15, '#ffe07a', 8);
-      this._shop = function () {}; /* drawer owns shop */
+      var trayY = 358;
+      addTrapChipStrip(self, tools, trayY);
+      words(this, '💰' + ((WB.data.wallet && WB.data.wallet.coins) | 0), 760, trayY, 14, '#ffe07a', 8);
+      if (this._panMax > 0) words(this, '←滑跑道→', 400, gy + 118, 12, '#1a2744', 8);
+      this._shop = function () {};
       this.paramRow = new cc.Node();
       this.addChild(this.paramRow, 31);
       this._params();
-      var bands = [[0, 3, ccColor(78, 168, 92, 70), '教'], [3, 7, ccColor(230, 194, 0, 70), '练'], [7, 10, ccColor(226, 121, 59, 70), '变'], [10, 12, ccColor(226, 59, 59, 70), '考']];
+      var track = new cc.Node();
+      this.addChild(track, 6);
+      this._track = track;
+      this._setPan = function (p) {
+        p = Math.max(0, Math.min(self._panMax, p || 0));
+        self._pan = p;
+        track.setPosition(viewL - p, 0);
+      };
+      ART.addGround(track, 0, gy, cols * cw, 4, 2);
+      var aB = Math.max(STORE.SAFE0 + 1, Math.round(cols * 0.22));
+      var bB = Math.round(cols * 0.5);
+      var cB = Math.round(cols * 0.72);
+      var bands = [
+        [0, aB, ccColor(78, 168, 92, 70), '教'],
+        [aB, bB, ccColor(230, 194, 0, 70), '练'],
+        [bB, cB, ccColor(226, 121, 59, 70), '变'],
+        [cB, cols, ccColor(226, 59, 59, 70), '考']
+      ];
       bands.forEach(function (b) {
-        plate(self, EDIT.L + b[0] * EDIT.cw, gy + 8, (b[1] - b[0]) * EDIT.cw, 92, b[2], 3);
-        words(self, b[3], EDIT.L + b[0] * EDIT.cw + 16, gy + 86, 14, '#1a2744', 7);
+        if (b[1] <= b[0]) return;
+        plate(track, b[0] * cw, gy + 8, (b[1] - b[0]) * cw, 86, b[2], 3);
+        words(track, b[3], b[0] * cw + 14, gy + 78, 13, '#1a2744', 7);
       });
-      plate(this, EDIT.L, gy + 8, STORE.SAFE0 * EDIT.cw, 92, ccColor(159, 240, 168, 50), 4);
-      words(this, '出生', EDIT.L + 28, gy + 64, 13, '#145c28', 7);
+      plate(track, 0, gy + 8, STORE.SAFE0 * cw, 86, ccColor(159, 240, 168, 50), 4);
+      words(track, '出生', 18, gy + 60, 12, '#145c28', 7);
       this.frames = [];
       this.marks = [];
       this.idxLabs = [];
       var x;
-      for (x = 0; x < STORE.MC; x++) {
-        var fr = ART.frame(this, EDIT.L + (x + 0.5) * EDIT.cw, gy + 52, EDIT.cw - 4, 84, cc.color(255, 255, 255), 90, 6, 6);
+      for (x = 0; x < cols; x++) {
+        var fr = ART.frame(track, (x + 0.5) * cw, gy + 48, cw - 4, 76, cc.color(255, 255, 255), 90, 6, 6);
         this.frames.push(fr);
         var mk = new cc.Node();
-        mk.setPosition(EDIT.L + (x + 0.5) * EDIT.cw, gy);
-        this.addChild(mk, 9);
+        mk.setPosition((x + 0.5) * cw, gy);
+        track.addChild(mk, 9);
         this.marks.push(mk);
-        this.idxLabs.push(words(this, String(x + 1), EDIT.L + (x + 0.5) * EDIT.cw, gy - 16, 12, '#ffe7a0', 7));
+        this.idxLabs.push(words(track, String(x + 1), (x + 0.5) * cw, gy - 14, 11, '#ffe7a0', 7));
       }
-      this._decoFlag = ART.place(this, ART.tex.flag, EDIT.L + STORE.MC * EDIT.cw - 46, gy + 6, { anchor: [0, 0], h: 70, z: 11 });
-      var grid = new cc.Node();
-      grid.setAnchorPoint(0, 0);
-      grid.setContentSize(STORE.MC * EDIT.cw, 130);
-      grid.setPosition(EDIT.L, gy - 6);
-      this.addChild(grid, 12);
+      this._decoFlag = ART.place(track, ART.tex.flag, cols * cw - 36, gy + 6, { anchor: [0, 0], h: 64, z: 11 });
+      var hit = new cc.Node();
+      hit.setAnchorPoint(0, 0);
+      hit.setContentSize(viewW, 120);
+      hit.setPosition(viewL, gy - 8);
+      this.addChild(hit, 12);
+      var drag = { on: false, lastX: 0, moved: false, acc: 0 };
       cc.eventManager.addListener(cc.EventListener.create({
         event: cc.EventListener.TOUCH_ONE_BY_ONE,
         swallowTouches: true,
         onTouchBegan: function (touch, event) {
           var loc = event.getCurrentTarget().convertToNodeSpace(touch.getLocation());
-          var box = cc.rect(0, 0, STORE.MC * EDIT.cw, 130);
-          if (!cc.rectContainsPoint(box, loc)) return false;
-          var col = Math.floor(loc.x / EDIT.cw);
+          if (!cc.rectContainsPoint(cc.rect(0, 0, viewW, 120), loc)) return false;
+          drag.on = true; drag.moved = false; drag.acc = 0; drag.lastX = touch.getLocation().x;
+          return true;
+        },
+        onTouchMoved: function (touch) {
+          if (!drag.on) return;
+          var dx = touch.getLocation().x - drag.lastX;
+          drag.lastX = touch.getLocation().x;
+          drag.acc += dx;
+          if (Math.abs(drag.acc) > 8) drag.moved = true;
+          if (drag.moved) self._setPan(self._pan - dx);
+        },
+        onTouchEnded: function (touch, event) {
+          if (!drag.on) return;
+          drag.on = false;
+          if (drag.moved) return;
+          var loc = event.getCurrentTarget().convertToNodeSpace(touch.getLocation());
+          var col = Math.floor((loc.x + self._pan) / cw);
+          var snap = WB.data.map.slice();
           var res = STORE.place(WB.data, col);
           WB.ui.flash = res.flash || '';
-          if (res.ok) STORE.save(localStorage, WB.data);
+          if (res.ok) {
+            var changed = false;
+            var i;
+            for (i = 0; i < snap.length; i++) if (snap[i] !== WB.data.map[i]) changed = true;
+            if (changed) {
+              WB.ui.undo = snap;
+              WB.ui.heartDef = true;
+              WB.ui.heartPlace = true;
+            }
+            STORE.save(localStorage, WB.data);
+          }
           later(function () { show(2); });
-          return true;
         }
-      }), grid);
-      this.ninja = addNinja(this, EDIT.L + 28, gy, isPhoneShell() ? 140 : 132);
+      }), hit);
+      this.ninja = addNinja(track, 28, gy, isPhoneShell() ? 120 : 112);
+      this._setPan(0);
       this.card = ART.panel(this, 872, 250, 160, 300, cc.color(78, 201, 107), 255, 10, 16);
-      words(this, '一共掉', 872, 372, 16, '#1b1b2a', 11);
+      var sceneN = (WB.data.levelId | 0);
+      var sceneName = (sceneN >= 1 && STORE.levelTitle) ? ('第' + sceneN + '关 ' + STORE.levelTitle(sceneN)) : '我的关';
+      words(this, sceneName, 872, 386, 12, '#1b1b2a', 11);
+      words(this, '一共掉', 872, 360, 14, '#1b1b2a', 11);
       this.sumLab = words(this, '', 872, 336, 28, '#1b1b2a', 11);
       this.moodLab = words(this, '', 872, 300, 16, '#1b1b2a', 11);
       this.checkLabs = [];
@@ -1049,20 +1276,38 @@
       }
       ART.panel(this, 386, 96, 460, 30, cc.color(255, 244, 214), 235, 10, 12);
       this.flashLab = words(this, WB.ui.flash || '点格子摆东西', 386, 96, 15, '#7a4e00', 11);
-      button(self, '跑一次', 800, 96, 110, 28, NAVY, WHITE, function () {
+      button(self, '跑一次', 700, 96, 100, 28, NAVY, WHITE, function () {
         WB.ui.running = true;
         WB.ui.runT0 = Date.now() / 1000;
         WB.ui.midSwitchArmed = false;
         WB.ui.midSwitchAt = 0;
       });
+      button(self, '撤销', 820, 96, 72, 28, NAVY, WHITE, function () { undoPlace(); });
+      var sceneNow = (WB.data.levelId | 0);
+      var saveLabel = (sceneNow >= 1 && sceneNow <= 5) ? ('存第' + sceneNow + '关') : '存我的第1关';
       addFootTrio(this,
         '试玩', function () { goPlayLevel9(false); },
-        '存我的第1关', function () {
-          saveMyFirstLevel();
+        saveLabel, function () {
+          if (sceneNow >= 1 && sceneNow <= 5 && STORE.saveLevelEdit) {
+            var r = STORE.saveLevelEdit(localStorage, WB.data, sceneNow);
+            WB.ui.flash = r && r.ok ? ('已存第' + sceneNow + '关') : '没存上，再点一次';
+          } else {
+            saveMyFirstLevel();
+          }
+          WB.ui.heartDef = true;
+          WB.ui.heartPlace = true;
+          WB.ui.heartSave = true;
           later(function () { show(2); });
         },
         '再打开', function () {
-          reopenMyFirst();
+          if (sceneNow >= 1 && sceneNow <= 5 && STORE.applyLevel) {
+            STORE.applyLevel(localStorage, sceneNow);
+            WB.data = STORE.load(localStorage);
+            if (STORE.ensureLongRunway) STORE.ensureLongRunway(WB.data, 24);
+            WB.ui.flash = '已打开第' + sceneNow + '关';
+          } else {
+            reopenMyFirst();
+          }
           later(function () { show(2); });
         }
       );
@@ -1108,18 +1353,18 @@
         chest: '宝箱：打开 +30 钱包币'
       };
       if (hint[sel]) {
-        words(this.paramRow, hint[sel], 220, 348, 15, '#1a2744', 1);
+        words(this.paramRow, hint[sel], 220, 300, 15, '#1a2744', 1);
         return;
       }
       if (sel !== 'spike' && sel !== 'fire') {
-        words(this.paramRow, '点一个刺或火，再选 1、3、5 秒', 250, 348, 15, '#1a2744', 1);
+        words(this.paramRow, '点一个刺或火，再选 1、3、5 秒', 250, 300, 15, '#1a2744', 1);
         return;
       }
       var cur = sel === 'fire' ? WB.data.mp.fire.dur : WB.data.mp.spike.interval;
-      words(this.paramRow, sel === 'fire' ? '火停多久' : '刺每几秒冒一次', 120, 348, 15, '#1a2744', 1);
+      words(this.paramRow, sel === 'fire' ? '火停多久' : '刺每几秒冒一次', 120, 300, 15, '#1a2744', 1);
       [1, 3, 5].forEach(function (v, i) {
         var on = cur === v;
-        button(self.paramRow, v + '秒', 280 + i * 96, 348, 86, 32, on ? GOLD : NAVY, on ? INK : WHITE, function () {
+        button(self.paramRow, v + '秒', 280 + i * 96, 300, 86, 32, on ? GOLD : NAVY, on ? INK : WHITE, function () {
           if (STORE.setNum(WB.data, v)) STORE.save(localStorage, WB.data);
           later(function () { show(2); });
         });
@@ -1133,7 +1378,8 @@
       if (sig === this._sig) return;
       this._sig = sig;
       var x, k, sel, sp;
-      for (x = 0; x < STORE.MC; x++) {
+      var nCells = this._cols || (WB.data.map && WB.data.map.length) || STORE.MC;
+      for (x = 0; x < nCells; x++) {
         k = WB.data.map[x];
         sel = WB.data.selX === x;
         this.frames[x].setColor(sel ? cc.color(255, 215, 80) : cc.color(255, 255, 255));
@@ -1183,7 +1429,7 @@
       if (this._decoFlag) {
         var goalPlaced = false;
         var gi;
-        for (gi = 0; gi < STORE.MC; gi++) if (WB.data.map[gi] === 'goal') goalPlaced = true;
+        for (gi = 0; gi < (this._cols || STORE.MC); gi++) if (WB.data.map[gi] === 'goal') goalPlaced = true;
         this._decoFlag.setVisible(!goalPlaced);
       }
       var tip = WB.ui.flash || (WB.ui.running ? '正在跑' : (WB.ui.previewDone ? '跑完了，可以去觉察' : '前两格安全 · 摆起点、陷阱、金币、终点'));
@@ -1191,17 +1437,22 @@
     },
     update: function (dt) {
       this._t += dt;
+      if (this._heartNow) {
+        this._heartNow.setOpacity(190 + Math.floor(65 * (0.5 + 0.5 * Math.sin(this._t * 5))));
+      }
       driftClouds(this._sky, this._t);
       this._syncMarks();
       if (!WB.ui.running) {
-        if (!WB.ui.previewDone) this.ninja.setPosition(EDIT.L + 28, EDIT.gy);
+        if (!WB.ui.previewDone) this.ninja.setPosition(28, EDIT.gy);
         stepNinja(this.ninja, dt, false, true);
         return;
       }
       var rt = Date.now() / 1000 - WB.ui.runT0;
       var P = 6;
-      var x = EDIT.L + 28 + Math.min(rt, P) / P * (STORE.MC * EDIT.cw - 36);
+      var span = Math.max(36, (this._cols || STORE.MC) * (this._cw || EDIT.cw) - 36);
+      var x = 28 + Math.min(rt, P) / P * span;
       this.ninja.setPosition(x, EDIT.gy);
+      if (this._setPan) this._setPan(x - (this._viewW || 400) * 0.35);
       stepNinja(this.ninja, dt, false, rt >= P);
       /* §8: 跑道中点自动切到「设置」段 + 短过渡 */
       if (rt >= P * 0.5 && !WB.ui.midSwitchArmed) {
@@ -1238,18 +1489,19 @@
       ART.frame(this, 724, 270, 430, 330, cc.color(255, 255, 255), 70, 3, 18);
 
       words(this, '我摆的一小关', 250, 400, 20, '#ffe7a0', 6);
-      var L = 46, cw = 34, gy = 250;
-      ART.panel(this, L + STORE.MC * cw / 2, gy + 18, STORE.MC * cw + 18, 108, ccColor(0, 0, 0), 55, 3, 10);
+      var colsR = (WB.data.map && WB.data.map.length) || STORE.MC;
+      var L = 46, cw = Math.max(14, Math.min(34, Math.floor(400 / colsR))), gy = 250;
+      ART.panel(this, L + colsR * cw / 2, gy + 18, colsR * cw + 18, 108, ccColor(0, 0, 0), 55, 3, 10);
       var bands = [[0, 3, ccColor(78, 168, 92, 80)], [3, 7, ccColor(230, 194, 0, 80)], [7, 10, ccColor(226, 121, 59, 80)], [10, 12, ccColor(226, 59, 59, 80)]];
       bands.forEach(function (b) {
         plate(this, L + b[0] * cw, gy + 4, (b[1] - b[0]) * cw, 70, b[1] ? b[2] : b[2], 4);
       }, this);
-      ART.addGround(this, L, gy, STORE.MC * cw, 5, 1);
+      ART.addGround(this, L, gy, colsR * cw, 5, 1);
       var hearts = STORE.mEst(WB.data.map, WB.data.mp);
       var tot = hearts.reduce(function (a, b) { return a + b; }, 0);
       var placed = 0;
       var x, k, px, sp;
-      for (x = 0; x < STORE.MC; x++) {
+      for (x = 0; x < colsR; x++) {
         k = WB.data.map[x];
         px = L + (x + 0.5) * cw;
         if (k === 'spike') {
@@ -1649,8 +1901,16 @@
     var walEl = document.getElementById('shopWallet');
     if (!el || !WB.data) return;
     var wal = WB.data.wallet || { coins: 0, weapons: [], equipped: null };
-    if (walEl) walEl.textContent = '金币 ' + (wal.coins | 0);
+    var shopOpen = !STORE.weaponShopOpen || STORE.weaponShopOpen(WB.data.levelId | 0);
+    if (walEl) walEl.textContent = shopOpen ? ('金币 ' + (wal.coins | 0)) : '第4关才用积分买武器';
     el.innerHTML = '';
+    if (!shopOpen) {
+      var locked = document.createElement('p');
+      locked.className = 'hint';
+      locked.textContent = '武器在第4关解锁。这一关先摆零件、试玩。';
+      el.appendChild(locked);
+      return;
+    }
     ['dart', 'blade', 'gun'].forEach(function (id) {
       var spec = STORE.WEAPONS[id];
       var owned = wal.weapons.indexOf(id) >= 0;
@@ -1679,17 +1939,19 @@
     var sfxEl = document.getElementById('musicSfx');
     if (!el) return;
     var AUDIO = window.WBAudio || null;
-    var tracks = AUDIO && AUDIO.BGM ? AUDIO.BGM.map(function (b) {
-      return { id: b.id, name: b.name, stub: false };
+    var tracks = (STORE.BGM_POOL && STORE.BGM_POOL.length) ? STORE.BGM_POOL.map(function (b) {
+      return { id: b.id, name: b.name, fileId: b.fileId, stub: false };
+    }) : (AUDIO && AUDIO.BGM ? AUDIO.BGM.map(function (b) {
+      return { id: b.id, name: b.name, fileId: b.id, stub: false };
     }) : [
       { id: 'explore', name: '探险', stub: true },
       { id: 'tense', name: '紧张', stub: true },
       { id: 'win', name: '过关', stub: true },
       { id: 'fail', name: '失败', stub: true }
-    ];
-    var cur = '';
-    if (WB.data && WB.data.audio && WB.data.audio.bgmId) cur = WB.data.audio.bgmId;
-    else if (WB.data && WB.data.music) cur = WB.data.music;
+    ]);
+    var cur = (WB.data && WB.data.bgmId) || '';
+    if (!cur && WB.data && WB.data.audio && WB.data.audio.bgmId) cur = WB.data.audio.bgmId;
+    else if (!cur && WB.data && WB.data.music) cur = WB.data.music;
     if (!WB.data.levelAudio) WB.data.levelAudio = AUDIO && AUDIO.blankLevelAudio ? AUDIO.blankLevelAudio() : {};
     var la = AUDIO && AUDIO.normalizeLevelAudio ? AUDIO.normalizeLevelAudio(WB.data.levelAudio) : (WB.data.levelAudio || {});
     WB.data.levelAudio = la;
@@ -1701,9 +1963,11 @@
       var nHang = AUDIO && AUDIO.levelsForTrack ? AUDIO.levelsForTrack(la, t.id).length : 0;
       b.innerHTML = t.name + '<span class="price">' + (t.stub ? '占位' : ('试听/选用' + (nHang ? (' · 已挂' + nHang) : ''))) + '</span>';
       b.onclick = function () {
-        WB.data.music = t.id;
-        if (!WB.data.audio) WB.data.audio = AUDIO && AUDIO.blankAudio ? AUDIO.blankAudio() : { bgmId: t.id, sfx: {} };
-        WB.data.audio.bgmId = t.id;
+        var fileId = t.fileId || t.id;
+        WB.data.bgmId = t.id;
+        WB.data.music = fileId;
+        if (!WB.data.audio) WB.data.audio = AUDIO && AUDIO.blankAudio ? AUDIO.blankAudio() : { bgmId: fileId, sfx: {} };
+        WB.data.audio.bgmId = fileId;
         WB.ui.linkTrack = t.id;
         STORE.save(localStorage, WB.data);
         if (AUDIO) {
@@ -1801,14 +2065,18 @@
     }
     window.addEventListener('error', function (e) { bootMsg(e.message || String(e), true); });
     var q = new URLSearchParams(location.search);
-    if (q.get('open') === 'my1' && STORE.applyMyFirst) {
+    var sceneN = parseInt(q.get('scene') || '', 10);
+    if (sceneN >= 1 && sceneN <= ((STORE && STORE.SCENE_COUNT) || 5) && STORE.applyLevel) {
+      try { STORE.applyLevel(localStorage, sceneN); } catch (eScene) {}
+    } else if (q.get('open') === 'my1' && STORE.applyMyFirst) {
       try { STORE.applyMyFirst(localStorage); } catch (eOpen) {}
     }
     WB.data = STORE.load(localStorage);
+    if (STORE.ensureLongRunway) STORE.ensureLongRunway(WB.data, 24);
     if (STORE.ensureDefaultMap) STORE.ensureDefaultMap(WB.data);
     var lesson = q.get('lesson') || 'tonight';
     var step = q.get('step');
-    if (step == null || step === '') step = (q.get('open') === 'my1') ? 2 : 0;
+    if (step == null || step === '') step = (q.get('open') === 'my1' || (sceneN >= 1 && sceneN <= 5)) ? 2 : 0;
     else step = +step;
     if (lesson !== 'tonight') step = 0;
     if (isNaN(step)) step = 0;

@@ -11,6 +11,7 @@
  * c31: 竖屏底栏完整可见（HTML 槽用 dvh/安全区/触控垫；fitStage 仍全视口）。横屏金框壳保留。
  * c30: 竖屏画布铺满 — fitStage 竖屏回 window 全视口；HTML 取消竖屏 16:9 槽。
  * c42: 默认关保底可见线圈弹簧垫（ensureSprings）+ 贴图更醒目；保留 c32 power=1300；P2 HUD 去「沼泽」壳话。
+ * c53: 五关弧线。?scene=1..5 读该关编辑稿（xygo-level-edits / 预填），记 xygo-scene5-progress，不写 sycocos-level-progress。第5关可 net=1。
  * c52: 我的第 1 关。起点/终点写入 v1.2 的 editor 字段；有起点或终点或 myLevelId 时按摆放跑（不补火/弹簧/沼/断坑），到达所摆终点即过关。第 9 关不写 sycocos-level-progress。
  * c51: 手机仍微糊 — c50 的 min(3,dpr) 已上线；横屏 `.canvas-slot` 的 border-radius+overflow:hidden 让移动 Safari/Chrome 把 WebGL 画布合成到低分图层（桌面不明显）。去掉槽圆角裁切；`_setupContainer` 一次写满 DPR 缓冲（不再先 2× 再改）。不改玩法/联机。
  * c50: 手机微糊 — 页 DPR≈3 时 Cocos `_setupContainer`/`ensureRetinaBuffer` 仍 min(2,dpr)→画布仅 2×CSS，浏览器再放大约 1.5× 发软。改为缓冲对齐 min(3,dpr)，并同步 `cc.view._devicePixelRatio`；桌面 dpr≤2 不变。不改玩法/联机。
@@ -269,7 +270,25 @@
     } catch (e) { return 9; }
   }
   var PLAY_LEVEL_ID = parsePlayLevelId(); /* ?level=1..9；缺省第9「我的关卡」 */
+  function parseSceneId() {
+    try {
+      var q = new URLSearchParams(location.search || '');
+      var raw = q.get('scene');
+      if (raw == null || raw === '') return 0;
+      var n = parseInt(raw, 10);
+      if (!isFinite(n) || n < 1 || n > 5) return 0;
+      return n | 0;
+    } catch (eSc) { return 0; }
+  }
+  var SCENE_ID = parseSceneId();
   function markLevelProgress(kind) {
+    /* 五关弧线走 xygo-scene5-progress，绝不写旧 Boss 键。 */
+    if (SCENE_ID >= 1 && SCENE_ID <= 5) {
+      try {
+        if (window.WBStore && WBStore.markSceneProgress) WBStore.markSceneProgress(localStorage, SCENE_ID, kind);
+      } catch (eScene) {}
+      return;
+    }
     /* kind: 'tried' | 'completed' — 仅正式 1–8。第9「我的关」不写入本键。 */
     if (!(PLAY_LEVEL_ID >= 1 && PLAY_LEVEL_ID <= 8)) return;
     try {
@@ -289,7 +308,11 @@
     levelAudioMap = {};
     if (AUDIO) audioCfg = AUDIO.blankAudio();
     try {
-      var raw = JSON.parse(localStorage.getItem(KEY) || 'null');
+      var raw = null;
+      if (SCENE_ID && window.WBStore && WBStore.docForLevel) {
+        try { raw = WBStore.docForLevel(localStorage, SCENE_ID); } catch (eDoc) { raw = null; }
+      }
+      if (!raw) raw = JSON.parse(localStorage.getItem(KEY) || 'null');
       if (raw && raw.audio) {
         if (AUDIO) audioCfg = AUDIO.normalize(raw.audio);
         else audioCfg = raw.audio;
@@ -588,8 +611,13 @@
 
   /** Mirror xy-go buildCustomDef X mapping. Boss/critters after design runway. */
   function loadLevel() {
-    var d;
-    try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { d = null; }
+    var d = null;
+    if (SCENE_ID && window.WBStore && WBStore.docForLevel) {
+      try { d = WBStore.docForLevel(localStorage, SCENE_ID); } catch (eSceneDoc) { d = null; }
+    }
+    if (!d) {
+      try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { d = null; }
+    }
     if (!d || typeof d !== 'object') d = swampPreset(12, 4);
     var tiles = Array.isArray(d.tiles) ? d.tiles.slice() : [];
     var traps = d.traps || {};
@@ -815,6 +843,14 @@
       bossC: bossC,
       authoredGoal: authoredGoalOn,
       myLevelTitle: (typeof d.myLevelTitle === 'string') ? d.myLevelTitle : '',
+      sceneId: SCENE_ID,
+      monsters: (function () {
+        var list = (d.editor && Array.isArray(d.editor.monsters)) ? d.editor.monsters : [];
+        return list.map(function (m) {
+          var dx = m && m.x | 0;
+          return { id: m.id, size: m.size === 'big' ? 'big' : 'small', x: dx, playC: gx(dx) };
+        });
+      })(),
       wallet: readWallet(d.wallet),
       lastScore: (typeof d.lastScore === 'number' && d.lastScore >= 0) ? (d.lastScore | 0) : 0,
       presetId: d.presetId || ''
@@ -1639,6 +1675,35 @@
         this.world.addChild(body, 7);
         this.critters.push({ x: cx, hp: 2, max: 2, alive: true, hurtT: 0, sp: body, home: cx });
       }
+      if (SCENE_ID && level.monsters && level.monsters.length) {
+        var preset = level.monsters;
+        var bi;
+        var bossSrc = null;
+        for (bi = preset.length - 1; bi >= 0; bi--) if (preset[bi].size === 'big') { bossSrc = preset[bi]; break; }
+        this.critters.forEach(function (cr) { if (cr.sp) cr.sp.removeFromParent(); });
+        this.critters = [];
+        if (bossSrc) {
+          this.boss.name = (window.WBStore && WBStore.monsterName) ? WBStore.monsterName(bossSrc.id) : '大怪';
+          this.boss.max = 4;
+          this.boss.hp = 4;
+          this.boss.x = bossSrc.playC * T + T * 0.5;
+          this.bossSp.setPosition(this.boss.x, this.gy);
+        } else {
+          this.boss.alive = false;
+          this.bossSp.setVisible(false);
+        }
+        preset.forEach(function (m) {
+          if (bossSrc && m === bossSrc) return;
+          var mx = m.playC * T + T * 0.5;
+          var bodyM = new cc.Sprite(m.size === 'big' ? crocTex : slimeTex);
+          bodyM.setAnchorPoint(0.5, 0);
+          bodyM.setPosition(mx, this.gy);
+          bodyM.setScale(m.size === 'big' ? 1.35 : 1.05);
+          this.world.addChild(bodyM, 7);
+          var hpM = m.size === 'big' ? 4 : 2;
+          this.critters.push({ x: mx, hp: hpM, max: hpM, alive: true, hurtT: 0, sp: bodyM, home: mx, name: m.id });
+        }, this);
+      }
 
       this.wallet = ensurePlayWeapons(level.wallet || readWallet(null));
       this.walletCoins = this.wallet.coins | 0;
@@ -1689,7 +1754,10 @@
 
       var lvEl = $('lvlChip');
       if (lvEl) {
-        if (PLAY_LEVEL_ID >= 1 && PLAY_LEVEL_ID <= 8) lvEl.textContent = '第9关 我的关卡';
+        if (SCENE_ID >= 1 && SCENE_ID <= 5) {
+          var sName = (window.WBStore && WBStore.levelTitle) ? WBStore.levelTitle(SCENE_ID) : '';
+          lvEl.textContent = '第' + SCENE_ID + '关 ' + sName + (SCENE_ID === 5 && /net=1/.test(location.search || '') ? ' · 联网' : '');
+        } else if (PLAY_LEVEL_ID >= 1 && PLAY_LEVEL_ID <= 8) lvEl.textContent = '第' + PLAY_LEVEL_ID + '关';
         else lvEl.textContent = level.myLevelTitle || '第9关 我的关卡';
       }
       var iv = (level.traps.spike && +level.traps.spike.interval) || 3;

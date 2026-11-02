@@ -5,7 +5,7 @@
 <meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0f1230">
-<meta name="wb-build" content="ldt33">
+<meta name="wb-build" content="ldt34">
 <title>AI办学小屋 · 课程3 · 可视化关卡工坊</title>
 <style>
 :root{
@@ -130,8 +130,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
 <div id="topbar">
   <div class="chip"><span>🏡 伍澍暘 · 课程3</span>
     <a href="../../../index.html">回小屋</a>
-    <a href="level-select.html?v=ls3">选关</a>
-    <a href="custom-play.html?v=c52&amp;level=9&amp;net=1">联机</a>
+    <a href="level-select.html?v=ls4">选关</a>
+    <a href="custom-play.html?v=c53&amp;scene=5&amp;net=1">联机</a>
     <a href="../../../xy-go/?custom=1">xy-go联网</a>
   </div>
   <div class="shell-toggle" id="shellToggle">
@@ -201,7 +201,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   </div>
 </aside>
 
-<!-- ldt33: 我的第1关 起点/终点/名册 · was ldt32: play tip→c49 链 · was ldt31: §8 电凹大箱真可摆 -->
+<!-- ldt34: 五关弧线 + 顶栏不叠 + 四步心跳 + 24格跑道 · was ldt33 -->
 <script>
 (function(){
   var cleared=false;
@@ -243,11 +243,12 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
 })();
 </script>
 <script src="../../../vendor/cocos2d-html5/cocos2d-js-v3.13-lite.js"></script>
-<script src="wb-store.js?v=ldt33"></script>
-<script src="wb-art.js?v=ldt33"></script>
+<script src="wb-chrome-layout.js?v=ldt34"></script>
+<script src="wb-store.js?v=ldt34"></script>
+<script src="wb-art.js?v=ldt34"></script>
 <script src="wb-ninja-walk.js?v=walk1"></script>
 <script src="wb-audio.js?v=ldt19"></script>
-<script src="visual-workbench.js?v=ldt33"></script>
+<script src="visual-workbench.js?v=ldt34"></script>
 <script>
 (function () {
   var shell = document.getElementById('shell');
@@ -327,7 +328,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);
   }
   document.getElementById('btnNet').onclick = function () {
     try { if (window.WB && window.WB.data && window.WBStore) window.WBStore.save(localStorage, window.WB.data); } catch (e0) {}
-    location.href = 'custom-play.html?v=c52&level=9&net=1';
+    location.href = 'custom-play.html?v=c53&scene=5&net=1';
   };
   document.getElementById('btnShop').onclick = function () { openDrawer('shop'); };
   document.getElementById('btnMusic').onclick = function () { openDrawer('music'); };
