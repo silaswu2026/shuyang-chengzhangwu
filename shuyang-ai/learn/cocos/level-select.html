@@ -6,7 +6,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <meta name="theme-color" content="#0f1230"/>
-  <meta name="level-select-build" content="ls5"/>
+  <meta name="level-select-build" content="ls6"/>
   <title>选关 · 伍澍暘成长屋</title>
   <link rel="stylesheet" href="../../../brand-tokens.css"/>
   <style>
@@ -115,22 +115,22 @@
     <header class="bar">
       <h1>🗺️ 选关 · 伍澍暘 · 小宇</h1>
       <a href="../../../index.html">回小屋</a>
-      <a id="toWb" href="visual-workbench.html?v=ldt35&amp;step=2&amp;scene=1">工坊</a>
+      <a id="toWb" href="visual-workbench.html?v=ldt36&amp;step=2&amp;scene=1">工坊</a>
     </header>
     <p class="lead" id="lead">五关由易到难。每一关<b>先打开编辑器</b>（配置已经填好），试一试，再玩。玩完可以回去再调。第 <b>4</b> 关才用积分买武器。第 <b>5</b> 关可以联网对战。</p>
     <div class="grid" id="grid" aria-label="五关"></div>
     <div class="foot">
-      <a class="primary" id="net5" href="custom-play.html?v=c53&amp;scene=5&amp;net=1">第5关 · 联网对战</a>
-      <a id="edit1" href="visual-workbench.html?v=ldt35&amp;step=2&amp;scene=1">从第1关编辑</a>
-      <a id="edit9" href="visual-workbench.html?v=ldt35&amp;open=my1&amp;step=2">我的旧关</a>
+      <a class="primary" id="net5" href="custom-play.html?v=c54&amp;scene=5&amp;net=1">第5关 · 联网对战</a>
+      <a id="edit1" href="visual-workbench.html?v=ldt36&amp;step=2&amp;scene=1">从第1关编辑</a>
+      <a id="edit9" href="visual-workbench.html?v=ldt36&amp;open=my1&amp;step=2">我的旧关</a>
     </div>
     <p class="note" id="note">加载名册…</p>
   </div>
-  <script src="wb-store.js?v=ldt35"></script>
+  <script src="wb-store.js?v=ldt36"></script>
   <script>
   (function () {
-    var PLAY = 'custom-play.html?v=c53';
-    var WB = 'visual-workbench.html?v=ldt35';
+    var PLAY = 'custom-play.html?v=c54';
+    var WB = 'visual-workbench.html?v=ldt36';
     var SCENE_KEY = 'xygo-scene5-progress';
     /* 试完规则（DESIGN）：L1–L4 各至少进过一次试玩页即算试过；
        若有过关 completed 戳也算。解锁后点任一关直达，无二次确认。 */
@@ -200,7 +200,7 @@
       grid.innerHTML = html;
       var doneN = 0;
       for (var k = 1; k <= 5; k++) if (prog.tried[String(k)] || prog.completed[String(k)]) doneN++;
-      note.textContent = 'tip ls5 · 五关进度 xygo-scene5-progress（不写旧 Boss 键 sycocos-level-progress）。编辑覆盖 xygo-level-edits。已试 ' + doneN + '/5。正式名伍澍暘 / 小宇。';
+      note.textContent = 'tip ls6 · 五关进度 xygo-scene5-progress（不写旧 Boss 键 sycocos-level-progress）。编辑覆盖 xygo-level-edits。已试 ' + doneN + '/5。正式名伍澍暘 / 小宇。';
     }
 
     bindOldMine(document.getElementById('edit9'));

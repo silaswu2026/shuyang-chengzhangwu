@@ -26,7 +26,13 @@ function fail(msg) {
   process.exitCode = 1;
 }
 
-if (store.SCENE_COUNT !== 5) fail('scene count');
+if (store.BACKDROPS.length !== 5) fail('backdrop count');
+var b0 = store.backdropById('forest');
+if (b0.file !== 'forest-day.jpg') fail('forest file');
+var st = { backdrop: 'forest' };
+var nxt = store.cycleBackdrop(st);
+if (nxt.id !== 'moss' || st.backdrop !== 'moss') fail('cycle backdrop');
+if (store.cycleBackdrop({ backdrop: 'thunder' }).id !== 'forest') fail('cycle wrap');
 if (!store.BGM_POOL || store.BGM_POOL.length !== 9) fail('bgm pool');
 if (!store.MONSTERS || store.MONSTERS.length !== 5) fail('monsters');
 
@@ -114,6 +120,17 @@ var blocked = store.place(old, 1);
 if (blocked.ok) fail('front spike');
 old.tool = 'coin';
 if (!store.place(old, 1).ok) fail('front coin');
+old.tool = 'fire';
+var changed = store.place(old, 4);
+if (!changed.ok || old.map[4] !== 'fire') fail('change kind');
+var picked = store.place(old, 4);
+if (!picked.selected || !old.moving) fail('select to move');
+var moved = store.place(old, 8);
+if (!moved.ok || old.map[8] !== 'fire' || old.map[4]) fail('move piece');
+old.moving = true;
+old.selX = 8;
+old.map[8] = 'spike';
+if (store.place(old, 0).ok) fail('move hazard into front');
 
 if (process.exitCode) console.error('store tests failed');
 else console.log('store scene5 tests ok');

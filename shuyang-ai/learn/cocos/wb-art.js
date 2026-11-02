@@ -1070,6 +1070,68 @@
     }
     return { clouds: clouds, sun: sun, hill: hill, box: box };
   }
+  var backdropImg = {};
+  function backdropSpec(id) {
+    if (window.WBStore && WBStore.backdropById) return WBStore.backdropById(id);
+    return { id: 'forest', name: '林间白天', file: 'forest-day.jpg' };
+  }
+  function paintBackdrop(layer, box, gy, spec, image) {
+    if (!image || !image.naturalWidth) return null;
+    var t = new cc.Texture2D();
+    t.initWithElement(image);
+    t.handleLoadedTexture();
+    try { if (t.setAntiAliasTexParameters) t.setAntiAliasTexParameters(); } catch (eA) {}
+    var sp = new cc.Sprite(t);
+    sp.setAnchorPoint(0, 0);
+    var iw = image.naturalWidth;
+    var ih = image.naturalHeight;
+    var bw = box.w;
+    var bh = Math.max(48, (box.y + box.h) - gy + 8);
+    var scale = Math.max(bw / iw, bh / ih);
+    sp.setScale(scale);
+    var dw = iw * scale;
+    sp.setPosition(box.x + (bw - dw) / 2, gy - 8);
+    if (spec.tint && spec.tint.length === 3) sp.setColor(cc.color(spec.tint[0], spec.tint[1], spec.tint[2]));
+    layer.addChild(sp, 2);
+    return sp;
+  }
+  function dressScene(layer, gy, box, id) {
+    box = box || { x: 0, y: 0, w: W, h: H };
+    var spec = backdropSpec(id);
+    var sky = dressSky(layer, gy, box);
+    var known = backdropImg[spec.id];
+    if (known && known.naturalWidth) {
+      sky.photo = paintBackdrop(layer, box, gy, spec, known);
+      if (sky.sun) sky.sun.setVisible(false);
+      if (sky.hill) sky.hill.setVisible(false);
+      if (sky.clouds) sky.clouds.forEach(function (c) { c.setVisible(false); });
+      return sky;
+    }
+    var im = new Image();
+    im.onload = function () {
+      backdropImg[spec.id] = im;
+      if (layer && layer.getParent && layer.getParent()) {
+        sky.photo = paintBackdrop(layer, box, gy, spec, im);
+        if (sky.sun) sky.sun.setVisible(false);
+        if (sky.hill) sky.hill.setVisible(false);
+        if (sky.clouds) sky.clouds.forEach(function (c) { c.setVisible(false); });
+      }
+    };
+    im.src = SC + spec.file;
+    return sky;
+  }
+  function preloadBackdrops() {
+    var list = (window.WBStore && WBStore.BACKDROPS) || [];
+    var i;
+    for (i = 0; i < list.length; i++) {
+      (function (spec) {
+        if (backdropImg[spec.id]) return;
+        var im = new Image();
+        im.onload = function () { backdropImg[spec.id] = im; };
+        im.src = SC + spec.file;
+      })(list[i]);
+    }
+  }
   function dressWater(layer, box) {
     box = box || { x: 0, y: 0, w: W, h: H };
     blit(layer, tex.water, box.x, box.y, box.w, box.h, 0);
@@ -1148,6 +1210,8 @@
     fill: fill,
     blit: blit,
     dressSky: dressSky,
+    dressScene: dressScene,
+    preloadBackdrops: preloadBackdrops,
     dressWater: dressWater,
     addGround: addGround
   };

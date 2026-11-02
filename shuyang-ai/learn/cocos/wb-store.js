@@ -56,6 +56,14 @@
     { id: 'bug', name: '甲虫' },
     { id: 'thunder', name: '雷兽' }
   ];
+  /* Photos already in xy-go/scenes. hall/thunder reuse a photo with a tint. */
+  var BACKDROPS = [
+    { id: 'forest', name: '林间白天', file: 'forest-day.jpg' },
+    { id: 'moss', name: '苔岩黄昏', file: 'moss-dusk.jpg' },
+    { id: 'canopy', name: '萤火夜', file: 'canopy-night.jpg' },
+    { id: 'hall', name: '尖刺暖廊', file: 'forest-day.jpg', tint: [255, 186, 120] },
+    { id: 'thunder', name: '雷鸣夜', file: 'canopy-night.jpg', tint: [150, 176, 255] }
+  ];
 
   function blankMap(n) {
     n = n | 0;
@@ -123,6 +131,94 @@
     var i;
     for (i = 0; i < MONSTERS.length; i++) if (MONSTERS[i].id === id) return MONSTERS[i].name;
     return '怪物';
+  }
+
+  function backdropById(id) {
+    var i;
+    for (i = 0; i < BACKDROPS.length; i++) if (BACKDROPS[i].id === id) return BACKDROPS[i];
+    if (id === 'swamp') return BACKDROPS[1];
+    return BACKDROPS[0];
+  }
+
+  function cycleBackdrop(state) {
+    var cur = state && state.backdrop;
+    var idx = 0;
+    var i;
+    for (i = 0; i < BACKDROPS.length; i++) if (BACKDROPS[i].id === cur) idx = i;
+    var next = BACKDROPS[(idx + 1) % BACKDROPS.length];
+    if (state) state.backdrop = next.id;
+    return next;
+  }
+
+  function cycleBgm(state) {
+    var cur = state && state.bgmId;
+    var idx = 0;
+    var i;
+    for (i = 0; i < BGM_POOL.length; i++) if (BGM_POOL[i].id === cur) idx = i;
+    var next = BGM_POOL[(idx + 1) % BGM_POOL.length];
+    if (state) {
+      state.bgmId = next.id;
+      if (!state.audio || typeof state.audio !== 'object') state.audio = blankAudio();
+      state.audio.bgmId = next.fileId;
+    }
+    return next;
+  }
+
+  var CAST = [
+    { id: 'green', name: '绿忍者' },
+    { id: 'red', name: '红忍者' },
+    { id: 'blue', name: '蓝忍者' }
+  ];
+  function cycleCharacter(state) {
+    var cur = state && state.character;
+    var idx = 0;
+    var i;
+    for (i = 0; i < CAST.length; i++) if (CAST[i].id === cur) idx = i;
+    var next = CAST[(idx + 1) % CAST.length];
+    if (state) state.character = next.id;
+    return next;
+  }
+
+  function toggleSfx(state) {
+    if (!state.audio || typeof state.audio !== 'object') state.audio = blankAudio();
+    if (!state.audio.sfx) state.audio.sfx = blankAudio().sfx;
+    var on = false;
+    var k;
+    for (k in state.audio.sfx) if (state.audio.sfx[k]) on = true;
+    var next = !on;
+    for (k in state.audio.sfx) state.audio.sfx[k] = next;
+    return next;
+  }
+
+  function monsterAt(state, x) {
+    var list = (state && state.monsters) || [];
+    var i;
+    for (i = 0; i < list.length; i++) if ((list[i].x | 0) === (x | 0)) return list[i];
+    return null;
+  }
+
+  function cycleMonsterAt(state, x) {
+    var hit = monsterAt(state, x);
+    if (!hit) return null;
+    var ids = [];
+    var i;
+    for (i = 0; i < MONSTERS.length; i++) ids.push(MONSTERS[i].id);
+    var pos = ids.indexOf(hit.id);
+    if (pos < 0) pos = 0;
+    if (hit.size !== 'big') hit.size = 'big';
+    else {
+      hit.size = 'small';
+      hit.id = ids[(pos + 1) % ids.length];
+    }
+    return hit;
+  }
+
+  function moveMonster(state, fromX, toX) {
+    var hit = monsterAt(state, fromX);
+    if (!hit) return { ok: false, flash: '' };
+    if ((toX | 0) < SAFE0) return { ok: false, flash: '怪物别放在出生两格' };
+    hit.x = toX | 0;
+    return { ok: true, flash: '怪物搬过来了' };
   }
 
   function templateMap(n) {
@@ -721,11 +817,43 @@
       return { ok: true, flash: tool === 'start' ? '起点放好了' : '终点放好了' };
     }
     var cur = state.map[x];
-    if (isTrap(cur) || isReward(cur)) {
+    var occupied = cur && (isTrap(cur) || isReward(cur) || cur === 'start' || cur === 'goal');
+    if (occupied && tool && tool !== cur && tool !== 'del' && isPlaceable(tool)) {
+      if (isStartHazard(tool) && x < SAFE0) {
+        return { ok: false, flash: '开头要空着（像马里奥出生点）' };
+      }
+      if (tool === 'start' || tool === 'goal') {
+        var iSwap;
+        for (iSwap = 0; iSwap < state.map.length; iSwap++) {
+          if (state.map[iSwap] === tool) state.map[iSwap] = null;
+        }
+      }
+      state.map[x] = tool;
+      state.sel = tool;
+      state.selX = x;
+      state.tool = tool;
+      state.moving = false;
+      return { ok: true, flash: '换成这个了' };
+    }
+    if (occupied) {
       state.sel = cur;
       state.selX = x;
-      if (isTrap(cur)) state.tool = cur;
-      return { ok: true, flash: '', selected: true };
+      state.tool = cur;
+      state.moving = true;
+      return { ok: true, flash: '选中了。点空格搬走，或点别的零件换种类', selected: true };
+    }
+    if (!cur && state.moving && state.selX >= 0 && state.selX < state.map.length && state.map[state.selX]) {
+      var piece = state.map[state.selX];
+      if (isStartHazard(piece) && x < SAFE0) {
+        return { ok: false, flash: '开头要空着（像马里奥出生点）' };
+      }
+      state.map[state.selX] = null;
+      state.map[x] = piece;
+      state.sel = piece;
+      state.selX = x;
+      state.tool = piece;
+      state.moving = false;
+      return { ok: true, flash: '搬过来了' };
     }
     if (isStartHazard(tool) && x < SAFE0) {
       return { ok: false, flash: '开头要空着（像马里奥出生点）' };
@@ -949,6 +1077,7 @@
     SCENE_COUNT: SCENE_COUNT,
     BGM_POOL: BGM_POOL,
     MONSTERS: MONSTERS,
+    BACKDROPS: BACKDROPS,
     MY_ID: MY_ID,
     MY_TITLE: MY_TITLE,
     ROWS: ROWS,
@@ -1005,6 +1134,14 @@
     templateMeta: templateMeta,
     bgmById: bgmById,
     monsterName: monsterName,
+    backdropById: backdropById,
+    cycleBackdrop: cycleBackdrop,
+    cycleBgm: cycleBgm,
+    cycleCharacter: cycleCharacter,
+    toggleSfx: toggleSfx,
+    monsterAt: monsterAt,
+    cycleMonsterAt: cycleMonsterAt,
+    moveMonster: moveMonster,
     weaponShopOpen: weaponShopOpen,
     markSceneProgress: markSceneProgress
   };
