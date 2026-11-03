@@ -20,12 +20,15 @@ if (MI8.DISCLAIMER !== '成长屋兴趣参考 · 非哈佛官方测验 · 非能
   fail('disclaimer text');
 }
 if (MI8.STORAGE_KEY !== 'xygo-mi8-results') fail('storage key');
+if (MI8.TIP !== 'mi2') fail('tip ' + MI8.TIP);
 if (MI8.DOMAINS.length !== 8) fail('8 domains');
 if (MI8.ITEMS.length !== 40) fail('40 items');
 
 var seen = {};
 MI8.DOMAINS.forEach(function (d) {
   if (d.items.length !== 5) fail(d.id + ' not 5');
+  if (!d.pictures || d.pictures.length !== 5) fail(d.id + ' pictures');
+  if (d.sceneItem < 1 || d.sceneItem > 5) fail(d.id + ' sceneItem');
   if (d.blurb.indexOf('你') !== 0) fail(d.id + ' blurb should speak to the child');
   if (!MI8.PLACES[d.place]) fail(d.id + ' missing place');
   d.items.forEach(function (text) {
@@ -163,9 +166,52 @@ if (box.getItem('xygo-custom-level') !== '{"no":1}') fail('save must not touch o
 });
 var js = fs.readFileSync(path.join(__dirname, 'mi8.js'), 'utf8');
 if (js.indexOf('xygo-custom-level') !== -1) fail('quiz js mentions a game key');
-if (js.indexOf('?v=mi1') === -1 && js.indexOf('mi1') === -1) fail('tip mi1 missing in js');
+if (js.indexOf("var TIP = 'mi2'") === -1) fail('tip mi2 missing in js');
+if (js.indexOf('mi1') !== -1) fail('stale mi1 in js');
 var html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
-if (html.indexOf('mi8.css?v=mi1') === -1 || html.indexOf('mi8.js?v=mi1') === -1) fail('asset cache bust');
+if (html.indexOf('mi8.css?v=mi2') === -1 || html.indexOf('mi8.js?v=mi2') === -1) fail('asset cache bust');
+if (html.indexOf('content="mi2"') === -1) fail('meta tip');
+if (html.indexOf('mi1') !== -1) fail('stale mi1 in html');
+var css = fs.readFileSync(path.join(__dirname, 'mi8.css'), 'utf8');
+if (css.indexOf('mi1') !== -1) fail('stale mi1 in css');
+if (/choice\[data-value/.test(css)) fail('choice styled by value');
+if (css.indexOf('.choice:nth') !== -1) fail('choice nth weight');
+if (!/\.bars \.bar-art,\s*\.bar-row\.hot \.bar-art\s*\{[^}]*width:\s*36px/.test(css)) fail('bar art size lock');
+if (!/\.card \.card-art,\s*\.card\.hot \.card-art\s*\{[^}]*width:\s*96px/.test(css)) fail('card art size lock');
+var choiceAt = js.indexOf('class="choice"');
+var choiceEnd = js.indexOf('</button>', choiceAt);
+var choiceTpl = js.slice(choiceAt, choiceEnd);
+if (choiceTpl.indexOf('<img') !== -1 || choiceTpl.indexOf('★') !== -1 || choiceTpl.indexOf('推荐') !== -1) {
+  fail('choice template guides');
+}
+var qFn = js.slice(js.indexOf('function questionHtml'), js.indexOf('function resultHtml'));
+var trackAt = qFn.indexOf('class="track"');
+var trackEnd = qFn.indexOf('</div>', trackAt);
+if (qFn.slice(trackAt, trackEnd).indexOf('<img') !== -1) fail('progress art');
+['../../../index.html', '../../index.html'].forEach(function (rel) {
+  var page = fs.readFileSync(path.join(__dirname, rel), 'utf8');
+  if (page.indexOf('mi8/?v=mi2') === -1 && page.indexOf('learn/mi8/?v=mi2') === -1) fail(rel + ' entry tip');
+  if (page.indexOf('mi8/?v=mi1') !== -1) fail(rel + ' stale entry');
+});
+var bannedArt = ['opacity', 'filter=', '<filter', 'animate', '★', '⭐', '👍', '推荐', '很酷', '你是', '该选', '天才', '✓', '✗'];
+MI8.ITEMS.forEach(function (item) {
+  if (!item.picture) fail(item.id + ' missing picture');
+  var svgPath = path.join(__dirname, 'assets', item.id + '.svg');
+  if (!fs.existsSync(svgPath)) fail('missing ' + item.id + '.svg');
+  var svg = fs.readFileSync(svgPath, 'utf8');
+  if (svg.indexOf('viewBox="0 0 160 120"') === -1) fail(item.id + ' viewBox');
+  if (svg.indexOf('fill="#1a2148"') === -1) fail(item.id + ' frame');
+  var desc = (svg.match(/<desc>([^<]*)<\/desc>/) || [])[1];
+  if (desc !== item.picture) fail(item.id + ' alt drift');
+  bannedArt.forEach(function (word) {
+    if (svg.indexOf(word) !== -1) fail(item.id + ' has ' + word);
+    if (item.picture.indexOf(word) !== -1) fail(item.id + ' caption has ' + word);
+  });
+});
+['level-editor', 'song-studio', 'outdoor', 'teach', 'reflect'].forEach(function (id) {
+  var scene = MI8.PLACES[id].scene;
+  if (!scene || !fs.existsSync(path.join(__dirname, 'assets', scene + '.svg'))) fail(id + ' scene');
+});
 if (MI8.PLACES['song-studio'].href !== '../song-studio/?v=mse1') fail('song door ' + MI8.PLACES['song-studio'].href);
 if (MI8.DOMAINS[4].tryText.indexOf('小歌编辑器') === -1) fail('music try text');
 if (MI8.DOMAINS[4].tryText.indexOf('更多') !== -1) fail('music try still points at 更多');

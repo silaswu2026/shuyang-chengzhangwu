@@ -1,10 +1,12 @@
-/* 成长屋兴趣小问 · 八个方向，测更喜欢哪边。缓存 mi1。
+/* 成长屋兴趣小问 · 八个方向，测更喜欢哪边。缓存 mi2。
+   每题一张图，只说明这件事长什么样。四档选项不配图、不加权。
    计分：每题 1–4，每方向 5 题，方向分 5–20。兴趣，不是能力。 */
 (function (root) {
   'use strict';
 
   var DISCLAIMER = '成长屋兴趣参考 · 非哈佛官方测验 · 非能力诊断 · 测的是更喜欢哪边';
   var STORAGE_KEY = 'xygo-mi8-results';
+  var TIP = 'mi2';
   var HIGHLIGHT_MAX_DROP = 4;
   var CHILD = '伍澍暘';
   var ASSISTANT = '小宇';
@@ -19,17 +21,19 @@
       id: 'level-editor',
       label: '做关卡',
       href: '../cocos/level-select.html?v=ls7',
-      cta: '去选一关'
+      cta: '去选一关',
+      scene: 'spatial-4'
     },
     'song-studio': {
       id: 'song-studio',
       label: '做歌',
       href: '../song-studio/?v=mse1',
-      cta: '去小歌编辑器'
+      cta: '去小歌编辑器',
+      scene: 'musical-4'
     },
-    outdoor: { id: 'outdoor', label: '到户外', href: '', cta: '' },
-    teach: { id: 'teach', label: '教别人', href: '', cta: '' },
-    reflect: { id: 'reflect', label: '想一想', href: '', cta: '' }
+    outdoor: { id: 'outdoor', label: '到户外', href: '', cta: '', scene: 'naturalist-1' },
+    teach: { id: 'teach', label: '教别人', href: '', cta: '', scene: 'interpersonal-3' },
+    reflect: { id: 'reflect', label: '想一想', href: '', cta: '', scene: 'intrapersonal-1' }
   };
 
   var DOMAINS = [
@@ -45,7 +49,15 @@
         '听到一个新词，会想找机会再用一次。',
         '听故事听到一半，会想问后来怎样了。',
         '心里有想法时，更想说出来或写下来，而不是一直闷着。'
-      ]
+      ],
+      pictures: [
+        '一个人把今天的事讲出来，气泡里有太阳和屋子',
+        '一扇关卡门上贴着一张纸，旁边还有一张一样大的纸',
+        '两张一样大的卡片都写着词，一张在上，一张在下',
+        '一本翻开的故事书，书签夹在中间，旁边有一个问号',
+        '三个一样大的格子：一个圆、一个小气泡、一张小纸'
+      ],
+      sceneItem: 2
     },
     {
       id: 'logical',
@@ -59,7 +71,15 @@
         '看到一排东西，会想找哪里在重复、哪里是规律。',
         '一关打不开时，更想一步一步试，而不是乱按一通。',
         '收拾或排队时，喜欢先分成几类再开始。'
-      ]
+      ],
+      pictures: [
+        '四格一样大的跑道，每格一个数字',
+        '左右两格一样大，一格写这一步，一格写下一步，方块一样大',
+        '一排圆和方，大小都一样，间距也一样',
+        '一个人、三块一样大的踏脚石、一扇关着的门',
+        '三只一样大的筐，里面分别是圆、方、三角'
+      ],
+      sceneItem: 1
     },
     {
       id: 'spatial',
@@ -73,7 +93,15 @@
         '喜欢指出一个东西在左边还是右边、高一点还是低一点。',
         '做关卡时，会在意空隙：从这里能不能跳到那里。',
         '涂色、拼图，或把画面排整齐，做完会觉得舒服。'
-      ]
+      ],
+      pictures: [
+        '一块方积木，气泡里是转过方向的同一块',
+        '三张一样大的卡片：地图、跑道、拼图',
+        '左边低处一个方块，右边高处一个圆，字一样大',
+        '两块一样高的平台，中间空着',
+        '一张涂了一半颜色的纸，旁边四块一样大的拼图'
+      ],
+      sceneItem: 4
     },
     {
       id: 'bodily',
@@ -87,7 +115,15 @@
         '跑、跳、球或攀爬，动完会觉得今天真痛快。',
         '搭积木或做手工时，手要摸到材料才安心。',
         '用全身演一个角色，比只用嘴讲更像自己。'
-      ]
+      ],
+      pictures: [
+        '一把椅子，一个人举着手在伸懒腰',
+        '一个人抬起一条腿',
+        '三个一样大的格子，里面是球、小路和石头',
+        '一个人把手放在积木和纸上',
+        '一个人张开手臂，身上披着一块布'
+      ],
+      sceneItem: 3
     },
     {
       id: 'musical',
@@ -101,7 +137,15 @@
         '喜欢分辨这段是快还是慢、是亮还是安静。',
         '想自己做出一小段歌，哪怕只有四拍。',
         '安静的时候，脑子里也会自己响起一首喜欢的曲子。'
-      ]
+      ],
+      pictures: [
+        '两个音符，一张桌子，一个人把手指点在桌上',
+        '一扇关卡门旁边一个音符',
+        '左右两格一样大，一格音符密、写着快，一格音符疏、写着慢',
+        '四个一样大的圆点，写着数字',
+        '一个人旁边的气泡里有三个音符'
+      ],
+      sceneItem: 4
     },
     {
       id: 'interpersonal',
@@ -115,7 +159,15 @@
         '把刚学会的一步讲给别人听，自己也会更明白。',
         '一群人还没开始时，愿意先招呼大家从哪里做起。',
         '做完一个东西，会在意别人玩的时候开不开心。'
-      ]
+      ],
+      pictures: [
+        '两个人一样大，一个旁边有积木，一个脚边有格子',
+        '两个人一样大，一个嘴巴是平的，中间有一个问号',
+        '两个人一样大，中间有一块台阶',
+        '三个人一样大，中间那个人旁边有一个小气泡',
+        '三块一样大的积木叠着，旁边两个人一样大'
+      ],
+      sceneItem: 3
     },
     {
       id: 'intrapersonal',
@@ -129,7 +181,15 @@
         '知道自己这一刻是想玩，还是想先歇一歇。',
         '做完一件事，会在心里分一分：哪里顺，哪里别扭。',
         '要选的时候，会问自己到底更想要哪一个。'
-      ]
+      ],
+      pictures: [
+        '气泡里三个一样大的格子，分别是球、书和叶子',
+        '一个人、两块积木、一张画着圆的纸',
+        '左右两格一样大，一格是球，一格是枕头',
+        '两段一样长的路，一段平，一段上面有圆包',
+        '两个一样大的格子，一个杯子、一本书'
+      ],
+      sceneItem: 1
     },
     {
       id: 'naturalist',
@@ -143,14 +203,22 @@
         '天气变了，或窗台有一盆植物，会想隔一会儿再看一眼。',
         '做关卡时，会想放上草地、水或石头。',
         '比起只记住名字，更想知道它为什么长成这样。'
-      ]
+      ],
+      pictures: [
+        '树、云、鸟和虫子，旁边站着一个人',
+        '两张一样大的卡片，各有一片叶子',
+        '一扇窗户、窗外的云、窗台上一盆植物',
+        '三块一样大的格子，上面是草、水和石头',
+        '一株带着根的植物，旁边站着一个人'
+      ],
+      sceneItem: 1
     }
   ];
 
   var ITEMS = [];
   DOMAINS.forEach(function (d) {
     d.items.forEach(function (text, i) {
-      ITEMS.push({ id: d.id + '-' + (i + 1), domainId: d.id, text: text });
+      ITEMS.push({ id: d.id + '-' + (i + 1), domainId: d.id, text: text, picture: d.pictures[i] });
     });
   });
 
@@ -405,13 +473,29 @@
     return svg;
   }
 
+  function sceneSrc(id) {
+    return 'assets/' + id + '.svg?v=' + TIP;
+  }
+
+  function sceneImg(id, cls, decorative) {
+    var alt = '';
+    if (!decorative) {
+      for (var i = 0; i < ITEMS.length; i++) {
+        if (ITEMS[i].id === id) alt = ITEMS[i].picture || '';
+      }
+    }
+    var altAttr = decorative ? ' alt="" aria-hidden="true"' : ' alt="' + esc(alt) + '"';
+    var classAttr = cls ? ' class="' + cls + '"' : '';
+    return '<img' + classAttr + ' src="' + sceneSrc(id) + '"' + altAttr + ' width="160" height="120"/>';
+  }
+
   function barsHtml(view) {
     var hi = view.highlight.ids;
     return view.ranked.map(function (row) {
       var d = domainById(row.id);
       var hot = hi.indexOf(row.id) !== -1 ? ' hot' : '';
       var width = Math.round((row.score / 20) * 100);
-      return '<div class="bar-row' + hot + '"><span class="bar-name">' + esc(d.name) + '</span><span class="bar-track"><span class="bar-fill" style="width:' + width + '%"></span></span><span class="bar-num">' + row.score + '/20 · ' + esc(warmth(row.score)) + '</span></div>';
+      return '<div class="bar-row' + hot + '">' + sceneImg(row.id + '-1', 'bar-art', true) + '<span class="bar-name">' + esc(d.name) + '</span><span class="bar-track"><span class="bar-fill" style="width:' + width + '%"></span></span><span class="bar-num">' + row.score + '/20 · ' + esc(warmth(row.score)) + '</span></div>';
     }).join('');
   }
 
@@ -431,7 +515,7 @@
       }).join(' · ');
       var doors = DOORS.map(function (door) {
         var place = PLACES[door.place];
-        return '<article class="card"><span class="place">' + esc(place.label) + '</span><p class="blurb">' + esc(door.text) + '</p>' + linkHtml(door.place) + '</article>';
+        return '<article class="card">' + sceneImg(place.scene, 'card-art', false) + '<span class="place">' + esc(place.label) + '</span><p class="blurb">' + esc(door.text) + '</p>' + linkHtml(door.place) + '</article>';
       }).join('');
       return '<p class="lead">' + esc(clusterCopy(view.ranked, hi.ids)) + '</p><p class="fine">' + names + '</p><div class="cards">' + doors + '</div>';
     }
@@ -441,7 +525,7 @@
       view.ranked.forEach(function (r) { if (r.id === id) row = r; });
       var place = PLACES[d.place];
       var head = mode === 'parent' ? '本月可以陪他试' : '本月可以多试';
-      return '<article class="card hot"><span class="badge">' + esc(cardBadge(row.score, view.ranked)) + '</span><h3>' + esc(d.name) + '</h3><p class="fine">' + row.score + '/20 · ' + esc(warmth(row.score)) + '</p><p class="blurb">' + esc(blurbFor(d, mode)) + '</p><span class="place">' + esc(place.label) + '</span><p class="try">' + esc(head) + '：' + esc(d.tryText) + '</p>' + linkHtml(d.place) + '</article>';
+      return '<article class="card hot">' + sceneImg(d.id + '-' + d.sceneItem, 'card-art', false) + '<span class="badge">' + esc(cardBadge(row.score, view.ranked)) + '</span><h3>' + esc(d.name) + '</h3><p class="fine">' + row.score + '/20 · ' + esc(warmth(row.score)) + '</p><p class="blurb">' + esc(blurbFor(d, mode)) + '</p><span class="place">' + esc(place.label) + '</span><p class="try">' + esc(head) + '：' + esc(d.tryText) + '</p>' + linkHtml(d.place) + '</article>';
     }).join('') + '</div>';
   }
 
@@ -461,6 +545,7 @@
   var MI8 = {
     DISCLAIMER: DISCLAIMER,
     STORAGE_KEY: STORAGE_KEY,
+    TIP: TIP,
     HIGHLIGHT_MAX_DROP: HIGHLIGHT_MAX_DROP,
     CHILD: CHILD,
     ASSISTANT: ASSISTANT,
@@ -526,7 +611,7 @@
 
     function render() {
       var disclaimerHtml = esc(DISCLAIMER).replace('测的是更喜欢哪边', '<span class="keep">测的是更喜欢哪边</span>');
-      app.innerHTML = '<main class="shell"><p class="disclaimer"><span>' + disclaimerHtml + '</span><span class="build-tip">mi1</span></p>' + screenHtml() + '</main>';
+      app.innerHTML = '<main class="shell"><p class="disclaimer"><span>' + disclaimerHtml + '</span><span class="build-tip">' + TIP + '</span></p>' + screenHtml() + '</main>';
       var q = document.getElementById('q-heading');
       if (q && state.screen === 'q') q.focus();
     }
@@ -561,7 +646,10 @@
       var speech = state.mode === 'parent'
         ? (ASSISTANT + '：题目还是这 40 句。请爸爸按平日看见的来选，看哪边更像' + CHILD + '。')
         : (ASSISTANT + '：' + CHILD + '，今天不考对错。我们只看你更喜欢哪边。');
-      return warnHtml() + '<div class="intro-grid"><div><p class="who">' + esc(ASSISTANT) + '</p><h1>更喜欢哪边</h1><p class="who">' + esc(CHILD) + '</p><p class="lead">' + esc(speech) + '</p><p class="fine">40 件小事。四格都算数，选最贴近的那一格。</p><div class="avatars" aria-label="小宇和伍澍暘"><figure><img src="../../avatars/xiaoyu.jpg" alt="小宇"/><figcaption>小宇</figcaption></figure><figure><img src="../../avatars/pengpeng.jpg" alt="伍澍暘"/><figcaption>伍澍暘</figcaption></figure></div></div><div><div class="seg" role="group" aria-label="谁来答"><button type="button" data-action="mode" data-mode="kid" aria-pressed="' + (state.mode === 'kid' ? 'true' : 'false') + '">' + esc(CHILD) + '自己答</button><button type="button" data-action="mode" data-mode="parent" aria-pressed="' + (state.mode === 'parent' ? 'true' : 'false') + '">爸爸可按观察代答</button></div><div class="actions">' + resume + '<button type="button" class="' + (resume ? 'ghost' : 'primary') + '" data-action="start">' + startLabel + '</button>' + savedBtn + '<a class="ghost" href="../../../index.html">回小屋</a></div>' + dialog + '</div></div>';
+      var strip = '<div class="scene-strip" aria-label="题目里会出现的事">' + DOMAINS.map(function (d) {
+        return sceneImg(d.id + '-1', '', true);
+      }).join('') + '</div>';
+      return warnHtml() + '<div class="intro-grid"><div><p class="who">' + esc(ASSISTANT) + '</p><h1>更喜欢哪边</h1><p class="who">' + esc(CHILD) + '</p><p class="lead">' + esc(speech) + '</p><p class="fine">40 件小事。四格都算数，选最贴近的那一格。</p>' + strip + '<div class="avatars" aria-label="小宇和伍澍暘"><figure><img src="../../avatars/xiaoyu.jpg" alt="小宇"/><figcaption>小宇</figcaption></figure><figure><img src="../../avatars/pengpeng.jpg" alt="伍澍暘"/><figcaption>伍澍暘</figcaption></figure></div></div><div><div class="seg" role="group" aria-label="谁来答"><button type="button" data-action="mode" data-mode="kid" aria-pressed="' + (state.mode === 'kid' ? 'true' : 'false') + '">' + esc(CHILD) + '自己答</button><button type="button" data-action="mode" data-mode="parent" aria-pressed="' + (state.mode === 'parent' ? 'true' : 'false') + '">爸爸可按观察代答</button></div><div class="actions">' + resume + '<button type="button" class="' + (resume ? 'ghost' : 'primary') + '" data-action="start">' + startLabel + '</button>' + savedBtn + '<a class="ghost" href="../../../index.html">回小屋</a></div>' + dialog + '</div></div>';
     }
 
     function questionHtml() {
@@ -580,7 +668,8 @@
       if (state.index === 39) {
         next = '<button type="button" class="primary" data-action="finish"' + (answered ? '' : ' disabled') + '>看我的喜欢</button>';
       }
-      return warnHtml() + '<section class="q-screen" aria-labelledby="q-heading"><div class="progress-label"><span>' + esc(domain.name) + ' · ' + within + ' / 5</span><span>第 ' + (state.index + 1) + ' / 40 题</span></div><div class="track" role="progressbar" aria-valuemin="1" aria-valuemax="40" aria-valuenow="' + (state.index + 1) + '"><span style="width:' + pct + '%"></span></div><p class="prompt">' + esc(promptFor(state.mode)) + '</p><h2 id="q-heading" class="q-text" tabindex="-1">' + esc(item.text) + '</h2><p class="hint">四格都对，选最贴近的。</p><div class="choices">' + choices + '</div><div class="q-nav"><button type="button" class="ghost" data-action="back">' + (state.index === 0 ? '先停一下' : '上一题') + '</button>' + next + '</div></section>';
+      var fig = '<figure class="q-fig">' + sceneImg(item.id, '', false) + '</figure>';
+      return warnHtml() + '<section class="q-screen" aria-labelledby="q-heading"><div class="q-top">' + fig + '<div class="q-copy"><div class="progress-label"><span>' + esc(domain.name) + ' · ' + within + ' / 5</span><span>第 ' + (state.index + 1) + ' / 40 题</span></div><div class="track" role="progressbar" aria-valuemin="1" aria-valuemax="40" aria-valuenow="' + (state.index + 1) + '"><span style="width:' + pct + '%"></span></div><p class="prompt">' + esc(promptFor(state.mode)) + '</p><h2 id="q-heading" class="q-text" tabindex="-1">' + esc(item.text) + '</h2><p class="hint">四格都对，选最贴近的。</p></div></div><div class="choices">' + choices + '</div><div class="q-nav"><button type="button" class="ghost" data-action="back">' + (state.index === 0 ? '先停一下' : '上一题') + '</button>' + next + '</div></section>';
     }
 
     function resultHtml() {
@@ -607,7 +696,7 @@
         dialog = '<div class="dialog"><p>再答一遍 40 题。答完才换掉「' + esc(modeLabel(state.viewMode)) + '」这一份。另一种答法还留着。</p><button type="button" class="primary" data-action="retake-yes">开始重测</button><button type="button" class="ghost" data-action="dialog-close">留在结果</button></div>';
       }
       var when = formatWhen(saved.savedAt);
-      return warnHtml() + '<p class="who">' + esc(ASSISTANT) + '</p><h1>' + esc(CHILD) + ' · 这周更想靠近的</h1><p class="lead">' + esc(speech) + '</p>' + low + switcher + cardsHtml(view, state.viewMode) + '<div class="chart-wrap"><div class="radar-box">' + radarSvg(view.scores, view.highlight.ids) + '</div><div class="bars">' + barsHtml(view) + '</div></div>' + restHtml(view, state.viewMode) + '<div class="foot-actions"><button type="button" class="primary" data-action="again">再测一次</button><button type="button" class="ghost" data-action="edit-last">改最后一题</button><a class="ghost" href="../../../index.html">回小屋</a></div>' + dialog + '<details class="parent-note"><summary>给爸爸的一句</summary><p>亮着的第一项做这次陪学的主活动，第二项收尾前短短试一下。第三项亮着也不另开一块课。先说他刚才做成的那一下，再说下次还想不想。</p><p>没亮的方向这周不必补。八边几乎一样近时，让' + esc(CHILD) + '自己点一件。爸爸代答先当观察，不拿来改掉他自己的选择。</p><p>做歌就进小歌编辑器。若用 Suno，只贴编辑器里的提示词，由爸爸代操作。</p></details><p class="saved-at">存在这台手机 · ' + esc(when) + ' · mi1</p>';
+      return warnHtml() + '<p class="who">' + esc(ASSISTANT) + '</p><h1>' + esc(CHILD) + ' · 这周更想靠近的</h1><p class="lead">' + esc(speech) + '</p>' + low + switcher + cardsHtml(view, state.viewMode) + '<div class="chart-wrap"><div class="radar-box">' + radarSvg(view.scores, view.highlight.ids) + '</div><div class="bars">' + barsHtml(view) + '</div></div>' + restHtml(view, state.viewMode) + '<div class="foot-actions"><button type="button" class="primary" data-action="again">再测一次</button><button type="button" class="ghost" data-action="edit-last">改最后一题</button><a class="ghost" href="../../../index.html">回小屋</a></div>' + dialog + '<details class="parent-note"><summary>给爸爸的一句</summary><p>亮着的第一项做这次陪学的主活动，第二项收尾前短短试一下。第三项亮着也不另开一块课。先说他刚才做成的那一下，再说下次还想不想。</p><p>没亮的方向这周不必补。八边几乎一样近时，让' + esc(CHILD) + '自己点一件。爸爸代答先当观察，不拿来改掉他自己的选择。</p><p>做歌就进小歌编辑器。若用 Suno，只贴编辑器里的提示词，由爸爸代操作。</p></details><p class="saved-at">存在这台手机 · ' + esc(when) + ' · ' + TIP + '</p>';
     }
 
     function startNew(mode) {
