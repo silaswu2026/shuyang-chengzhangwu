@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="theme-color" content="#0f1230"/>
+  <title>小歌编辑器 · 伍澍暘</title>
+  <link rel="stylesheet" href="../../../brand-tokens.css"/>
+  <link rel="stylesheet" href="song-studio.css?v=mse1"/>
+</head>
+<body>
+  <div class="app" id="songApp">
+    <header>
+      <p class="who">伍澍暘 · 小宇</p>
+      <h1>小歌编辑器</h1>
+      <p class="heart">①定义 → ②摆 → ③立刻听 → ④存</p>
+      <a href="lesson.html?v=mse1">回课件</a>
+    </header>
+    <div class="workspace">
+      <section class="col define" aria-label="定义这首歌">
+        <label class="block">歌名
+          <input id="title" type="text" maxlength="40" value="我的小歌 1" autocomplete="off"/>
+        </label>
+        <fieldset>
+          <legend>风格</legend>
+          <div class="chips" id="styleChips">
+            <button type="button" class="chip" data-value="热血游戏" aria-pressed="true">热血游戏</button>
+            <button type="button" class="chip" data-value="轻松流行" aria-pressed="false">轻松流行</button>
+            <button type="button" class="chip" data-value="安静钢琴" aria-pressed="false">安静钢琴</button>
+            <button type="button" class="chip" data-value="电子跳动" aria-pressed="false">电子跳动</button>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>心情</legend>
+          <div class="chips" id="moodChips">
+            <button type="button" class="chip" data-value="开心" aria-pressed="true">开心</button>
+            <button type="button" class="chip" data-value="热血" aria-pressed="false">热血</button>
+            <button type="button" class="chip" data-value="安静" aria-pressed="false">安静</button>
+            <button type="button" class="chip" data-value="搞笑" aria-pressed="false">搞笑</button>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>BPM</legend>
+          <div class="bpm-row">
+            <div class="bpm-presets" role="group" aria-label="速度预设">
+              <button type="button" class="preset" data-bpm="80" aria-pressed="false">80</button>
+              <button type="button" class="preset" data-bpm="110" aria-pressed="true">110</button>
+              <button type="button" class="preset" data-bpm="140" aria-pressed="false">140</button>
+            </div>
+            <output class="bpm-num" id="bpmNum" for="bpm">110</output>
+          </div>
+          <input id="bpm" type="range" min="70" max="140" value="110" aria-label="BPM 滑条"/>
+        </fieldset>
+        <fieldset>
+          <legend>结构</legend>
+          <div class="chips" id="sections">
+            <button type="button" class="chip" data-section="intro" aria-pressed="true">前奏</button>
+            <button type="button" class="chip" data-section="verse" aria-pressed="true">主歌</button>
+            <button type="button" class="chip" data-section="chorus" aria-pressed="true">副歌</button>
+          </div>
+          <p class="hint" id="sectionHint" hidden></p>
+        </fieldset>
+        <fieldset>
+          <legend>音色</legend>
+          <div class="chips" id="instChips">
+            <button type="button" class="chip" data-value="鼓" aria-pressed="false">鼓</button>
+            <button type="button" class="chip" data-value="贝斯嗡音" aria-pressed="false">贝斯嗡音</button>
+            <button type="button" class="chip" data-value="钢琴" aria-pressed="true">钢琴</button>
+            <button type="button" class="chip" data-value="合成铅" aria-pressed="false">合成铅</button>
+          </div>
+        </fieldset>
+      </section>
+      <section class="col place" aria-label="摆鼓点和旋律">
+        <p id="nowHear">停着</p>
+        <div class="grids">
+          <div>
+            <h2>鼓点 · 一个小节 16 下</h2>
+            <div class="grid-scroll"><div id="drumGrid" class="grid16" role="group" aria-label="鼓点"></div></div>
+          </div>
+          <div>
+            <h2>旋律 · 五声</h2>
+            <div class="grid-scroll"><div id="melodyGrid" class="grid16" role="group" aria-label="旋律"></div></div>
+          </div>
+        </div>
+        <p class="grid-count" id="gridCount"></p>
+        <div class="row-actions">
+          <button type="button" class="mini" id="clearDrums">清空鼓点</button>
+          <button type="button" class="mini" id="clearMelody">清空旋律</button>
+        </div>
+        <div class="write">
+          <div>
+            <label class="block">主题和句子
+              <textarea id="lyrics" rows="2" maxlength="400" placeholder="例：小忍者穿过竹林，去找一颗会发光的石头。不要写别人的歌名。"></textarea>
+            </label>
+            <div class="prompt-actions">
+              <button type="button" class="mini" id="makePrompt">生成 AI 提示词</button>
+              <button type="button" class="mini" id="copyPrompt">复制提示词</button>
+            </div>
+            <p class="note">13岁以下由爸爸代操作 Suno。这里只写出一段话，不登录、不连网。</p>
+            <textarea id="promptOut" rows="4" readonly aria-label="给爸爸的提示词"></textarea>
+          </div>
+          <div>
+            <h2>我的小歌</h2>
+            <div id="roster" aria-label="名册"></div>
+            <button type="button" class="mini" id="saveNew">另存新的一首</button>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="transport">
+      <button type="button" class="go" id="play">▶ 试听</button>
+      <button type="button" class="stop" id="stop">⏹ 停止</button>
+      <button type="button" id="save">保存「我的小歌」</button>
+      <p id="status" aria-live="polite"></p>
+    </div>
+    <footer>Web Audio 自制合成 · 商用 AI 需家长账号</footer>
+  </div>
+  <script src="song-studio.js?v=mse1"></script>
+</body>
+</html>

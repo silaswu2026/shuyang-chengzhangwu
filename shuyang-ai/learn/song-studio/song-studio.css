@@ -1,0 +1,221 @@
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  color: var(--ink);
+  font-family: var(--family-font), "WenQuanYi Micro Hei", sans-serif;
+  background:
+    radial-gradient(900px 420px at 100% -10%, #24306a66, transparent 55%),
+    var(--bg-deep);
+}
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+.app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding:
+    env(safe-area-inset-top)
+    env(safe-area-inset-right)
+    env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 6px;
+  border-bottom: 1px solid var(--stroke);
+}
+header h1 { margin: 0; font-size: 16px; font-weight: 800; }
+.who { margin: 0; color: var(--gold); font-size: 12px; font-weight: 800; white-space: nowrap; }
+.heart { margin: 0; color: var(--muted); font-size: 12px; font-weight: 700; flex: 1; }
+header a {
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.workspace { flex: 1; min-height: 0; }
+.col { padding: 8px 12px 12px; }
+fieldset {
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  margin: 0 0 8px;
+  padding: 6px 8px 8px;
+}
+legend {
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 4px;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip, .preset, .mini, .transport button, .song button {
+  appearance: none;
+  border: 1px solid var(--stroke);
+  background: var(--navy2);
+  color: var(--ink);
+  border-radius: 999px;
+  min-height: 34px;
+  padding: 4px 10px;
+  font-weight: 800;
+  font-size: 13px;
+}
+.chip[aria-pressed="true"], .preset[aria-pressed="true"] {
+  background: linear-gradient(180deg, var(--gold), var(--gold2));
+  color: #1a1404;
+  border-color: transparent;
+}
+label.block { display: block; font-size: 12px; font-weight: 800; color: var(--gold); margin-bottom: 8px; }
+input[type="text"], textarea, input[type="range"] { width: 100%; }
+input[type="text"], textarea {
+  margin-top: 4px;
+  background: #0b0e24;
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 8px;
+  font-weight: 700;
+}
+textarea { resize: vertical; min-height: 52px; }
+.bpm-row { display: flex; align-items: center; gap: 8px; }
+.bpm-presets { display: flex; gap: 6px; }
+.bpm-num {
+  min-width: 42px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--gold);
+}
+.hint { margin: 6px 0 0; color: var(--gold); font-size: 12px; font-weight: 700; min-height: 1em; }
+.note, .empty, .grid-count, footer, #status {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.note { margin: 6px 0; }
+.grid-scroll { overflow-x: auto; margin-bottom: 8px; }
+.grid16 {
+  display: grid;
+  grid-template-columns: 44px repeat(16, minmax(22px, 1fr));
+  gap: 3px;
+  align-items: center;
+  min-width: 460px;
+}
+.g-label { font-size: 11px; font-weight: 800; color: var(--gold); }
+.beat-no { text-align: center; font-size: 10px; color: var(--muted); font-weight: 700; }
+.cell {
+  width: 100%;
+  aspect-ratio: 1;
+  min-height: 22px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 224, 122, .28);
+  background: #12162e;
+  padding: 0;
+}
+.cell.kick.on { background: var(--green); border-color: transparent; }
+.cell.snare.on { background: var(--gold); border-color: transparent; }
+.cell.hat.on { background: var(--gold2); border-color: transparent; }
+.cell.mel.on { background: var(--green); border-color: transparent; }
+.cell.now { outline: 2px solid var(--gold); outline-offset: 1px; }
+.row-actions, .prompt-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.mini { min-height: 32px; }
+h2 {
+  margin: 10px 0 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+}
+#nowHear { margin: 0 0 6px; color: var(--green); font-size: 13px; font-weight: 800; }
+.song {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+}
+.song.current .song-name { color: var(--gold); }
+.song-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 800;
+  font-size: 13px;
+}
+.song button { min-height: 32px; padding: 2px 8px; font-size: 12px; }
+.transport {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  background: #0b0e24ee;
+  border-top: 1px solid var(--stroke);
+  position: sticky;
+  bottom: 0;
+}
+.transport .go {
+  border: 0;
+  background: linear-gradient(180deg, var(--green), var(--green2));
+  color: #062014;
+}
+.transport .stop { background: var(--navy2); }
+#status { flex: 1; min-width: 120px; margin: 0; }
+footer {
+  padding: 4px 12px 8px;
+}
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+@media (orientation: landscape) and (min-width: 700px) {
+  .app { height: 100dvh; }
+  .workspace {
+    display: grid;
+    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+    min-height: 0;
+    overflow: hidden;
+  }
+  .col { overflow: auto; min-height: 0; }
+  header h1 { font-size: 15px; }
+  .write { display: block; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (min-width: 700px) {
+  header { padding: 4px 10px; }
+  header h1 { font-size: 15px; }
+  .workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .define {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: stretch;
+    overflow: visible;
+    padding: 4px 8px 2px;
+  }
+  .define .block { flex: 1 1 150px; margin: 0; }
+  .define fieldset { flex: 1 1 200px; margin: 0; padding: 2px 6px 4px; }
+  .define .chip, .define .preset { min-height: 28px; font-size: 12px; padding: 2px 8px; }
+  .place { overflow: auto; padding: 2px 8px 6px; }
+  .place h2 { margin: 0 0 2px; }
+  #nowHear { margin: 0 0 2px; }
+  .grids {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    align-items: start;
+  }
+  .cell { height: 20px; min-height: 0; aspect-ratio: auto; }
+  .grid16 { min-width: 0; gap: 2px; }
+  .grid-scroll { margin-bottom: 4px; }
+  textarea { min-height: 40px; }
+  .transport { padding: 6px 10px; }
+  footer { padding: 0 10px 4px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .chip, .preset { min-height: 30px; }
+}
