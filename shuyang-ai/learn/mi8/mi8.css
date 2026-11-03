@@ -1,4 +1,5 @@
-/* 兴趣小问 · 海军蓝 / 金 / 绿。缓存 mi1。 */
+/* 兴趣小问 · 海军蓝 / 金 / 绿。缓存 mi2。
+   四档按钮同一尺寸、字号、边框、底色。图固定尺寸，不按分数放大。 */
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 html, body { margin: 0; min-height: 100%; }
@@ -127,6 +128,22 @@ h2 { margin: 0; font-size: clamp(20px, 5vw, 28px); font-weight: 800; line-height
 }
 .dialog p { margin: 0 0 10px; font-weight: 700; line-height: 1.45; }
 .q-screen { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.q-fig { margin: 8px 0 0; display: flex; justify-content: center; }
+.q-fig img,
+.scene-strip img,
+.bar-art,
+.card .card-art,
+.card.hot .card-art {
+  pointer-events: none;
+}
+.q-fig img {
+  width: min(200px, 56vw);
+  height: auto;
+  border-radius: 16px;
+  display: block;
+}
+.scene-strip { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 2px; }
+.scene-strip img { width: 52px; height: 39px; border-radius: 8px; display: block; }
 .progress-label {
   display: flex; justify-content: space-between; gap: 8px;
   font-size: 13px; font-weight: 800; color: var(--gold); margin-bottom: 6px;
@@ -143,12 +160,17 @@ h2 { margin: 0; font-size: clamp(20px, 5vw, 28px); font-weight: 800; line-height
 .choices {
   margin-top: auto;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   padding-top: 12px;
 }
 .choice {
+  width: 100%;
   min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   border: 1px solid var(--stroke);
   background: var(--card);
   color: var(--ink);
@@ -179,6 +201,14 @@ h2 { margin: 0; font-size: clamp(20px, 5vw, 28px); font-weight: 800; line-height
   font-size: 12px; font-weight: 800; color: #062014;
   background: var(--gold); border-radius: 999px; padding: 3px 8px;
 }
+.card .card-art,
+.card.hot .card-art {
+  width: 96px;
+  height: 72px;
+  border-radius: 12px;
+  display: block;
+  margin: 0 0 8px;
+}
 .card h3 { margin: 8px 0 4px; font-size: 22px; }
 .card .blurb { margin: 0; font-weight: 700; line-height: 1.45; }
 .try { margin: 8px 0 0; color: var(--muted); font-size: 14px; font-weight: 700; line-height: 1.45; }
@@ -191,7 +221,14 @@ h2 { margin: 0; font-size: clamp(20px, 5vw, 28px); font-weight: 800; line-height
 .radar-box { display: flex; justify-content: center; }
 .radar-box svg { width: min(100%, 320px); height: auto; }
 .bars { display: flex; flex-direction: column; gap: 8px; }
-.bar-row { display: grid; grid-template-columns: 4.5em 1fr auto; gap: 8px; align-items: center; }
+.bar-row { display: grid; grid-template-columns: 36px 4.5em 1fr auto; gap: 8px; align-items: center; }
+.bars .bar-art,
+.bar-row.hot .bar-art {
+  width: 36px;
+  height: 27px;
+  border-radius: 6px;
+  display: block;
+}
 .bar-row.hot .bar-name { color: var(--gold); }
 .bar-name { font-size: 13px; font-weight: 800; }
 .bar-num { font-size: 12px; font-weight: 800; color: var(--muted); white-space: nowrap; }
@@ -212,7 +249,7 @@ h2 { margin: 0; font-size: clamp(20px, 5vw, 28px); font-weight: 800; line-height
 @media (max-width: 640px) and (orientation: portrait) {
   .q-screen { justify-content: flex-start; }
   .choices { grid-template-columns: 1fr; margin-top: 18px; }
-  .choice { min-height: 56px; text-align: left; padding-left: 16px; }
+  .choice { min-height: 56px; }
 }
 
 @media (min-width: 800px) {
@@ -231,10 +268,23 @@ h2 { margin: 0; font-size: clamp(20px, 5vw, 28px); font-weight: 800; line-height
   .seg { margin: 6px 0; }
   .seg button, .ghost, .primary { min-height: 44px; font-size: 15px; }
   .intro-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 12px; align-items: center; }
-  .prompt { margin-top: 4px; }
+  .scene-strip { margin: 4px 0; gap: 4px; }
+  .scene-strip img { width: 36px; height: 27px; }
+  .q-top {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
+  }
+  .q-fig { margin: 0; }
+  .q-fig img { width: 120px; height: 90px; border-radius: 12px; }
+  .q-copy { min-width: 0; }
+  .prompt { margin-top: 4px; font-size: 13px; }
+  .q-text { font-size: 16px; }
   .hint { margin-top: 2px; }
-  .choices { grid-template-columns: repeat(4, 1fr); gap: 8px; padding-top: 8px; }
-  .choice { min-height: 58px; font-size: 15px; padding: 6px; }
+  .choices { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding-top: 8px; }
+  .choice { min-height: 52px; font-size: 15px; padding: 6px; }
+  .card .card-art, .card.hot .card-art { width: 72px; height: 54px; }
   .q-nav { margin-top: 6px; }
   .card { padding: 8px 10px; }
   .card h3 { font-size: 18px; margin: 4px 0; }
