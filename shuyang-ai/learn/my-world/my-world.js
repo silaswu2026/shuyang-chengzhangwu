@@ -1,4 +1,4 @@
-/* 方块小世界 mw1 · 浏览器里走路、转头、敲树。制作/昼夜/矿/船/商店以后再加。 */
+/* 方块小世界 mw2 · 任何方块都能敲，敲下来的进背包。制作/昼夜/矿/船/商店以后再加。 */
 (function () {
   'use strict';
 
@@ -22,9 +22,12 @@
   ];
   var STORE = 'xygo-my-world';
   var blocks = new Uint8Array(W * H * D);
+  var NAMES = { wood: '木头', leaf: '树叶', dirt: '泥土', stone: '石头' };
+  var ORDER = ['wood', 'leaf', 'dirt', 'stone'];
   var state = {
     px: 10.5, py: 4, pz: 10.5, yaw: Math.PI / 2, pitch: 0, vy: 0,
-    onGround: false, wood: 0, started: false
+    onGround: false, started: false,
+    inv: { wood: 0, leaf: 0, dirt: 0, stone: 0 }
   };
   var keys = {};
   var joyX = 0, joyY = 0, punching = false, jumping = false;
@@ -94,7 +97,9 @@
     blocks = keep;
     try {
       localStorage.setItem(STORE, JSON.stringify({
-        v: 1, tip: 'mw1', wood: state.wood,
+        v: 2, tip: 'mw2',
+        inv: state.inv,
+        wood: state.inv.wood || 0,
         px: state.px, py: state.py, pz: state.pz,
         yaw: state.yaw, pitch: state.pitch, edits: edits
       }));
@@ -105,8 +110,13 @@
     grow();
     var raw = null;
     try { raw = JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (e) { raw = null; }
-    if (!raw || raw.v !== 1) return;
-    if (isFinite(raw.wood) && raw.wood > 0) state.wood = raw.wood | 0;
+    if (!raw || (raw.v !== 1 && raw.v !== 2)) return;
+    if (raw.inv) {
+      ORDER.forEach(function (k) {
+        if (isFinite(raw.inv[k]) && raw.inv[k] > 0) state.inv[k] = raw.inv[k] | 0;
+      });
+    }
+    if (!(state.inv.wood > 0) && isFinite(raw.wood) && raw.wood > 0) state.inv.wood = raw.wood | 0;
     ['px', 'py', 'pz', 'yaw', 'pitch'].forEach(function (k) {
       if (isFinite(raw[k])) state[k] = raw[k];
     });
@@ -183,7 +193,7 @@
     var dist = 0;
     for (var i = 0; i < 48; i++) {
       var id = at(x, y, z);
-      if (id === LOG) return { x: x, y: y, z: z, dist: dist };
+      if (id !== AIR) return { x: x, y: y, z: z, id: id, dist: dist };
       if (tmaxX < tmaxY && tmaxX < tmaxZ) {
         if (tmaxX > maxDist) return null;
         x += stepX; dist = tmaxX; tmaxX += tdx;
@@ -198,23 +208,40 @@
     return null;
   }
 
-  function chop(hit) {
+  function breakTime(id) {
+    if (id === LEAF) return 0.2;
+    if (id === STONE) return 0.55;
+    return 0.35;
+  }
+
+  function dropOf(id) {
+    if (id === LOG) return 'wood';
+    if (id === LEAF) return 'leaf';
+    if (id === GRASS || id === DIRT) return 'dirt';
+    if (id === STONE) return 'stone';
+    return null;
+  }
+
+  function renderBag() {
+    var el = document.getElementById('bag');
+    if (!el) return;
+    el.innerHTML = ORDER.map(function (k) {
+      return '<span>' + NAMES[k] + ' ' + (state.inv[k] || 0) + '</span>';
+    }).join('');
+  }
+
+  function breakBlock(hit) {
+    var id = at(hit.x, hit.y, hit.z);
+    if (!id) return;
     put(hit.x, hit.y, hit.z, AIR);
-    for (var y = hit.y; y <= hit.y + 2; y++) {
-      for (var dx = -1; dx <= 1; dx++) {
-        for (var dz = -1; dz <= 1; dz++) {
-          if (at(hit.x + dx, y, hit.z + dz) === LEAF) put(hit.x + dx, y, hit.z + dz, AIR);
-        }
-      }
+    var drop = dropOf(id);
+    if (drop) {
+      state.inv[drop] = (state.inv[drop] || 0) + 1;
+      toast('得到' + NAMES[drop]);
     }
-    state.wood += 1;
     dirty = true;
-    toast('得到木头');
     save();
-    var el = document.getElementById('wood');
-    if (el) el.textContent = '木头 ' + state.wood;
-    var hint = document.getElementById('hint');
-    if (hint) hint.textContent = '小宇：木头在背包里了。还可以再敲一棵。';
+    renderBag();
   }
 
   function toast(text) {
@@ -254,13 +281,14 @@
     if (hit) {
       if (key !== breakKey) { breakKey = key; breakAcc = 0; }
       breakAcc += dt;
+      var need = breakTime(hit.id);
       if (bar && fill) {
         bar.className = 'on';
-        fill.style.width = Math.min(100, breakAcc / 0.35 * 100) + '%';
+        fill.style.width = Math.min(100, breakAcc / need * 100) + '%';
       }
-      if (breakAcc >= 0.35) {
+      if (breakAcc >= need) {
         breakAcc = 0;
-        chop(hit);
+        breakBlock(hit);
       }
     } else {
       breakAcc = 0;
@@ -535,15 +563,14 @@
   }
 
   load();
-  document.getElementById('wood').textContent = '木头 ' + state.wood;
-  if (state.wood > 0) document.getElementById('hint').textContent = '小宇：背包里已经有木头。还可以再敲树。';
+  renderBag();
   bind();
   if (bootGL()) requestAnimationFrame(loop);
   window.__xy = {
     state: state,
     at: at,
     ray: ray,
-    chop: chop,
+    breakBlock: breakBlock,
     STORE: STORE
   };
 })();

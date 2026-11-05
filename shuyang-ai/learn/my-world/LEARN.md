@@ -1,13 +1,13 @@
-# 方块小世界（mw1）
+# 方块小世界（mw2）
 
 浏览器页面，不用安装。
 
-https://silaswu2026.github.io/shuyang-chengzhangwu/shuyang-ai/learn/my-world/?v=mw1
+https://silaswu2026.github.io/shuyang-chengzhangwu/shuyang-ai/learn/my-world/?v=mw2
 
 小屋首页旁路有入口。助手叫小宇。
 
-- 存档钥匙：`xygo-my-world`（只存木头数量和这一小块方世界里敲掉的方块）
-- 这一版：第一人称走路、转头、跳，敲树干，木头进背包
+- 存档钥匙：`xygo-my-world`（v2：背包里的木头、树叶、泥土、石头，以及敲掉的方块。旧的 v1 存档只认木头，打开后会接着用）
+- 这一版：第一人称走路、转头、跳。树干、树叶、泥土、石头都能敲，敲下来的进背包
 - 以后再加：制作、昼夜、矿洞、铁船、商店
 
-声明：自研小游戏，不是正版《我的世界》。
+声明：自研小游戏，不是正版《我的世界》。这游戏没有怪物。
