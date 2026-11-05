@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <link rel="icon" href="../../../favicon.png" type="image/png"/>
+  <link rel="apple-touch-icon" href="../../../apple-touch-icon.png"/>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+  <meta name="theme-color" content="#0f1230"/>
+  <meta name="xy-tip" content="mw1"/>
+  <title>伍澍暘的方块小世界</title>
+  <link rel="stylesheet" href="../../../brand-tokens.css"/>
+  <link rel="stylesheet" href="my-world.css?v=mw1"/>
+</head>
+<body>
+  <canvas id="view"></canvas>
+  <div id="hud">
+    <p id="disclaimer">自研小游戏，不是正版《我的世界》。</p>
+    <p id="hint">小宇：对准棕色树干，按住「敲」。</p>
+    <p id="meta"><span id="wood">木头 0</span><span class="tip">mw1</span></p>
+    <div id="cross" aria-hidden="true"></div>
+    <div id="bar" aria-hidden="true"><i id="barFill"></i></div>
+    <div id="joy" aria-hidden="true"><i id="knob"></i></div>
+    <div id="actions">
+      <button type="button" id="jump">跳</button>
+      <button type="button" id="punch">敲</button>
+    </div>
+    <p id="keys">WASD 走路 · 鼠标看 · 左键敲树 · 空格跳</p>
+    <p id="toast" aria-live="polite"></p>
+  </div>
+  <div id="start">
+    <p class="who">小宇</p>
+    <h1>方块小世界</h1>
+    <p class="lead">伍澍暘，这是一块方的世界。地、树，全是方块。往前走，敲树干，木头会进背包。</p>
+    <button type="button" id="go">开始玩</button>
+    <p class="disclaimer">自研小游戏，不是正版《我的世界》。</p>
+  </div>
+  <script src="my-world.js?v=mw1"></script>
+</body>
+</html>
