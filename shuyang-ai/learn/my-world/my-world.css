@@ -5,9 +5,13 @@ html,body{margin:0;height:100%;overflow:hidden;background:#87b7ea;color:var(--in
 #hud{position:fixed;inset:0;pointer-events:none}
 #disclaimer{margin:0;padding:6px 10px 0;font-size:12px;font-weight:700;color:var(--gold);
   text-shadow:0 1px 2px #000a}
+#peace,.peace{margin:0;padding:0 10px;font-size:12px;font-weight:800;color:var(--green);
+  text-shadow:0 1px 2px #000a}
 #hint{margin:2px 12px 0;font-size:15px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000c;
   max-width:640px}
-#meta{margin:2px 12px 0;font-size:14px;font-weight:800;color:var(--gold);text-shadow:0 1px 2px #000a}
+#meta{margin:4px 12px 0;font-size:14px;font-weight:800;color:var(--gold);text-shadow:0 1px 2px #000a}
+#bag{display:inline-flex;gap:6px;flex-wrap:wrap;vertical-align:middle}
+#bag span{background:#0f1230cc;border:1px solid var(--stroke);border-radius:999px;padding:1px 8px}
 #meta .tip{margin-left:8px;opacity:.7;font-size:11px}
 #cross{position:absolute;left:50%;top:46%;width:14px;height:14px;margin:-7px 0 0 -7px}
 #cross::before,#cross::after{content:"";position:absolute;background:#fff;box-shadow:0 0 0 1px #0008}
@@ -36,13 +40,15 @@ html,body{margin:0;height:100%;overflow:hidden;background:#87b7ea;color:var(--in
 #start h1{margin:0;font-size:32px}
 #start .lead{margin:0;max-width:420px;line-height:1.5;font-weight:700}
 #start .disclaimer{color:var(--muted);font-size:13px;font-weight:700}
+#start .peace{color:var(--green);font-size:14px;text-shadow:none}
 #go{min-width:180px;min-height:52px;border:0;border-radius:999px;font:inherit;font-size:20px;font-weight:900;
   color:#062014;background:linear-gradient(180deg,var(--green),var(--green2));cursor:pointer}
 @media (pointer:fine){#joy{display:none}}
 @media (pointer:coarse){#keys{display:none}}
 @media (orientation:landscape) and (max-height:520px){
-  #disclaimer{font-size:11px;padding-top:4px}
+  #disclaimer,#peace{font-size:11px;padding-top:2px}
   #hint{font-size:13px}
+  #bag span{font-size:12px}
   #joy{width:96px;height:96px;left:10px;bottom:10px}
   #knob{left:28px;top:28px}
   #actions{right:10px;bottom:10px;gap:6px}
