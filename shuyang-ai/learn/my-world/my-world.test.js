@@ -20,7 +20,7 @@ global.localStorage = {
   setItem: function (k, v) { mem[k] = String(v); }
 };
 
-eq(MW.TIP, 'mw3', 'tip');
+eq(MW.TIP, 'mw4', 'tip');
 eq(MW.STORE, 'xygo-my-world', 'store');
 if (MW.KID_NAMES.length < 8) fail('kid names');
 MW.KID_NAMES.forEach(function (n) {
@@ -45,6 +45,30 @@ if (!(a.counts[MW.FLOWER] > 0)) fail('flowers');
 if (!(a.counts[MW.SAND] > 0)) fail('sand');
 if (!(a.counts[MW.GOLD] >= 8)) fail('gold ' + a.counts[MW.GOLD]);
 if (!(a.counts[MW.CHEST] >= 2)) fail('chests ' + a.counts[MW.CHEST]);
+var seedN;
+for (seedN = 1; seedN <= 40; seedN++) {
+  MW.grow(seedN);
+  var sp = MW.scan().spawn;
+  if (!MW.feetClear(sp.x, sp.y, sp.z)) fail('spawn buried seed ' + seedN + ' ' + sp.x + ',' + sp.y + ',' + sp.z);
+  if (MW.overlaps(sp.x, sp.y, sp.z)) fail('spawn overlap ' + seedN);
+  var gx = Math.floor(sp.x), gz = Math.floor(sp.z), gy = Math.floor(sp.y) - 1;
+  var ground = MW.at(gx, gy, gz);
+  if (ground !== MW.GRASS && ground !== MW.SAND) fail('spawn ground ' + seedN + ' id ' + ground);
+  if (sp.y < MW.SEA) fail('spawn under sea ' + seedN + ' y ' + sp.y);
+  var guest = MW.pickSurface(sp.x, sp.z, 1.5);
+  if (!MW.feetClear(guest.x, guest.y, guest.z)) fail('guest spawn ' + seedN);
+  if (Math.hypot(guest.x - sp.x, guest.z - sp.z) < 1.4) fail('guest stacked ' + seedN);
+}
+MW.grow(3);
+MW.loadRaw({ v: 3, tip: 'mw3', seed: 3, px: 22.5, py: 3, pz: 12.5, yaw: 0.2, pitch: -1, inv: { wood: 4 } });
+if (!MW.feetClear(MW.state.px, MW.state.py, MW.state.pz)) fail('buried save not lifted');
+eq(MW.state.inv.wood, 4, 'buried save keeps wood');
+if (Math.abs(MW.state.pitch) > 0.01) fail('buried save should look out');
+MW.grow(6);
+var hill = MW.scan().spawn;
+MW.loadRaw({ v: 3, tip: 'mw4', seed: 6, px: hill.x, py: hill.y, pz: hill.z, yaw: 1.2, pitch: -0.4, inv: {} });
+if (Math.abs(MW.state.px - hill.x) > 0.01 || Math.abs(MW.state.py - hill.y) > 0.01) fail('clear save should stay');
+MW.grow(1);
 var rz = 18 + Math.sin(20 * 0.23 + (1 % 7)) * 4.5;
 var riverHit = false;
 var zi;
@@ -162,6 +186,7 @@ MW.applyNet({
   px: 12, py: 9, pz: 14, yaw: 0.2, pitch: 0, w: 1
 });
 if (!MW.remotes.host1 || MW.remotes.host1.name !== '星星') fail('host avatar name');
+if (!MW.feetClear(MW.state.px, MW.state.py, MW.state.pz)) fail('guest joined underground');
 eq(MW.scan().seed, 4, 'guest uses host seed');
 MW.applyNet({ mw: 3, t: 'pos', from: 'host1', name: '星星', x: 12.5, y: 9, z: 14.2, yaw: 1, pitch: 0, w: 2, host: 1, clock: 36 });
 if (Math.abs(MW.remotes.host1.tx - 12.5) > 0.01) fail('pos sync');
@@ -175,7 +200,7 @@ MW.state.inv.gold = 9;
 MW.save();
 var saved = JSON.parse(localStorage.getItem('xygo-my-world'));
 eq(saved.v, 3, 'save v');
-eq(saved.tip, 'mw3', 'save tip');
+eq(saved.tip, 'mw4', 'save tip');
 eq(saved.seed, 11, 'guest keeps own map');
 eq(saved.inv.gold, 9, 'guest keeps coins');
 eq(saved.inv.wood, 2, 'guest keeps wood');
@@ -188,18 +213,19 @@ var peace = '这游戏没有怪物。';
 var made = '自研小游戏，不是正版《我的世界》。';
 if (html.split(peace).length < 3) fail('peace twice in page');
 if (html.split(made).length < 3) fail('disclaimer twice in page');
-if (html.indexOf('xy-tip" content="mw3"') < 0) fail('meta tip');
-if (html.indexOf('my-world.css?v=mw3') < 0 || html.indexOf('my-world.js?v=mw3') < 0) fail('cache bust');
+if (html.indexOf('xy-tip" content="mw4"') < 0) fail('meta tip');
+if (html.indexOf('my-world.css?v=mw4') < 0 || html.indexOf('my-world.js?v=mw4') < 0) fail('cache bust');
 if (html.indexOf('vendor/peerjs/peerjs.min.js') < 0) fail('vendor peerjs');
-if (html.indexOf('>mw3<') < 0) fail('hud tip');
+if (html.indexOf('>mw4<') < 0) fail('hud tip');
 if (learn.indexOf(peace) < 0 || learn.indexOf('不是正版《我的世界》') < 0) fail('learn disclaimers');
-if (learn.indexOf('?v=mw3') < 0) fail('learn url');
+if (learn.indexOf('?v=mw4') < 0) fail('learn url');
+if (learn.indexOf('出生') < 0) fail('learn spawn');
 if (learn.indexOf('xygo-my-world') < 0) fail('learn key');
-if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw3') < 0) fail('hub tip');
-if (hub.indexOf('?v=mw2') >= 0 && hub.indexOf('my-world/?v=mw2') >= 0) fail('old hub tip');
+if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw4') < 0) fail('hub tip');
+if (hub.indexOf('my-world/?v=mw3') >= 0) fail('old hub tip');
 
 if (failed) {
   console.error(failed + ' failed');
   process.exit(1);
 }
-console.log('my-world mw3 ok');
+console.log('my-world mw4 ok');

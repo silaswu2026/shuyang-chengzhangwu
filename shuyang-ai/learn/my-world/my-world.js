@@ -1,8 +1,8 @@
-/* 方块小世界 mw3 · 昼夜、海河山、小船、火把、木剑石剑、金币、PeerJS 一起看见对方。没有怪物。 */
+/* 方块小世界 mw4 · 出生在地面上。昼夜、海河山、小船、火把、木剑、金币、一起看见对方。没有怪物。 */
 (function () {
   'use strict';
 
-  var TIP = 'mw3';
+  var TIP = 'mw4';
   var STORE = 'xygo-my-world';
   var W = 40, H = 22, D = 40, SEA = 8, DAY = 72;
   var AIR = 0, GRASS = 1, DIRT = 2, LOG = 3, LEAF = 4, STONE = 5;
@@ -108,7 +108,7 @@
   function openBC() {
     if (netBC || typeof document === 'undefined' || typeof BroadcastChannel === 'undefined') return;
     try {
-      netBC = new BroadcastChannel('xygo-my-world-mw3');
+      netBC = new BroadcastChannel('xygo-my-world-mw4');
       netBC.onmessage = function (ev) { onNet(ev && ev.data, 'bc', null); };
     } catch (eBc) { netBC = null; }
   }
@@ -212,19 +212,111 @@
       }
     }
   }
-  function findSpawn() {
-    var x, z, y;
-    for (x = 14; x < 30; x++) {
-      for (z = 6; z < 34; z++) {
-        if (Math.abs(z - riverZ(x)) < 5) continue;
-        for (y = SEA + 1; y <= SEA + 3; y++) {
-          if (at(x, y, z) === GRASS && at(x, y + 1, z) === AIR && at(x, y + 2, z) === AIR) {
-            return { x: x + 0.5, y: y + 1, z: z + 0.5 };
-          }
-        }
+  function highestSolid(x, z) {
+    var y;
+    for (y = H - 1; y >= 0; y--) if (solid(x, y, z)) return y;
+    return -1;
+  }
+  function standColumn(x, z) {
+    x |= 0; z |= 0;
+    if (x < 1 || z < 1 || x >= W - 1 || z >= D - 1) return null;
+    var top = highestSolid(x, z);
+    if (top < 1 || top + 2 >= H) return null;
+    var feet = top + 1;
+    var y;
+    for (y = feet; y < H; y++) {
+      if (solid(x, y, z) || at(x, y, z) === WATER) return null;
+    }
+    if (overlaps(x + 0.5, feet, z + 0.5)) return null;
+    return { x: x + 0.5, y: feet, z: z + 0.5, ground: at(x, top, z), top: top };
+  }
+  function cliffCost(x, z, top) {
+    var n = 0, dx, dz, h;
+    for (dx = -1; dx <= 1; dx++) {
+      for (dz = -1; dz <= 1; dz++) {
+        if (!dx && !dz) continue;
+        h = highestSolid(x + dx, z + dz);
+        if (h > top + 1) n += h - top;
       }
     }
-    return { x: 22.5, y: SEA + 3, z: 12.5 };
+    return n;
+  }
+  function pickSurface(preferX, preferZ, minDist) {
+    var relaxed, best, bestScore, x, z, spot, dist, score;
+    minDist = minDist || 0;
+    for (relaxed = 0; relaxed < 2; relaxed++) {
+      best = null;
+      bestScore = 1e9;
+      for (x = 1; x < W - 1; x++) {
+        for (z = 1; z < D - 1; z++) {
+          spot = standColumn(x, z);
+          if (!spot) continue;
+          if (!relaxed && spot.ground !== GRASS && spot.ground !== SAND) continue;
+          dist = Math.hypot(spot.x - preferX, spot.z - preferZ);
+          if (dist < minDist) continue;
+          score = (spot.x - 18) * (spot.x - 18) + (spot.z - 12) * (spot.z - 12);
+          score += dist * dist * 0.2;
+          if (spot.ground === SAND) score += 36;
+          if (spot.ground !== GRASS && spot.ground !== SAND) score += 90;
+          score += cliffCost(x, z, spot.top) * 7;
+          if (Math.abs(z - riverZ(x)) < 3.2) score += 28;
+          if (score < bestScore) { bestScore = score; best = spot; }
+        }
+      }
+      if (best) return best;
+    }
+    return standColumn(18, 12) || { x: 18.5, y: SEA + 2, z: 12.5, ground: GRASS, top: SEA + 1 };
+  }
+  function findSpawn() {
+    spawn = pickSurface(18, 12, 0);
+    return spawn;
+  }
+  function openYaw(px, eyeY, pz) {
+    var best = 0, bestD = -1, i, a, d, t, x, y, z, dx, dz;
+    for (i = 0; i < 8; i++) {
+      a = i * Math.PI / 4;
+      dx = Math.sin(a);
+      dz = -Math.cos(a);
+      d = 24;
+      for (t = 0.8; t < 24; t += 0.8) {
+        x = Math.floor(px + dx * t);
+        y = Math.floor(eyeY);
+        z = Math.floor(pz + dz * t);
+        if (solid(x, y, z)) { d = t; break; }
+      }
+      if (d > bestD) { bestD = d; best = a; }
+    }
+    return best;
+  }
+  function feetClear(px, py, pz) {
+    if (!isFinite(px) || !isFinite(py) || !isFinite(pz)) return false;
+    if (overlaps(px, py, pz)) return false;
+    var x0 = Math.floor(px - 0.2), x1 = Math.floor(px + 0.2);
+    var z0 = Math.floor(pz - 0.2), z1 = Math.floor(pz + 0.2);
+    var feet = Math.floor(py + 0.02);
+    var head = Math.floor(py + 1.5);
+    var x, z, y, supported = false;
+    if (feet < 1 || head >= H) return false;
+    for (x = x0; x <= x1; x++) {
+      for (z = z0; z <= z1; z++) {
+        if (x < 0 || z < 0 || x >= W || z >= D) return false;
+        for (y = feet; y <= head; y++) {
+          if (solid(x, y, z) || at(x, y, z) === WATER) return false;
+        }
+        for (y = head + 1; y < H; y++) if (solid(x, y, z)) return false;
+        if (solid(x, feet - 1, z)) supported = true;
+      }
+    }
+    return supported;
+  }
+  function putOnGround(spot) {
+    state.px = spot.x;
+    state.py = spot.y;
+    state.pz = spot.z;
+    state.vy = 0;
+    state.ride = -1;
+    state.pitch = 0;
+    state.yaw = openYaw(spot.x, spot.y + 1.5, spot.z);
   }
   function grow(seed, keepPos) {
     worldSeed = (seed >>> 0) || 1;
@@ -259,15 +351,12 @@
         }
       }
     }
-    spawn = findSpawn();
+    findSpawn();
     ensureChests();
+    if (!feetClear(spawn.x, spawn.y, spawn.z)) findSpawn();
     if (!keepPos) {
       boats.splice(0, boats.length);
-      state.px = spawn.x;
-      state.py = spawn.y;
-      state.pz = spawn.z;
-      state.vy = 0;
-      state.ride = -1;
+      putOnGround(spawn);
     }
     dirty = true;
   }
@@ -323,6 +412,7 @@
     }
     grow(raw.seed, true);
     applyEdits(raw.edits);
+    findSpawn();
     boats.splice(0, boats.length);
     (raw.boats || []).forEach(function (b) {
       if (b && b.length >= 2 && isFinite(+b[0]) && isFinite(+b[1])) boats.push({ x: +b[0], z: +b[1] });
@@ -340,13 +430,11 @@
     if (isFinite(raw.clock) && raw.clock >= 0) state.clock = raw.clock % (DAY * 20);
     if (isFinite(raw.yaw)) state.yaw = raw.yaw;
     if (isFinite(raw.pitch)) state.pitch = Math.max(-1.2, Math.min(1.2, raw.pitch));
-    if (isFinite(raw.px) && isFinite(raw.py) && isFinite(raw.pz)) {
+    if (isFinite(raw.px) && feetClear(raw.px, raw.py, raw.pz)) {
       state.px = raw.px; state.py = raw.py; state.pz = raw.pz;
     } else {
-      state.px = spawn.x; state.py = spawn.y; state.pz = spawn.z;
+      putOnGround(spawn);
     }
-    var guard = 0;
-    while (overlaps(state.px, state.py, state.pz) && guard++ < 8) state.py += 0.5;
   }
   function load() {
     var raw = null;
@@ -768,7 +856,9 @@
       moveAxis(0, state.vy * dt, 0);
     }
     if (state.py < -2) {
-      state.px = spawn.x; state.py = spawn.y; state.pz = spawn.z; state.vy = 0; state.ride = -1;
+      findSpawn();
+      putOnGround(spawn);
+      toast('小宇：回到地面了');
     }
     doPunch(dt);
     afterSim(dt);
@@ -1360,18 +1450,16 @@
     var px = state.px, py = state.py, pz = state.pz, ride = state.ride;
     grow(msg.seed | 0, true);
     applyEdits(msg.edits || []);
+    findSpawn();
     boats.splice(0, boats.length);
     (msg.boats || []).forEach(function (b) {
       if (b && b.length >= 2) boats.push({ x: +b[0], z: +b[1] });
     });
     if (isFinite(+msg.clock)) state.clock = +msg.clock;
     if (first) {
-      state.px = spawn.x + 1.8;
-      state.py = spawn.y;
-      state.pz = spawn.z + 0.4;
-      state.ride = -1;
-      var guard = 0;
-      while (overlaps(state.px, state.py, state.pz) && guard++ < 8) state.py += 0.5;
+      putOnGround(pickSurface(spawn.x, spawn.z, 1.5));
+    } else if (!feetClear(px, py, pz)) {
+      putOnGround(spawn);
     } else {
       state.px = px; state.py = py; state.pz = pz; state.ride = ride;
     }
@@ -1845,6 +1933,7 @@
     applyNet: onNet, applyPos: applyPos, dayFactor: dayFactor, skyRGB: skyRGB,
     setClock: function (s) { state.clock = s; },
     weaponCode: weaponCode, inWaterAt: inWaterAt, sim: sim, overlaps: overlaps, tryPlace: tryPlace,
+    feetClear: feetClear, pickSurface: pickSurface, putOnGround: putOnGround,
     selfId: function () { return selfId; },
     setSelfForTest: function (id) { selfId = id; },
     setRole: function (role) { netRole = role; }
