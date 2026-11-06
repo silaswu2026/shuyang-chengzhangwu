@@ -1,8 +1,8 @@
-/* 方块小世界 mw4 · 出生在地面上。昼夜、海河山、小船、火把、木剑、金币、一起看见对方。没有怪物。 */
+/* 方块小世界 mw5 · 能跳上一格台阶。出生在地面。昼夜、海河山、小船。没有怪物。 */
 (function () {
   'use strict';
 
-  var TIP = 'mw4';
+  var TIP = 'mw5';
   var STORE = 'xygo-my-world';
   var W = 40, H = 22, D = 40, SEA = 8, DAY = 72;
   var AIR = 0, GRASS = 1, DIRT = 2, LOG = 3, LEAF = 4, STONE = 5;
@@ -108,7 +108,7 @@
   function openBC() {
     if (netBC || typeof document === 'undefined' || typeof BroadcastChannel === 'undefined') return;
     try {
-      netBC = new BroadcastChannel('xygo-my-world-mw4');
+      netBC = new BroadcastChannel('xygo-my-world-mw5');
       netBC.onmessage = function (ev) { onNet(ev && ev.data, 'bc', null); };
     } catch (eBc) { netBC = null; }
   }
@@ -167,6 +167,7 @@
     x |= 0; y |= 0; z |= 0;
     if (x < 0 || y < 0 || z < 0 || x >= W || y >= H || z >= D) return;
     blocks[(y * D + z) * W + x] = id;
+    dirty = true;
   }
   function solid(x, y, z) {
     x |= 0; y |= 0; z |= 0;
@@ -488,13 +489,31 @@
     return false;
   }
   function moveAxis(dx, dy, dz) {
+    var ox = state.px, oy = state.py, oz = state.pz;
+    var xHit = false, zHit = false;
     if (dx) {
       state.px += dx;
-      if (overlaps(state.px, state.py, state.pz)) state.px -= dx;
+      if (overlaps(state.px, state.py, state.pz)) { state.px = ox; xHit = true; }
     }
     if (dz) {
       state.pz += dz;
-      if (overlaps(state.px, state.py, state.pz)) state.pz -= dz;
+      if (overlaps(state.px, state.py, state.pz)) { state.pz = oz; zHit = true; }
+    }
+    if ((xHit || zHit) && (dx || dz) && state.onGround && !inWaterAt(ox, oy, oz)) {
+      var slidX = state.px, slidZ = state.pz;
+      var rises = [0.35, 0.7, 1.02];
+      var r, stepped = false;
+      for (r = 0; r < rises.length; r++) {
+        state.py = oy + rises[r];
+        state.px = ox + dx;
+        state.pz = oz + dz;
+        if (!overlaps(state.px, state.py, state.pz) && overlaps(state.px, state.py - 0.3, state.pz)) {
+          if (state.vy < 0) state.vy = 0;
+          stepped = true;
+          break;
+        }
+      }
+      if (!stepped) { state.px = slidX; state.py = oy; state.pz = slidZ; }
     }
     if (dy) {
       var steps = Math.max(1, Math.ceil(Math.abs(dy) / 0.15));
@@ -850,7 +869,7 @@
       } else state.vy = 0;
       moveAxis(0, state.vy * dt, 0);
     } else {
-      if (jump && state.onGround) { state.vy = 7.2; state.onGround = false; }
+      if (jump && state.onGround) { state.vy = 9; state.onGround = false; }
       state.vy -= 26 * dt;
       if (state.vy < -20) state.vy = -20;
       moveAxis(0, state.vy * dt, 0);
@@ -1934,6 +1953,7 @@
     setClock: function (s) { state.clock = s; },
     weaponCode: weaponCode, inWaterAt: inWaterAt, sim: sim, overlaps: overlaps, tryPlace: tryPlace,
     feetClear: feetClear, pickSurface: pickSurface, putOnGround: putOnGround,
+    press: function (code, on) { keys[code] = !!on; },
     selfId: function () { return selfId; },
     setSelfForTest: function (id) { selfId = id; },
     setRole: function (role) { netRole = role; }
