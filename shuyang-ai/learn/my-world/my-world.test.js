@@ -20,7 +20,7 @@ global.localStorage = {
   setItem: function (k, v) { mem[k] = String(v); }
 };
 
-eq(MW.TIP, 'mw4', 'tip');
+eq(MW.TIP, 'mw5', 'tip');
 eq(MW.STORE, 'xygo-my-world', 'store');
 if (MW.KID_NAMES.length < 8) fail('kid names');
 MW.KID_NAMES.forEach(function (n) {
@@ -200,7 +200,7 @@ MW.state.inv.gold = 9;
 MW.save();
 var saved = JSON.parse(localStorage.getItem('xygo-my-world'));
 eq(saved.v, 3, 'save v');
-eq(saved.tip, 'mw4', 'save tip');
+eq(saved.tip, 'mw5', 'save tip');
 eq(saved.seed, 11, 'guest keeps own map');
 eq(saved.inv.gold, 9, 'guest keeps coins');
 eq(saved.inv.wood, 2, 'guest keeps wood');
@@ -213,19 +213,99 @@ var peace = '这游戏没有怪物。';
 var made = '自研小游戏，不是正版《我的世界》。';
 if (html.split(peace).length < 3) fail('peace twice in page');
 if (html.split(made).length < 3) fail('disclaimer twice in page');
-if (html.indexOf('xy-tip" content="mw4"') < 0) fail('meta tip');
-if (html.indexOf('my-world.css?v=mw4') < 0 || html.indexOf('my-world.js?v=mw4') < 0) fail('cache bust');
+if (html.indexOf('xy-tip" content="mw5"') < 0) fail('meta tip');
+if (html.indexOf('my-world.css?v=mw5') < 0 || html.indexOf('my-world.js?v=mw5') < 0) fail('cache bust');
 if (html.indexOf('vendor/peerjs/peerjs.min.js') < 0) fail('vendor peerjs');
-if (html.indexOf('>mw4<') < 0) fail('hud tip');
+if (html.indexOf('>mw5<') < 0) fail('hud tip');
 if (learn.indexOf(peace) < 0 || learn.indexOf('不是正版《我的世界》') < 0) fail('learn disclaimers');
-if (learn.indexOf('?v=mw4') < 0) fail('learn url');
+if (learn.indexOf('?v=mw5') < 0) fail('learn url');
 if (learn.indexOf('出生') < 0) fail('learn spawn');
+if (learn.indexOf('台阶') < 0) fail('learn step');
 if (learn.indexOf('xygo-my-world') < 0) fail('learn key');
-if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw4') < 0) fail('hub tip');
-if (hub.indexOf('my-world/?v=mw3') >= 0) fail('old hub tip');
+if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw5') < 0) fail('hub tip');
+if (hub.indexOf('my-world/?v=mw4') >= 0) fail('old hub tip');
+
+function standAt(spot) {
+  MW.state.px = spot.x;
+  MW.state.py = spot.y;
+  MW.state.pz = spot.z;
+  MW.state.yaw = 0;
+  MW.state.pitch = 0;
+  MW.state.vy = 0;
+  MW.state.onGround = true;
+  MW.state.started = true;
+  MW.state.ride = -1;
+}
+function layLedge(spot, tall) {
+  var x = Math.floor(spot.x);
+  var z0 = Math.floor(spot.z) - 1;
+  var fy = Math.floor(spot.y);
+  var dz;
+  for (dz = 0; dz < 5; dz++) {
+    MW.put(x, fy, z0 - dz, MW.DIRT);
+    MW.put(x, fy + 1, z0 - dz, tall ? MW.STONE : MW.AIR);
+    MW.put(x, fy + 2, z0 - dz, MW.AIR);
+    MW.put(x, fy + 3, z0 - dz, MW.AIR);
+  }
+  return { x: x, z0: z0, fy: fy };
+}
+MW.grow(2);
+var ledge = MW.scan().spawn;
+standAt(ledge);
+var step = layLedge(ledge, false);
+var yBefore = MW.state.py;
+var hop;
+for (hop = 0; hop < 36; hop++) {
+  MW.press('KeyW', true);
+  MW.press('Space', true);
+  MW.sim(0.05);
+}
+MW.press('KeyW', false);
+MW.press('Space', false);
+if (!(MW.state.py >= yBefore + 0.9)) fail('jump step py ' + yBefore + ' -> ' + MW.state.py);
+if (MW.state.pz > step.z0 + 1) fail('jump did not land on ledge z ' + MW.state.pz);
+
+MW.grow(2);
+ledge = MW.scan().spawn;
+standAt(ledge);
+step = layLedge(ledge, false);
+yBefore = MW.state.py;
+for (hop = 0; hop < 24; hop++) {
+  MW.press('KeyW', true);
+  MW.sim(0.05);
+}
+MW.press('KeyW', false);
+if (!(MW.state.py >= yBefore + 0.9)) fail('walk step py ' + yBefore + ' -> ' + MW.state.py);
+
+MW.grow(2);
+ledge = MW.scan().spawn;
+standAt(ledge);
+step = layLedge(ledge, true);
+yBefore = MW.state.py;
+for (hop = 0; hop < 30; hop++) {
+  MW.press('KeyW', true);
+  MW.press('Space', true);
+  MW.sim(0.05);
+}
+MW.press('KeyW', false);
+MW.press('Space', false);
+if (MW.state.py > yBefore + 1.6) fail('climbed a 2 block wall ' + MW.state.py);
+
+MW.grow(2);
+ledge = MW.scan().spawn;
+standAt(ledge);
+var peak = ledge.y;
+for (hop = 0; hop < 20; hop++) {
+  MW.press('Space', true);
+  MW.sim(0.05);
+  if (MW.state.py > peak) peak = MW.state.py;
+}
+MW.press('Space', false);
+if (peak - ledge.y < 1.15) fail('jump apex ' + (peak - ledge.y));
+if (peak - ledge.y > 1.6) fail('jump too high ' + (peak - ledge.y));
 
 if (failed) {
   console.error(failed + ' failed');
   process.exit(1);
 }
-console.log('my-world mw4 ok');
+console.log('my-world mw5 ok');
