@@ -1,8 +1,8 @@
-/* 方块小世界 mw5 · 能跳上一格台阶。出生在地面。昼夜、海河山、小船。没有怪物。 */
+/* 方块小世界 mw6 · 右下角始终看得见自己的手和手里的东西。 */
 (function () {
   'use strict';
 
-  var TIP = 'mw5';
+  var TIP = 'mw6';
   var STORE = 'xygo-my-world';
   var W = 40, H = 22, D = 40, SEA = 8, DAY = 72;
   var AIR = 0, GRASS = 1, DIRT = 2, LOG = 3, LEAF = 4, STONE = 5;
@@ -108,7 +108,7 @@
   function openBC() {
     if (netBC || typeof document === 'undefined' || typeof BroadcastChannel === 'undefined') return;
     try {
-      netBC = new BroadcastChannel('xygo-my-world-mw5');
+      netBC = new BroadcastChannel('xygo-my-world-mw6');
       netBC.onmessage = function (ev) { onNet(ev && ev.data, 'bc', null); };
     } catch (eBc) { netBC = null; }
   }
@@ -918,7 +918,7 @@
           z: Math.round(state.pz * 100) / 100,
           yaw: Math.round(state.yaw * 1000) / 1000,
           pitch: Math.round(state.pitch * 1000) / 1000,
-          w: weaponCode(), host: netRole === 'host' ? 1 : 0, clock: state.clock
+          w: weaponCode(), hd: holdCode(), host: netRole === 'host' ? 1 : 0, clock: state.clock
         });
       }
     }
@@ -927,6 +927,19 @@
     if (state.equip.weapon === 'swordStone') return 2;
     if (state.equip.weapon === 'swordWood') return 1;
     return 0;
+  }
+  function holdCode() {
+    if (state.hold === 'torch') return 1;
+    if (state.hold === 'boat') return 2;
+    return 0;
+  }
+  function handKind() {
+    if (state.hold === 'torch') return 'torch';
+    if (state.hold === 'boat') return 'boat';
+    if (state.equip.weapon === 'swordStone') return 'swordStone';
+    if (state.equip.weapon === 'swordWood') return 'swordWood';
+    if (state.equip.tool === 'pick') return 'pick';
+    return 'hand';
   }
   function sunElev() {
     return Math.sin((state.clock % DAY) / DAY * Math.PI * 2 + 0.9);
@@ -1107,9 +1120,53 @@
     pushCube(data, p.x - 0.2, p.y + 0.92, p.z - 0.2, 0.4, 0.4, 0.4, [0.96, 0.84, 0.7]);
     pushCube(data, p.x - 0.2, p.y + 1.22, p.z - 0.2, 0.4, 0.12, 0.4, [0.28, 0.18, 0.1]);
     pushCube(data, p.x + fx * 0.24 - 0.05, p.y + 1.05, p.z + fz * 0.24 - 0.05, 0.1, 0.1, 0.1, [0.45, 0.24, 0.2]);
-    if (p.w) {
+    if (p.hd === 1) {
+      pushCube(data, p.x + fx * 0.34 - 0.04, p.y + 0.55, p.z + fz * 0.34 - 0.04, 0.08, 0.46, 0.08, [0.45, 0.28, 0.12]);
+      pushCube(data, p.x + fx * 0.34 - 0.08, p.y + 0.98, p.z + fz * 0.34 - 0.08, 0.16, 0.16, 0.16, [1, 0.82, 0.28]);
+    } else if (p.hd === 2) {
+      pushCube(data, p.x + fx * 0.4 - 0.16, p.y + 0.55, p.z + fz * 0.4 - 0.1, 0.32, 0.12, 0.2, [0.5, 0.3, 0.12]);
+    } else if (p.w) {
       var rgb = p.w === 2 ? [0.75, 0.78, 0.84] : [0.62, 0.4, 0.16];
-      pushCube(data, p.x + fx * 0.38 - 0.04, p.y + 0.45, p.z + fz * 0.38 - 0.04, 0.08, 0.72, 0.08, rgb);
+      pushCube(data, p.x + fx * 0.38 - 0.05, p.y + 0.42, p.z + fz * 0.38 - 0.05, 0.1, 0.78, 0.1, rgb);
+    }
+  }
+  function pushViewBox(data, origin, right, up, fwd, lx, ly, lz, sx, sy, sz, rgb) {
+    var f, v, face, s, px, py, pz;
+    for (f = 0; f < 6; f++) {
+      face = FACES[f];
+      s = SHADE[f];
+      for (v = 0; v < 18; v += 3) {
+        px = lx + face[v] * sx;
+        py = ly + face[v + 1] * sy;
+        pz = lz + face[v + 2] * sz;
+        data.push(
+          origin[0] + right[0] * px + up[0] * py + fwd[0] * pz,
+          origin[1] + right[1] * px + up[1] * py + fwd[1] * pz,
+          origin[2] + right[2] * px + up[2] * py + fwd[2] * pz,
+          rgb[0] * s, rgb[1] * s, rgb[2] * s
+        );
+      }
+    }
+  }
+  function pushViewHand(data, origin, right, up, fwd) {
+    var sleeve = state.equip.armor === 'armor' ? [0.28, 0.72, 0.38] : [0.2, 0.32, 0.62];
+    var skin = [0.96, 0.78, 0.62];
+    pushViewBox(data, origin, right, up, fwd, 0.06, -0.34, 0.18, 0.14, 0.18, 0.28, sleeve);
+    pushViewBox(data, origin, right, up, fwd, 0.05, -0.22, 0.42, 0.18, 0.14, 0.16, skin);
+    var kind = handKind();
+    if (kind === 'swordWood' || kind === 'swordStone') {
+      var blade = kind === 'swordStone' ? [0.78, 0.82, 0.88] : [0.66, 0.42, 0.18];
+      pushViewBox(data, origin, right, up, fwd, 0.09, -0.16, 0.5, 0.06, 0.5, 0.07, blade);
+      pushViewBox(data, origin, right, up, fwd, 0.02, -0.18, 0.48, 0.22, 0.05, 0.09, [0.42, 0.26, 0.12]);
+    } else if (kind === 'pick') {
+      pushViewBox(data, origin, right, up, fwd, 0.1, -0.2, 0.5, 0.05, 0.42, 0.05, [0.42, 0.28, 0.14]);
+      pushViewBox(data, origin, right, up, fwd, 0.02, 0.16, 0.46, 0.22, 0.08, 0.08, [0.62, 0.64, 0.68]);
+    } else if (kind === 'torch') {
+      pushViewBox(data, origin, right, up, fwd, 0.1, -0.18, 0.48, 0.05, 0.4, 0.05, [0.45, 0.28, 0.12]);
+      pushViewBox(data, origin, right, up, fwd, 0.05, 0.16, 0.44, 0.14, 0.14, 0.14, [1, 0.78, 0.25]);
+    } else if (kind === 'boat') {
+      pushViewBox(data, origin, right, up, fwd, 0.0, -0.24, 0.46, 0.28, 0.1, 0.18, [0.52, 0.32, 0.14]);
+      pushViewBox(data, origin, right, up, fwd, 0.1, -0.16, 0.5, 0.04, 0.16, 0.04, [0.62, 0.4, 0.18]);
     }
   }
   function drawDyn(data, uMin, uFog, uAmb) {
@@ -1227,16 +1284,16 @@
       pushCube(actors, b.x - 0.02, by + 0.52, b.z - 0.28, 0.05, 0.4, 0.5, [0.94, 0.9, 0.78]);
     }
     for (id in remotes) pushAvatar(actors, remotes[id]);
-    if (state.started && weaponCode()) {
-      var handRgb = weaponCode() === 2 ? [0.78, 0.8, 0.86] : [0.64, 0.4, 0.16];
-      var hx = state.px + dir[0] * 0.95 + basis.right[0] * 0.42;
-      var hy = eyeY + dir[1] * 0.95 - 0.48;
-      var hz = state.pz + dir[2] * 0.95 + basis.right[2] * 0.42;
-      pushCube(actors, hx - 0.03, hy, hz - 0.03, 0.06, 0.34, 0.06, handRgb);
-      pushCube(actors, hx - 0.07, hy - 0.05, hz - 0.045, 0.14, 0.05, 0.09, [0.42, 0.26, 0.12]);
-    }
     drawDyn(bright, 1.3, 1 - day, 1);
     drawDyn(actors, 0.72, 1 - day, 0.18 + 0.82 * day);
+    if (state.started) {
+      var hand = [];
+      var fwd = dir;
+      pushViewHand(hand, [state.px, eyeY, state.pz], basis.right, basis.up, fwd);
+      gl.disable(gl.DEPTH_TEST);
+      drawDyn(hand, 1.2, 0, 1);
+      gl.enable(gl.DEPTH_TEST);
+    }
     var hit = state.started ? ray(4.5, true) : null;
     outline(hit);
     if (lineN) {
@@ -1461,6 +1518,7 @@
     r.yaw = isFinite(+msg.yaw) ? +msg.yaw : 0;
     r.pitch = isFinite(+msg.pitch) ? +msg.pitch : 0;
     r.w = msg.w | 0;
+    r.hd = msg.hd | 0;
     r.seen = Date.now();
     if (msg.host && netRole === 'guest' && isFinite(+msg.clock)) state.clock = +msg.clock;
   }
@@ -1951,7 +2009,7 @@
     addBoat: addBoat, snapshotHome: snapshotHome, pinHome: function () { snapshotHome(); lockHome = true; },
     applyNet: onNet, applyPos: applyPos, dayFactor: dayFactor, skyRGB: skyRGB,
     setClock: function (s) { state.clock = s; },
-    weaponCode: weaponCode, inWaterAt: inWaterAt, sim: sim, overlaps: overlaps, tryPlace: tryPlace,
+    weaponCode: weaponCode, handKind: handKind, inWaterAt: inWaterAt, sim: sim, overlaps: overlaps, tryPlace: tryPlace,
     feetClear: feetClear, pickSurface: pickSurface, putOnGround: putOnGround,
     press: function (code, on) { keys[code] = !!on; },
     selfId: function () { return selfId; },
