@@ -1,12 +1,16 @@
-/* 方块小世界 mw7 · 镜头稍宽，手里的方块收小。世界格子仍是原来的一格。 */
+/* 方块小世界 mw9 · 小地图、村庄、床、水柱、联机重连。世界格子仍可整片挖空。 */
 (function () {
   'use strict';
 
-  var TIP = 'mw7';
+  var TIP = 'mw9';
   var STORE = 'xygo-my-world';
-  var W = 40, H = 22, D = 40, SEA = 8, DAY = 72;
+  var W = 56, H = 22, D = 56, SEA = 8, DAY = 420;
+  var HP_MAX = 6;
+  var WALK = 3.0;
+  var MAP_N = 41;
+  var MAP_CELL = 2;
   var AIR = 0, GRASS = 1, DIRT = 2, LOG = 3, LEAF = 4, STONE = 5;
-  var WATER = 6, SAND = 7, FLOWER = 8, GOLD = 9, TORCH = 10, CHEST = 11;
+  var WATER = 6, SAND = 7, FLOWER = 8, GOLD = 9, TORCH = 10, CHEST = 11, BED = 12;
   var COL = {
     1: [0.36, 0.72, 0.32],
     2: [0.55, 0.36, 0.22],
@@ -18,7 +22,8 @@
     8: [0.93, 0.45, 0.58],
     9: [0.86, 0.68, 0.18],
     10: [1, 0.86, 0.35],
-    11: [0.72, 0.46, 0.16]
+    11: [0.72, 0.46, 0.16],
+    12: [0.82, 0.28, 0.32]
   };
   var SHADE = [1, 0.55, 0.82, 0.68, 0.9, 0.64];
   var FACES = [
@@ -30,20 +35,22 @@
     [1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0]
   ];
   var KID_NAMES = ['乐乐', '豆豆', '果果', '星星', '月月', '安安', '米米', '桃桃', '橙橙', '森森', '洋洋', '贝贝', '糖糖', '泡泡', '朵朵', '球球', '木木', '小河', '小船', '小金', '小山', '小树', '阳光', '棉花', '南瓜', '葡萄', '荔枝', '樱桃', '云朵', '海星', '贝壳', '松果'];
-  var INV_KEYS = ['wood', 'leaf', 'dirt', 'stone', 'sand', 'torch', 'boat', 'swordWood', 'swordStone', 'armor', 'pick', 'gold'];
-  var BAG_SHOW = [['wood', '木头'], ['leaf', '树叶'], ['dirt', '泥土'], ['stone', '石头'], ['sand', '沙子'], ['torch', '火把'], ['boat', '小船'], ['swordWood', '木剑'], ['swordStone', '石剑'], ['armor', '叶衣'], ['pick', '石稿']];
-  var NAMES = { wood: '木头', leaf: '树叶', dirt: '泥土', stone: '石头', sand: '沙子', torch: '火把', boat: '小船', swordWood: '木剑', swordStone: '石剑', armor: '叶衣', pick: '石稿', gold: '金币' };
+  var INV_KEYS = ['wood', 'leaf', 'dirt', 'stone', 'sand', 'torch', 'boat', 'bed', 'swordWood', 'swordStone', 'armor', 'pick', 'gun', 'gold'];
+  var BAG_SHOW = [['wood', '木头'], ['leaf', '树叶'], ['dirt', '泥土'], ['stone', '石头'], ['sand', '沙子'], ['torch', '火把'], ['boat', '小船'], ['bed', '床'], ['swordWood', '木剑'], ['swordStone', '石剑'], ['armor', '叶衣'], ['pick', '石稿'], ['gun', '枪']];
+  var NAMES = { wood: '木头', leaf: '树叶', dirt: '泥土', stone: '石头', sand: '沙子', torch: '火把', boat: '小船', bed: '床', swordWood: '木剑', swordStone: '石剑', armor: '叶衣', pick: '石稿', gun: '枪', gold: '金币' };
   var RECIPES = {
-    torch: { cost: { wood: 1 }, give: 'torch', n: 1, say: '火把' },
-    boat: { cost: { wood: 5 }, give: 'boat', n: 1, say: '小船' },
+    torch: { cost: { wood: 3 }, give: 'torch', n: 1, say: '火把', woodGate: 1 },
+    boat: { cost: { wood: 10 }, give: 'boat', n: 1, say: '小船', woodGate: 1 },
     swordWood: { cost: { wood: 3 }, give: 'swordWood', n: 1, say: '木剑', slot: 'weapon' },
     swordStone: { cost: { stone: 2, wood: 1 }, give: 'swordStone', n: 1, say: '石剑', slot: 'weapon' },
     armor: { cost: { leaf: 8 }, give: 'armor', n: 1, say: '叶衣', slot: 'armor' },
     pick: { cost: { stone: 3, wood: 1 }, give: 'pick', n: 1, say: '石稿', slot: 'tool' },
+    gun: { cost: { stone: 2, wood: 1 }, give: 'gun', n: 1, say: '枪', slot: 'weapon' },
+    bed: { cost: { wood: 3, leaf: 2 }, give: 'bed', n: 1, say: '床' },
     sell: { cost: { wood: 1 }, give: 'gold', n: 1, say: '金币' }
   };
   var SLOT_WORD = {
-    weapon: { '': '武器 空', swordWood: '武器 木剑', swordStone: '武器 石剑' },
+    weapon: { '': '武器 空', swordWood: '武器 木剑', swordStone: '武器 石剑', gun: '武器 枪' },
     armor: { '': '护甲 空', armor: '护甲 叶衣' },
     tool: { '': '工具 空', pick: '工具 石稿' }
   };
@@ -70,10 +77,19 @@
   var spawn = { x: 20.5, y: 10, z: 20.5 };
   var boats = [];
   var torchCells = [];
+  var pigs = [];
+  var cows = [];
+  var villagers = [];
+  var village = null;
+  var armorDrop = null;
+  var fallPeak = null;
+  var shotLock = false;
+  var mapOpen = true;
+  var suppressMobs = false;
   var state = {
     px: 20.5, py: 10, pz: 20.5, yaw: 0.4, pitch: 0, vy: 0,
-    onGround: false, started: false, ride: -1, hold: 'hand', clock: 0,
-    gotHost: false,
+    onGround: false, started: false, ride: -1, sitting: null, hold: 'hand', clock: 0,
+    hp: HP_MAX, knockX: 0, knockZ: 0, gotHost: false,
     name: KID_NAMES[(Math.random() * KID_NAMES.length) | 0],
     inv: blankInv(),
     equip: { weapon: '', armor: '', tool: '' }
@@ -108,13 +124,13 @@
   function openBC() {
     if (netBC || typeof document === 'undefined' || typeof BroadcastChannel === 'undefined') return;
     try {
-      netBC = new BroadcastChannel('xygo-my-world-mw7');
+      netBC = new BroadcastChannel('xygo-my-world-mw9');
       netBC.onmessage = function (ev) { onNet(ev && ev.data, 'bc', null); };
     } catch (eBc) { netBC = null; }
   }
 
   function blankInv() {
-    return { wood: 0, leaf: 0, dirt: 0, stone: 0, sand: 0, torch: 0, boat: 0, swordWood: 0, swordStone: 0, armor: 0, pick: 0, gold: 0 };
+    return { wood: 0, leaf: 0, dirt: 0, stone: 0, sand: 0, torch: 0, boat: 0, bed: 0, swordWood: 0, swordStone: 0, armor: 0, pick: 0, gun: 0, gold: 0 };
   }
   function $(id) {
     return (typeof document !== 'undefined') ? document.getElementById(id) : null;
@@ -171,9 +187,10 @@
   }
   function solid(x, y, z) {
     x |= 0; y |= 0; z |= 0;
-    if (x < 0 || y < 0 || z < 0 || x >= W || y >= H || z >= D) return true;
+    if (x < 0 || z < 0 || x >= W || z >= D) return true;
+    if (y < 0 || y >= H) return false;
     var id = at(x, y, z);
-    return id !== AIR && id !== LEAF && id !== FLOWER && id !== WATER && id !== TORCH;
+    return id !== AIR && id !== LEAF && id !== FLOWER && id !== WATER && id !== TORCH && id !== BED;
   }
   function countId(id) {
     var n = 0, i;
@@ -316,12 +333,163 @@
     state.pz = spot.z;
     state.vy = 0;
     state.ride = -1;
+    state.knockX = 0;
+    state.knockZ = 0;
+    fallPeak = null;
     state.pitch = 0;
     state.yaw = openYaw(spot.x, spot.y + 1.5, spot.z);
+  }
+  function wearingArmor() {
+    return state.equip.armor === 'armor' && (state.inv.armor | 0) > 0;
+  }
+  function renderHp() {
+    var text = $('hpText'), fill = $('hpFill');
+    if (text) text.textContent = '血 ' + state.hp + (wearingArmor() ? ' · 护甲' : '');
+    if (fill) fill.style.width = Math.max(0, Math.round(state.hp / HP_MAX * 100)) + '%';
+  }
+  function hurt(n, why) {
+    state.hp -= n;
+    if (state.hp < 0) state.hp = 0;
+    var flash = $('hurt');
+    if (flash) {
+      flash.classList.remove('on');
+      void flash.offsetWidth;
+      flash.classList.add('on');
+    }
+    renderHp();
+    if (why) toast(why);
+    if (state.hp <= 0) {
+      state.hp = HP_MAX;
+      findSpawn();
+      putOnGround(spawn);
+      renderHp();
+      toast('血没了，回到地面');
+    }
+  }
+  function groundFeet(x, z) {
+    var top = highestSolid(x | 0, z | 0);
+    if (top < 0) return null;
+    if (at(x | 0, top + 1, z | 0) === WATER) return null;
+    return top + 1;
+  }
+  function carveHouse(x, z, floorY) {
+    var dx, dz, y;
+    for (dx = 0; dx <= 4; dx++) {
+      for (dz = 0; dz <= 4; dz++) {
+        for (y = floorY + 1; y <= floorY + 4; y++) put(x + dx, y, z + dz, AIR);
+        put(x + dx, floorY, z + dz, STONE);
+      }
+    }
+    for (y = floorY + 1; y <= floorY + 3; y++) {
+      for (dx = 0; dx <= 4; dx++) {
+        put(x + dx, y, z, LOG);
+        put(x + dx, y, z + 4, LOG);
+      }
+      for (dz = 1; dz <= 3; dz++) {
+        put(x, y, z + dz, LOG);
+        put(x + 4, y, z + dz, LOG);
+      }
+    }
+    put(x + 2, floorY + 1, z, AIR);
+    put(x + 2, floorY + 2, z, AIR);
+    for (dx = 0; dx <= 4; dx++) {
+      for (dz = 0; dz <= 4; dz++) put(x + dx, floorY + 4, z + dz, LEAF);
+    }
+  }
+  function buildVillage() {
+    var best = null, bestScore = 1e9, x, z, spot, sc, pass;
+    for (pass = 0; pass < 2 && !best; pass++) {
+      for (x = 14; x < W - 14; x += 2) {
+        for (z = 26; z < D - 10; z += 2) {
+          spot = standColumn(x, z);
+          if (!spot || spot.ground !== GRASS) continue;
+          if (Math.abs(z - riverZ(x)) < 6) continue;
+          if (pass === 0 && (spot.top > SEA + 4 || spot.top < SEA - 1)) continue;
+          sc = (x - 24) * (x - 24) + (z - 36) * (z - 36) + (spot.top - (SEA + 1)) * (spot.top - (SEA + 1)) * 6;
+          if (sc < bestScore) { bestScore = sc; best = spot; }
+        }
+      }
+      bestScore = 1e9;
+    }
+    if (!best) {
+      var fx, fz, top;
+      for (fx = 18; fx <= 34 && !best; fx += 2) {
+        for (fz = 28; fz <= 46; fz += 2) {
+          top = highestSolid(fx, fz);
+          if (top >= 2 && top < SEA + 8 && at(fx, top, fz) !== WATER) {
+            best = { x: fx + 0.5, z: fz + 0.5, top: top, ground: GRASS };
+            break;
+          }
+        }
+      }
+    }
+    if (!best) best = { x: 24.5, z: 36.5, top: 8, ground: GRASS };
+    var cx = best.x | 0, cz = best.z | 0, gy = best.top;
+    var dx, dz, y;
+    for (dx = -6; dx <= 8; dx++) {
+      for (dz = -6; dz <= 8; dz++) {
+        x = cx + dx; z = cz + dz;
+        if (x < 1 || z < 1 || x >= W - 1 || z >= D - 1) continue;
+        for (y = gy + 1; y < H; y++) if (at(x, y, z)) put(x, y, z, AIR);
+        if (at(x, gy, z) !== GRASS && at(x, gy, z) !== SAND) {
+          put(x, gy, z, GRASS);
+          if (gy > 0 && at(x, gy - 1, z) === STONE) put(x, gy - 1, z, DIRT);
+        }
+      }
+    }
+    carveHouse(cx, cz, gy);
+    carveHouse(cx + 6, cz + 1, gy);
+    put(cx + 1, gy + 1, cz + 2, BED);
+    village = { x: cx + 2.5, z: cz + 6.5, y: gy + 1 };
+    armorDrop = { x: cx + 2.5, y: gy + 1, z: cz - 2.5, taken: false };
+  }
+  function spawnMobs() {
+    pigs.splice(0, pigs.length);
+    cows.splice(0, cows.length);
+    villagers.splice(0, villagers.length);
+    if (!village) return;
+    var i, feet;
+    for (i = 0; i < 4; i++) {
+      villagers.push({
+        x: village.x + (i - 1.5) * 1.4,
+        z: village.z + 0.6,
+        y: village.y,
+        yaw: 0.4 * i,
+        alive: true,
+        hue: i % 3
+      });
+    }
+    for (i = 0; i < 4; i++) {
+      feet = groundFeet(village.x + 3 + i, village.z + 4);
+      pigs.push({
+        x: village.x + 2 + i * 1.3,
+        z: village.z + 4,
+        y: feet == null ? village.y : feet,
+        yaw: i,
+        alive: true,
+        hp: 1,
+        cool: 0
+      });
+    }
+    for (i = 0; i < 3; i++) {
+      feet = groundFeet(village.x - 3, village.z + i * 1.6);
+      cows.push({
+        x: village.x - 3,
+        z: village.z + i * 1.6,
+        y: feet == null ? village.y : feet,
+        yaw: 1.2,
+        alive: true,
+        hp: 3,
+        mad: false,
+        cool: 0
+      });
+    }
   }
   function grow(seed, keepPos) {
     worldSeed = (seed >>> 0) || 1;
     blocks = new Uint8Array(W * H * D);
+    village = null;
+    armorDrop = null;
     var x, z, y, h, id, topId;
     for (z = 0; z < D; z++) {
       for (x = 0; x < W; x++) {
@@ -343,7 +511,8 @@
         if (h < SEA) {
           for (y = h + 1; y < SEA; y++) put(x, y, z, WATER);
         }
-        if (topId === GRASS && h < SEA + 5 && h + 4 < H && Math.abs(z - riverZ(x)) > 4.5 && hash2(x, z, 9) < 0.04) {
+        var meadow = Math.hypot(x - 18, z - 12) < 16 || Math.hypot(x - 26, z - 38) < 14;
+        if (!meadow && topId === GRASS && h < SEA + 5 && h + 4 < H && Math.abs(z - riverZ(x)) > 4.5 && hash2(x, z, 9) < 0.016) {
           placeTree(x, z, h);
         } else if (topId === GRASS && hash2(x, z, 10) < 0.1 && at(x, h + 1, z) === AIR) {
           put(x, h + 1, z, FLOWER);
@@ -352,13 +521,19 @@
         }
       }
     }
+    buildVillage();
     findSpawn();
     ensureChests();
     if (!feetClear(spawn.x, spawn.y, spawn.z)) findSpawn();
     if (!keepPos) {
       boats.splice(0, boats.length);
       putOnGround(spawn);
+      state.hp = HP_MAX;
+      state.knockX = 0;
+      state.knockZ = 0;
+      fallPeak = null;
     }
+    if (!suppressMobs) spawnMobs();
     dirty = true;
   }
   function newSeed() {
@@ -369,7 +544,7 @@
       var p = String(row).split(',');
       if (p.length < 4) return;
       var id = +p[3];
-      if (id < 0 || id > CHEST) return;
+      if (id < 0 || id > BED) return;
       put(+p[0], +p[1], +p[2], id);
     });
     dirty = true;
@@ -377,7 +552,9 @@
   function collectEdits() {
     var keep = blocks;
     var saved = { px: state.px, py: state.py, pz: state.pz, ride: state.ride };
+    suppressMobs = true;
     grow(worldSeed, true);
+    suppressMobs = false;
     var fresh = blocks;
     blocks = keep;
     state.px = saved.px;
@@ -437,10 +614,27 @@
       putOnGround(spawn);
     }
   }
+  function freshGame() {
+    lockHome = false;
+    home = null;
+    state.inv = blankInv();
+    state.equip.weapon = '';
+    state.equip.armor = '';
+    state.equip.tool = '';
+    state.hold = 'hand';
+    state.clock = 0;
+    state.ride = -1;
+    state.sitting = null;
+    state.hp = HP_MAX;
+    state.knockX = 0;
+    state.knockZ = 0;
+    state.gotHost = false;
+    fallPeak = null;
+    grow(newSeed(), false);
+    try { localStorage.removeItem(STORE); } catch (e) {}
+  }
   function load() {
-    var raw = null;
-    try { raw = JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (e) { raw = null; }
-    loadRaw(raw);
+    freshGame();
   }
   function snapshotHome() {
     home = {
@@ -499,7 +693,10 @@
       state.pz += dz;
       if (overlaps(state.px, state.py, state.pz)) { state.pz = oz; zHit = true; }
     }
-    if ((xHit || zHit) && (dx || dz) && state.onGround && !inWaterAt(ox, oy, oz)) {
+    var nearFloor = state.onGround || (state.vy <= 0.4 && overlaps(ox, oy - 0.22, oz));
+    if ((xHit || zHit) && (dx || dz) && inWaterAt(ox, oy, oz)) {
+      if (!tryShore(ox, oy, oz, dx, dz)) { /* stay blocked */ }
+    } else if ((xHit || zHit) && (dx || dz) && nearFloor && !inWaterAt(ox, oy, oz)) {
       var slidX = state.px, slidZ = state.pz;
       var rises = [0.35, 0.7, 1.02];
       var r, stepped = false;
@@ -606,6 +803,7 @@
     if (id === STONE) return 'stone';
     if (id === SAND) return 'sand';
     if (id === TORCH) return 'torch';
+    if (id === BED) return 'bed';
     return null;
   }
   function cleanName(s) {
@@ -639,11 +837,22 @@
     for (i = 0; i < holdBtns.length; i++) holdBtns[i].classList.toggle('on', holdBtns[i].getAttribute('data-hold') === state.hold);
     var nameLabel = $('nameLabel');
     if (nameLabel && !state.started) nameLabel.textContent = state.name;
+    var gate = $('woodGate');
+    if (gate) gate.textContent = (state.inv.wood | 0) >= 1 ? '火把 3 木头 · 小船 10 木头' : '先敲到 1 个木头，才能做火把和小船';
+    if (typeof document !== 'undefined') {
+      var gates = document.querySelectorAll('#craft button[data-wood-gate]');
+      for (i = 0; i < gates.length; i++) gates[i].disabled = (state.inv.wood | 0) < 1;
+    }
+    renderHp();
     setNetStatus();
   }
   function craft(name) {
     var r = RECIPES[name];
     if (!r) return false;
+    if (r.woodGate && (state.inv.wood | 0) < r.woodGate) {
+      toast('小宇：先敲到 1 个木头，才能做火把和小船');
+      return false;
+    }
     var k;
     for (k in r.cost) if ((state.inv[k] | 0) < r.cost[k]) { toast('小宇：材料不够'); return false; }
     for (k in r.cost) state.inv[k] -= r.cost[k];
@@ -659,6 +868,7 @@
     if (slot === 'weapon') {
       if (state.inv.swordWood) opts.push('swordWood');
       if (state.inv.swordStone) opts.push('swordStone');
+      if (state.inv.gun) opts.push('gun');
     } else if (slot === 'armor') {
       if (state.inv.armor) opts.push('armor');
     } else if (slot === 'tool') {
@@ -709,7 +919,7 @@
     return true;
   }
   function placeTorch() {
-    if ((state.inv.torch | 0) < 1) { toast('小宇：做火把要 1 个木头'); return false; }
+    if ((state.inv.torch | 0) < 1) { toast('小宇：做火把要 3 个木头'); return false; }
     if (countId(TORCH) >= 32) { toast('小宇：火把够多了'); return false; }
     var hit = ray(4.5, true);
     if (!hit) { toast('小宇：对准要插的方块'); return false; }
@@ -740,7 +950,7 @@
     return true;
   }
   function placeBoatAimed() {
-    if ((state.inv.boat | 0) < 1) { toast('小宇：做一条小船要 5 个木头'); return false; }
+    if ((state.inv.boat | 0) < 1) { toast('小宇：做一条小船要 10 个木头'); return false; }
     var cell = firstWater(6);
     if (!cell && state.pitch < -0.35 && at(state.px | 0, SEA - 1, state.pz | 0) === WATER) {
       cell = { x: state.px | 0, y: SEA - 1, z: state.pz | 0 };
@@ -753,10 +963,32 @@
     toast('小船放下了');
     return true;
   }
+  function placeBedAt(x, y, z) {
+    x |= 0; y |= 0; z |= 0;
+    if ((state.inv.bed | 0) < 1) return false;
+    if (at(x, y, z) !== AIR) return false;
+    if (countId(BED) >= 16) return false;
+    if (!solid(x, y - 1, z)) return false;
+    state.inv.bed--;
+    localSet(x, y, z, BED);
+    save();
+    renderHud();
+    return true;
+  }
+  function placeBed() {
+    if ((state.inv.bed | 0) < 1) { toast('小宇：床要 3 个木头和 2 片树叶'); return false; }
+    var hit = ray(4.5, true);
+    if (!hit) { toast('小宇：对准要放床的方块'); return false; }
+    var x = hit.px, y = hit.py, z = hit.pz;
+    if (!placeBedAt(x, y, z)) { toast('小宇：这里放不下床'); return false; }
+    toast('床放下了。站上去可以坐下、睡觉。');
+    return true;
+  }
   function tryPlace() {
     if (state.hold === 'torch') return placeTorch();
     if (state.hold === 'boat') return placeBoatAimed();
-    toast('小宇：先点右边的火把或船');
+    if (state.hold === 'bed') return placeBed();
+    toast('小宇：先点右边的火把、船或床');
     return false;
   }
   function nearestBoat(dist) {
@@ -767,11 +999,71 @@
     }
     return best;
   }
+  function nearestBed(dist) {
+    var best = null, bestD = dist || 1.35;
+    var x0 = (state.px | 0) - 2, z0 = (state.pz | 0) - 2;
+    var x, y, z, d, y1 = (state.py | 0) - 1, y2 = (state.py | 0) + 2;
+    for (x = x0; x <= x0 + 4; x++) {
+      for (z = z0; z <= z0 + 4; z++) {
+        for (y = y1; y <= y2; y++) {
+          if (at(x, y, z) !== BED) continue;
+          d = Math.hypot(x + 0.5 - state.px, z + 0.5 - state.pz);
+          if (d < bestD) { bestD = d; best = { x: x, y: y, z: z }; }
+        }
+      }
+    }
+    return best;
+  }
+  function toggleSit() {
+    if (state.sitting) {
+      state.sitting = null;
+      toast('起来了');
+      return;
+    }
+    if (state.ride >= 0) { toast('小宇：先下船'); return; }
+    var b = nearestBed(1.35);
+    if (!b) { toast('小宇：身边没有床'); return; }
+    state.sitting = b;
+    state.px = b.x + 0.5;
+    state.pz = b.z + 0.5;
+    state.py = b.y;
+    state.vy = 0;
+    state.onGround = true;
+    toast('坐下了。可以睡觉。');
+  }
+  function dayPhase() {
+    var p = (state.clock % DAY) / DAY;
+    if (p < 0) p += 1;
+    return p;
+  }
+  function sleepNow() {
+    if (!state.sitting) { toast('小宇：先坐到床上'); return false; }
+    var p = dayPhase();
+    if (p > 0.04) state.clock += (1 - p) * DAY;
+    var veil = $('sleep');
+    if (veil) {
+      veil.hidden = false;
+      veil.classList.remove('on');
+      void veil.offsetWidth;
+      veil.classList.add('on');
+    }
+    toast('早上好');
+    emit({ t: 'clock', clock: state.clock });
+    return true;
+  }
   function toggleRide() {
     if (state.ride >= 0) {
+      var ox = state.px, oy = state.py, oz = state.pz;
       state.ride = -1;
-      state.py += 0.2;
-      toast('下船了');
+      state.sitting = null;
+      var dirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [0.8, 0.8], [-0.8, 0.8], [0.8, -0.8], [-0.8, -0.8]];
+      var i, landed = false;
+      for (i = 0; i < dirs.length; i++) {
+        state.px = ox; state.py = oy; state.pz = oz;
+        if (tryShore(ox, oy, oz, dirs[i][0], dirs[i][1])) { landed = true; break; }
+      }
+      if (!landed) { state.px = ox; state.py = oy + 0.15; state.pz = oz; toast('下船了'); }
+      else toast('上岸了');
       return;
     }
     var i = nearestBoat(1.7);
@@ -784,7 +1076,61 @@
     toast('上船了。小船开在水上。');
   }
   function inWaterAt(px, py, pz) {
-    return at(px, py + 0.35, pz) === WATER || at(px, py + 1.05, pz) === WATER;
+    return at(px, py + 0.2, pz) === WATER || at(px, py + 0.9, pz) === WATER || at(px, py + 1.35, pz) === WATER;
+  }
+  function submergedAt(px, py, pz) {
+    return at(px, py + 0.85, pz) === WATER;
+  }
+  function columnSurface(x, z) {
+    x |= 0; z |= 0;
+    var y, bottom = -1, top = -1;
+    if (x < 0 || z < 0 || x >= W || z >= D) return null;
+    for (y = 0; y < H; y++) {
+      if (at(x, y, z) === WATER) {
+        if (bottom < 0) bottom = y;
+        top = y;
+      }
+    }
+    if (top < 0) return null;
+    return { bottom: bottom, top: top, surface: top + 1, depth: top - bottom + 1 };
+  }
+  function tryShore(ox, oy, oz, dx, dz) {
+    var sx = dx > 0.001 ? 1 : dx < -0.001 ? -1 : 0;
+    var sz = dz > 0.001 ? 1 : dz < -0.001 ? -1 : 0;
+    if (!sx && !sz) return false;
+    var keepX = state.px, keepY = state.py, keepZ = state.pz;
+    var cells = [[Math.floor(ox) + sx, Math.floor(oz) + sz]];
+    if (sx && sz) {
+      cells.push([Math.floor(ox) + sx, Math.floor(oz)]);
+      cells.push([Math.floor(ox), Math.floor(oz) + sz]);
+    }
+    var col = columnSurface(ox, oz);
+    var base = col ? col.surface - 0.02 : oy;
+    if (oy < base - 1.35 && state.vy < 0.8) return false;
+    var i, cx, cz, y, floor, feet;
+    for (i = 0; i < cells.length; i++) {
+      cx = cells[i][0]; cz = cells[i][1];
+      floor = -1;
+      for (y = Math.min(H - 1, Math.floor(base + 2.2)); y >= 0; y--) {
+        if (solid(cx, y, cz)) { floor = y; break; }
+      }
+      if (floor < 0) continue;
+      feet = floor + 1;
+      if (feet - base > 1.08) continue;
+      if (feet < oy - 0.35) continue;
+      if (solid(cx, feet, cz) || solid(cx, feet + 1, cz)) continue;
+      if (at(cx, feet, cz) === WATER) continue;
+      state.px = cx + 0.5;
+      state.pz = cz + 0.5;
+      state.py = feet;
+      if (overlaps(state.px, state.py, state.pz)) continue;
+      state.vy = 0;
+      state.onGround = true;
+      state.sitting = null;
+      return true;
+    }
+    state.px = keepX; state.py = keepY; state.pz = keepZ;
+    return false;
   }
   function craftOpen() {
     var el = $('craft');
@@ -796,7 +1142,45 @@
     bar.className = on ? 'on' : '';
     if (on) fill.style.width = Math.min(100, pct) + '%';
   }
+  function animalInSight() {
+    var dir = look();
+    var best = null, bestD = 9, list, i, e, dx, dy, dz, dist, dot;
+    function scan(arr, kind) {
+      for (i = 0; i < arr.length; i++) {
+        e = arr[i];
+        if (!e.alive) continue;
+        dx = e.x - state.px;
+        dy = (e.y + 0.6) - (state.py + 1.5);
+        dz = e.z - state.pz;
+        dist = Math.hypot(dx, dy, dz);
+        if (dist < 0.4 || dist > bestD) continue;
+        dot = (dx * dir[0] + dy * dir[1] + dz * dir[2]) / dist;
+        if (dot > 0.82) { best = { e: e, kind: kind, i: i }; bestD = dist; }
+      }
+    }
+    scan(pigs, 'pig');
+    scan(cows, 'cow');
+    return best;
+  }
+  function tryShoot() {
+    if (state.equip.weapon !== 'gun' || (state.inv.gun | 0) < 1) return false;
+    var hit = animalInSight();
+    if (!hit) return false;
+    hit.e.hp = (hit.e.hp | 0) - 1;
+    if (hit.kind === 'cow') hit.e.mad = true;
+    if (hit.e.hp <= 0) {
+      hit.e.alive = false;
+      toast(hit.kind === 'pig' ? '小猪倒下了' : '牛倒下了');
+    } else toast('牛还剩 ' + hit.e.hp + ' 下');
+    emit({ t: 'mob', k: hit.kind, i: hit.i, hp: hit.e.hp });
+    return true;
+  }
   function doPunch(dt) {
+    if (punching && !shotLock && state.equip.weapon === 'gun') {
+      shotLock = true;
+      if (tryShoot()) { breakAcc = 0; setBar(false, 0); return; }
+    }
+    if (!punching) shotLock = false;
     var hit = punching ? ray(4.5, true) : null;
     var key = hit ? hit.x + ',' + hit.y + ',' + hit.z : '';
     if (hit && hit.id !== WATER) {
@@ -841,6 +1225,21 @@
     var mx = Math.sin(state.yaw), mz = -Math.cos(state.yaw);
     var rx = Math.cos(state.yaw), rz = Math.sin(state.yaw);
     var jump = jumping || !!keys.Space;
+    if (state.sitting) {
+      var bed = state.sitting;
+      if (at(bed.x, bed.y, bed.z) !== BED) state.sitting = null;
+      else if (jump) { state.sitting = null; toast('起来了'); }
+      else {
+        state.px = bed.x + 0.5;
+        state.pz = bed.z + 0.5;
+        state.py = bed.y;
+        state.vy = 0;
+        state.onGround = true;
+        doPunch(dt);
+        afterSim(dt);
+        return;
+      }
+    }
     if (state.ride >= 0) {
       var b = boats[state.ride];
       if (!b) state.ride = -1;
@@ -853,20 +1252,30 @@
         return;
       }
     }
-    var wet = inWaterAt(state.px, state.py, state.pz);
-    if (wet && !toldWater) { toldWater = true; toast('小宇：按住跳，可以在水里往上游'); }
-    var speed = (wet ? 2.5 : 4.4) * dt;
+    var wet = submergedAt(state.px, state.py, state.pz);
+    if (wet && !toldWater) { toldWater = true; toast('小宇：按住跳往上游。低头往前，会沉下去。'); }
+    if (state.knockX || state.knockZ) {
+      moveAxis(state.knockX * dt, 0, state.knockZ * dt);
+      var damp = Math.max(0, 1 - dt * 1.6);
+      state.knockX *= damp;
+      state.knockZ *= damp;
+      if (Math.abs(state.knockX) < 0.15) state.knockX = 0;
+      if (Math.abs(state.knockZ) < 0.15) state.knockZ = 0;
+    }
+    var speed = ((wet || inWaterAt(state.px, state.py, state.pz)) ? 1.8 : WALK) * dt;
     moveAxis((mx * stick.forward + rx * stick.strafe) * speed, 0, (mz * stick.forward + rz * stick.strafe) * speed);
+    wet = submergedAt(state.px, state.py, state.pz);
     if (wet) {
       var unstick = 0;
-      while (overlaps(state.px, state.py, state.pz) && unstick++ < 12) state.py += 0.2;
-      var target = SEA - 1.15;
-      if (jump) state.vy = 4.6;
-      else if (state.py < target - 0.05) state.vy = 3.8;
-      else if (state.py > target + 0.45) {
-        state.vy -= 16 * dt;
-        if (state.vy < -8) state.vy = -8;
-      } else state.vy = 0;
+      while (overlaps(state.px, state.py, state.pz) && unstick++ < 8) state.py += 0.12;
+      var col = columnSurface(state.px, state.pz);
+      var surface = col ? col.surface : (Math.floor(state.py) + 1);
+      var diving = state.pitch < -0.35 && stick.forward > 0.15 && !jump;
+      if (jump) state.vy = 5.4;
+      else if (diving) state.vy = -2.6;
+      else if (state.py < surface - 1.45) state.vy = 3.4;
+      else if (state.py > surface - 0.85) state.vy = -0.6;
+      else state.vy = 2.2;
       moveAxis(0, state.vy * dt, 0);
     } else {
       if (jump && state.onGround) { state.vy = 9; state.onGround = false; }
@@ -874,13 +1283,185 @@
       if (state.vy < -20) state.vy = -20;
       moveAxis(0, state.vy * dt, 0);
     }
+    if (!wet && state.ride < 0) {
+      if (!state.onGround) {
+        if (fallPeak == null || state.py > fallPeak) fallPeak = state.py;
+      } else if (fallPeak != null) {
+        var drop = fallPeak - state.py;
+        fallPeak = null;
+        if (drop > 3.2) {
+          var dmg = Math.max(1, Math.round(drop - 2.2));
+          if (wearingArmor()) dmg = Math.max(0, dmg - 2);
+          if (dmg > 0) hurt(dmg, '摔疼了');
+        }
+      }
+    } else fallPeak = null;
     if (state.py < -2) {
+      var deep = fallPeak == null ? 6 : Math.max(4, Math.round(fallPeak - state.py));
+      fallPeak = null;
+      hurt(wearingArmor() ? Math.max(1, deep - 3) : deep, '');
       findSpawn();
       putOnGround(spawn);
-      toast('小宇：回到地面了');
+      toast('掉下去了，回到地面');
     }
+    if (armorDrop && !armorDrop.taken && Math.hypot(state.px - armorDrop.x, state.pz - armorDrop.z) < 1.3 && Math.abs(state.py - armorDrop.y) < 2) {
+      armorDrop.taken = true;
+      state.inv.armor = (state.inv.armor | 0) + 1;
+      state.equip.armor = 'armor';
+      toast('穿上叶衣了。牛顶不动你。');
+      save();
+      renderHud();
+    }
+    if (state.ride < 0 && !state.sitting) nudgeFree();
+    simMobs(dt);
     doPunch(dt);
     afterSim(dt);
+  }
+  function nudgeFree() {
+    if (!overlaps(state.px, state.py, state.pz)) return;
+    var ox = state.px, oy = state.py, oz = state.pz;
+    var steps = [0.1, -0.1, 0.22, -0.22, 0.4, -0.4];
+    var i, j;
+    for (i = 0; i < steps.length; i++) {
+      for (j = 0; j < steps.length; j++) {
+        state.px = ox + steps[i];
+        state.pz = oz + steps[j];
+        state.py = oy;
+        if (!overlaps(state.px, state.py, state.pz)) return;
+      }
+    }
+    state.py = oy + 0.4;
+    if (!overlaps(state.px, state.py, state.pz)) return;
+    state.px = ox; state.py = oy; state.pz = oz;
+  }
+  function nearestBody(x, z) {
+    var bestX = state.px, bestZ = state.pz, best = Math.hypot(state.px - x, state.pz - z);
+    var id, r, d;
+    for (id in remotes) {
+      r = remotes[id];
+      d = Math.hypot((r.x || 0) - x, (r.z || 0) - z);
+      if (d < best) { best = d; bestX = r.x; bestZ = r.z; }
+    }
+    return { x: bestX, z: bestZ, d: best };
+  }
+  function pigNip(e) {
+    if (!e || !e.alive || e.cool > 0) return;
+    e.cool = 1.1;
+    if (wearingArmor()) {
+      toast('护甲挡住了小猪');
+      return;
+    }
+    var dx = state.px - e.x, dz = state.pz - e.z;
+    var len = Math.hypot(dx, dz) || 1;
+    state.knockX = dx / len * 3.2;
+    state.knockZ = dz / len * 3.2;
+    hurt(1, '小猪撞过来了');
+  }
+  function cowBump(e) {
+    if (!e || !e.alive) return;
+    if (e.cool > 0) return;
+    e.cool = 1.5;
+    state.sitting = null;
+    if (wearingArmor()) {
+      if (state.hp > 2) state.hp -= 1;
+      renderHp();
+      toast('护甲挡住了，牛没把你顶下去');
+      return;
+    }
+    var dx = state.px - e.x, dz = state.pz - e.z;
+    var len = Math.hypot(dx, dz) || 1;
+    state.knockX = dx / len * 10;
+    state.knockZ = dz / len * 10;
+    state.vy = 7.2;
+    state.onGround = false;
+    fallPeak = Math.max(state.py, fallPeak || 0);
+    hurt(2, '牛把你顶下去了');
+  }
+  function simMobs(dt) {
+    var i, e, dx, dz, dist, feet, nx, nz, len, ang;
+    for (i = 0; i < villagers.length; i++) {
+      e = villagers[i];
+      ang = state.clock * 0.35 + i * 1.7;
+      nx = village.x + Math.sin(ang) * 2.2;
+      nz = village.z + Math.cos(ang * 0.8) * 2.2;
+      dx = nx - e.x; dz = nz - e.z;
+      len = Math.hypot(dx, dz) || 1;
+      feet = groundFeet(e.x + dx / len * dt * 0.8, e.z + dz / len * dt * 0.8);
+      if (feet != null && Math.abs(feet - e.y) <= 1.1) {
+        e.x += dx / len * dt * 0.8;
+        e.z += dz / len * dt * 0.8;
+        e.y = feet;
+        e.yaw = Math.atan2(dx, -dz);
+      }
+    }
+    var guestView = netRole === 'guest' && state.gotHost;
+    for (i = 0; i < pigs.length; i++) {
+      e = pigs[i];
+      if (!e.alive) continue;
+      if (e.cool > 0) e.cool -= dt;
+      dx = state.px - e.x; dz = state.pz - e.z;
+      dist = Math.hypot(dx, dz);
+      if (guestView) {
+        if (state.started && dist < 1.15) pigNip(e);
+        continue;
+      }
+      var who = nearestBody(e.x, e.z);
+      var chase = state.started && (netRole === 'host' ? who.d < 8 : dist < 8);
+      var aim = chase ? (netRole === 'host' ? who : { x: state.px, z: state.pz }) : null;
+      if (aim) {
+        dx = aim.x - e.x; dz = aim.z - e.z;
+        len = Math.hypot(dx, dz) || 1;
+        if (len > 0.2) {
+          nx = e.x + dx / len * dt * 2.1;
+          nz = e.z + dz / len * dt * 2.1;
+          feet = groundFeet(nx, nz);
+          if (feet != null && Math.abs(feet - e.y) <= 1.15) {
+            e.x = nx; e.z = nz; e.y = feet; e.yaw = Math.atan2(dx, -dz);
+          }
+        }
+        if (Math.hypot(state.px - e.x, state.pz - e.z) < 1.15) pigNip(e);
+      } else {
+        ang = state.clock * 0.45 + i * 2.3;
+        nx = e.x + Math.sin(ang) * dt * 0.9;
+        nz = e.z + Math.cos(ang * 1.3) * dt * 0.9;
+        feet = groundFeet(nx, nz);
+        if (feet != null && Math.abs(feet - e.y) <= 1.05) { e.x = nx; e.z = nz; e.y = feet; e.yaw = ang; }
+      }
+    }
+    for (i = 0; i < cows.length; i++) {
+      e = cows[i];
+      if (!e.alive) continue;
+      if (e.cool > 0) e.cool -= dt;
+      dx = state.px - e.x; dz = state.pz - e.z;
+      dist = Math.hypot(dx, dz);
+      if (guestView) {
+        if (state.started && dist < 1.25) cowBump(e);
+        continue;
+      }
+      var nearCow = nearestBody(e.x, e.z);
+      var cowAim = null;
+      if (state.started && (e.mad || (netRole === 'host' ? nearCow.d < 9 : dist < 9))) {
+        cowAim = netRole === 'host' ? nearCow : { x: state.px, z: state.pz, d: dist };
+      }
+      if (cowAim && cowAim.d > 0.15) {
+        dx = cowAim.x - e.x; dz = cowAim.z - e.z;
+        dist = Math.hypot(dx, dz);
+        len = dist || 1;
+        nx = e.x + dx / len * dt * 2.4;
+        nz = e.z + dz / len * dt * 2.4;
+        feet = groundFeet(nx, nz);
+        if (feet != null && Math.abs(feet - e.y) <= 1.2) {
+          e.x = nx; e.z = nz; e.y = feet; e.yaw = Math.atan2(dx, -dz);
+        }
+        if (Math.hypot(state.px - e.x, state.pz - e.z) < 1.25) cowBump(e);
+      } else {
+        ang = state.clock * 0.3 + i;
+        nx = e.x + Math.sin(ang) * dt * 0.55;
+        nz = e.z + Math.cos(ang) * dt * 0.55;
+        feet = groundFeet(nx, nz);
+        if (feet != null && Math.abs(feet - e.y) <= 1.05) { e.x = nx; e.z = nz; e.y = feet; }
+      }
+    }
   }
   function afterSim(dt) {
     var btn = $('ride');
@@ -892,6 +1473,12 @@
         btn.textContent = '上船';
       }
     }
+    var sitBtn = $('sit'), sleepBtn = $('sleepBtn');
+    if (sitBtn) {
+      sitBtn.hidden = !(state.sitting || nearestBed(1.35));
+      sitBtn.textContent = state.sitting ? '起来' : '坐下';
+    }
+    if (sleepBtn) sleepBtn.hidden = !state.sitting;
     if (toastUntil && Date.now() > toastUntil) {
       var t = $('toast');
       if (t) t.textContent = '';
@@ -900,7 +1487,7 @@
     var id, r, now = Date.now();
     for (id in remotes) {
       r = remotes[id];
-      if (now - r.seen > 4000) { delete remotes[id]; continue; }
+      if (now - r.seen > 8000) { delete remotes[id]; continue; }
       r.x += (r.tx - r.x) * 0.4;
       r.y += (r.ty - r.y) * 0.4;
       r.z += (r.tz - r.z) * 0.4;
@@ -918,12 +1505,22 @@
           z: Math.round(state.pz * 100) / 100,
           yaw: Math.round(state.yaw * 1000) / 1000,
           pitch: Math.round(state.pitch * 1000) / 1000,
-          w: weaponCode(), hd: holdCode(), host: netRole === 'host' ? 1 : 0, clock: state.clock
+          w: weaponCode(), hd: holdCode(), host: netRole === 'host' ? 1 : 0,
+          clock: state.clock, vy: Math.round(state.vy * 10) / 10
         });
+      }
+      if (netRole === 'host' && netHot()) {
+        var mobAcc = state._mobAcc || 0;
+        mobAcc += dt;
+        if (mobAcc >= 0.4) {
+          state._mobAcc = 0;
+          emit({ t: 'mobs', pigs: packMobs(pigs), cows: packMobs(cows, true) });
+        } else state._mobAcc = mobAcc;
       }
     }
   }
   function weaponCode() {
+    if (state.equip.weapon === 'gun') return 3;
     if (state.equip.weapon === 'swordStone') return 2;
     if (state.equip.weapon === 'swordWood') return 1;
     return 0;
@@ -936,18 +1533,35 @@
   function handKind() {
     if (state.hold === 'torch') return 'torch';
     if (state.hold === 'boat') return 'boat';
+    if (state.hold === 'bed') return 'bed';
+    if (state.equip.weapon === 'gun') return 'gun';
     if (state.equip.weapon === 'swordStone') return 'swordStone';
     if (state.equip.weapon === 'swordWood') return 'swordWood';
     if (state.equip.tool === 'pick') return 'pick';
     return 'hand';
   }
+  function smooth01(u) {
+    if (u < 0) return 0;
+    if (u > 1) return 1;
+    return u * u * (3 - 2 * u);
+  }
   function sunElev() {
-    return Math.sin((state.clock % DAY) / DAY * Math.PI * 2 + 0.9);
+    var p = dayPhase();
+    if (p < 0.42) return 0.28 + 0.72 * Math.sin((p / 0.42) * Math.PI);
+    if (p < 0.9) {
+      var u = smooth01((p - 0.42) / 0.48);
+      return 0.28 * (1 - u) - 0.62 * u;
+    }
+    if (p < 0.96) return -0.62;
+    return -0.62 + 0.9 * smooth01((p - 0.96) / 0.04);
   }
   function dayFactor() {
-    var d = sunElev() * 1.2 + 0.08;
-    if (d < 0) d = 0;
-    if (d > 1) d = 1;
+    var p = dayPhase();
+    var d;
+    if (p < 0.42) d = 1;
+    else if (p < 0.9) d = 1 - smooth01((p - 0.42) / 0.48);
+    else if (p < 0.96) d = 0;
+    else d = smooth01((p - 0.96) / 0.04);
     return d;
   }
   function skyRGB() {
@@ -984,6 +1598,11 @@
           if (!id) continue;
           if (id === TORCH) {
             torchCells.push({ x: x + 0.5, y: y + 0.45, z: z + 0.5 });
+            continue;
+          }
+          if (id === BED) {
+            pushCube(data, x + 0.06, y, z + 0.08, 0.88, 0.28, 0.84, [0.82, 0.22, 0.28]);
+            pushCube(data, x + 0.08, y + 0.28, z + 0.1, 0.28, 0.16, 0.28, [0.95, 0.95, 0.98]);
             continue;
           }
           if (id === FLOWER) {
@@ -1089,11 +1708,23 @@
     var a = corner(-1, -1), b = corner(1, -1), c = corner(1, 1), d = corner(-1, 1);
     [a, b, c, a, c, d].forEach(function (p) { data.push(p[0], p[1], p[2], rgb[0], rgb[1], rgb[2]); });
   }
+  function lightPoints() {
+    var list = [], i, id, fwd;
+    for (i = 0; i < torchCells.length; i++) list.push(torchCells[i]);
+    if (state.started && handKind() === 'torch') {
+      fwd = look();
+      list.push({ x: state.px + fwd[0] * 0.45, y: state.py + 1.05, z: state.pz + fwd[2] * 0.45, held: 1 });
+    }
+    for (id in remotes) {
+      if ((remotes[id].hd | 0) === 1) list.push({ x: remotes[id].x, y: (remotes[id].y || 0) + 1.0, z: remotes[id].z, held: 1 });
+    }
+    return list;
+  }
   function fillTorches() {
-    var i;
+    var i, lights = lightPoints();
     for (i = 0; i < 8; i++) { torchU[i * 3] = 0; torchU[i * 3 + 1] = -40; torchU[i * 3 + 2] = 0; }
-    if (!torchCells.length) return;
-    var ranked = torchCells.map(function (t) {
+    if (!lights.length) return;
+    var ranked = lights.map(function (t) {
       var dx = t.x - state.px, dy = t.y - (state.py + 1.2), dz = t.z - state.pz;
       return { t: t, d: dx * dx + dy * dy + dz * dz };
     });
@@ -1125,6 +1756,8 @@
       pushCube(data, p.x + fx * 0.34 - 0.08, p.y + 0.98, p.z + fz * 0.34 - 0.08, 0.16, 0.16, 0.16, [1, 0.82, 0.28]);
     } else if (p.hd === 2) {
       pushCube(data, p.x + fx * 0.4 - 0.16, p.y + 0.55, p.z + fz * 0.4 - 0.1, 0.32, 0.12, 0.2, [0.5, 0.3, 0.12]);
+    } else if (p.w === 3) {
+      pushCube(data, p.x + fx * 0.36 - 0.04, p.y + 0.7, p.z + fz * 0.36 - 0.04, 0.08, 0.08, 0.28, [0.16, 0.16, 0.18]);
     } else if (p.w) {
       var rgb = p.w === 2 ? [0.75, 0.78, 0.84] : [0.62, 0.4, 0.16];
       pushCube(data, p.x + fx * 0.38 - 0.05, p.y + 0.42, p.z + fz * 0.38 - 0.05, 0.1, 0.78, 0.1, rgb);
@@ -1156,6 +1789,7 @@
     var sleeve = state.equip.armor === 'armor' ? [0.28, 0.72, 0.38] : [0.2, 0.32, 0.62];
     var skin = [0.96, 0.78, 0.62];
     box(0.06, -0.34, 0.18, 0.14, 0.18, 0.28, sleeve);
+    if (wearingArmor()) box(0.02, -0.28, 0.22, 0.2, 0.12, 0.16, [0.22, 0.78, 0.4]);
     box(0.05, -0.22, 0.42, 0.18, 0.14, 0.16, skin);
     var kind = handKind();
     if (kind === 'swordWood' || kind === 'swordStone') {
@@ -1171,7 +1805,45 @@
     } else if (kind === 'boat') {
       box(0.0, -0.24, 0.46, 0.28, 0.1, 0.18, [0.52, 0.32, 0.14]);
       box(0.1, -0.16, 0.5, 0.04, 0.16, 0.04, [0.62, 0.4, 0.18]);
+    } else if (kind === 'bed') {
+      box(0.02, -0.22, 0.48, 0.28, 0.08, 0.16, [0.82, 0.22, 0.28]);
+      box(0.02, -0.16, 0.42, 0.1, 0.06, 0.08, [0.95, 0.95, 0.98]);
+    } else if (kind === 'gun') {
+      box(0.1, -0.2, 0.5, 0.06, 0.06, 0.36, [0.18, 0.18, 0.2]);
+      box(0.08, -0.16, 0.46, 0.1, 0.1, 0.08, [0.35, 0.28, 0.16]);
     }
+  }
+  function pushPig(data, e) {
+    var y = e.y, pink = [0.93, 0.55, 0.62], dark = [0.72, 0.32, 0.4];
+    pushCube(data, e.x - 0.16, y, e.z - 0.16, 0.1, 0.16, 0.1, dark);
+    pushCube(data, e.x + 0.08, y, e.z - 0.16, 0.1, 0.16, 0.1, dark);
+    pushCube(data, e.x - 0.16, y, e.z + 0.08, 0.1, 0.16, 0.1, dark);
+    pushCube(data, e.x + 0.08, y, e.z + 0.08, 0.1, 0.16, 0.1, dark);
+    pushCube(data, e.x - 0.22, y + 0.16, e.z - 0.26, 0.44, 0.28, 0.5, pink);
+    pushCube(data, e.x - 0.1, y + 0.2, e.z - 0.38, 0.2, 0.14, 0.14, dark);
+  }
+  function pushCow(data, e) {
+    var y = e.y;
+    var fx = Math.sin(e.yaw || 0), fz = -Math.cos(e.yaw || 0);
+    var brown = [0.48, 0.28, 0.13], dark = [0.3, 0.16, 0.08], white = [0.95, 0.95, 0.92];
+    pushCube(data, e.x - 0.26, y, e.z - 0.32, 0.12, 0.26, 0.12, dark);
+    pushCube(data, e.x + 0.14, y, e.z - 0.32, 0.12, 0.26, 0.12, dark);
+    pushCube(data, e.x - 0.26, y, e.z + 0.16, 0.12, 0.26, 0.12, dark);
+    pushCube(data, e.x + 0.14, y, e.z + 0.16, 0.12, 0.26, 0.12, dark);
+    pushCube(data, e.x - 0.32, y + 0.26, e.z - 0.4, 0.64, 0.4, 0.82, brown);
+    pushCube(data, e.x - 0.06, y + 0.52, e.z - 0.08, 0.24, 0.12, 0.2, white);
+    pushCube(data, e.x - 0.28, y + 0.36, e.z + 0.02, 0.14, 0.16, 0.18, white);
+    var hx = e.x + fx * 0.52, hz = e.z + fz * 0.52;
+    pushCube(data, hx - 0.24, y + 0.28, hz - 0.22, 0.48, 0.4, 0.4, brown);
+    pushCube(data, hx - 0.16, y + 0.36, hz - 0.18, 0.32, 0.18, 0.14, white);
+    pushCube(data, hx - 0.22, y + 0.66, hz - 0.06, 0.08, 0.14, 0.08, [0.86, 0.82, 0.7]);
+    pushCube(data, hx + 0.12, y + 0.66, hz - 0.06, 0.08, 0.14, 0.08, [0.86, 0.82, 0.7]);
+  }
+  function pushVillager(data, e) {
+    var robe = [[0.2, 0.45, 0.78], [0.72, 0.55, 0.16], [0.35, 0.62, 0.32]][e.hue || 0];
+    pushCube(data, e.x - 0.16, e.y, e.z - 0.1, 0.32, 0.55, 0.22, robe);
+    pushCube(data, e.x - 0.14, e.y + 0.55, e.z - 0.14, 0.28, 0.28, 0.28, [0.93, 0.78, 0.62]);
+    pushCube(data, e.x - 0.14, e.y + 0.78, e.z - 0.14, 0.28, 0.08, 0.28, [0.35, 0.22, 0.12]);
   }
   function drawDyn(data, uMin, uFog, uAmb) {
     if (!data.length || !gl) return;
@@ -1227,8 +1899,8 @@
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     if (dirty) { buildMesh(); dirty = false; }
     var dir = look();
-    var eyeY = state.py + 1.5;
-    var proj = perspective(80 * Math.PI / 180, canvas.width / Math.max(1, canvas.height), 0.08, 90);
+    var eyeY = state.py + (state.sitting ? 1.02 : 1.5);
+    var proj = perspective(86 * Math.PI / 180, canvas.width / Math.max(1, canvas.height), 0.08, 120);
     var view = lookAt(state.px, eyeY, state.pz, state.px + dir[0], eyeY + dir[1], state.pz + dir[2]);
     var mvp = mul(proj, view);
     gl.useProgram(prog);
@@ -1242,8 +1914,7 @@
     gl.enableVertexAttribArray(loc.pos);
     gl.enableVertexAttribArray(loc.col);
     var basis = cameraBasis();
-    var ang = (state.clock % DAY) / DAY * Math.PI * 2 + 0.9;
-    var elev = Math.sin(ang), az = Math.cos(ang);
+    var elev = sunElev(), az = Math.cos(dayPhase() * Math.PI * 2);
     var skyData = [];
     var dist = 22;
     if (elev > -0.02) {
@@ -1287,6 +1958,12 @@
       pushCube(actors, b.x - 0.06, by + 0.26, b.z - 0.06, 0.12, 0.7, 0.12, [0.55, 0.36, 0.16]);
       pushCube(actors, b.x - 0.02, by + 0.52, b.z - 0.28, 0.05, 0.4, 0.5, [0.94, 0.9, 0.78]);
     }
+    for (id = 0; id < pigs.length; id++) if (pigs[id].alive) pushPig(actors, pigs[id]);
+    for (id = 0; id < cows.length; id++) if (cows[id].alive) pushCow(actors, cows[id]);
+    for (id = 0; id < villagers.length; id++) pushVillager(actors, villagers[id]);
+    if (armorDrop && !armorDrop.taken) {
+      pushCube(actors, armorDrop.x - 0.18, armorDrop.y, armorDrop.z - 0.12, 0.36, 0.42, 0.24, [0.25, 0.75, 0.4]);
+    }
     for (id in remotes) pushAvatar(actors, remotes[id]);
     drawDyn(bright, 1.3, 1 - day, 1);
     drawDyn(actors, 0.72, 1 - day, 0.18 + 0.82 * day);
@@ -1310,7 +1987,88 @@
       gl.drawArrays(gl.LINES, 0, lineN);
     }
     drawNames(mvp);
+    drawMap();
     setNetStatus();
+  }
+  function mapDots() {
+    var dots = [{ kind: 'self', x: state.px, z: state.pz, yaw: state.yaw, color: '#111' }];
+    var id, r, i, e;
+    for (id in remotes) {
+      r = remotes[id];
+      dots.push({ kind: 'other', x: r.x, z: r.z, color: '#e23b3b' });
+    }
+    if (village) dots.push({ kind: 'village', x: village.x, z: village.z, color: '#ffe07a' });
+    for (i = 0; i < villagers.length; i++) {
+      e = villagers[i];
+      dots.push({ kind: 'villager', x: e.x, z: e.z, color: '#7dff6a' });
+    }
+    dots.push({ kind: 'spawn', x: spawn.x, z: spawn.z, color: '#fff4b0' });
+    return { n: MAP_N, cell: MAP_CELL, dots: dots };
+  }
+  function drawMap() {
+    var canvas = $('map');
+    var wrap = $('mapWrap');
+    if (wrap) wrap.hidden = !state.started;
+    if (!canvas || !state.started || !mapOpen) {
+      if (canvas) canvas.hidden = true;
+      return;
+    }
+    canvas.hidden = false;
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    var n = MAP_N, cell = MAP_CELL, px = state.px, pz = state.pz;
+    var x0 = px - (n - 1) / 2, z0 = pz - (n - 1) / 2;
+    var ix, iz, wx, wz, top, id, col, sx, sy;
+    ctx.fillStyle = '#14182e';
+    ctx.fillRect(0, 0, n * cell, n * cell);
+    for (iz = 0; iz < n; iz++) {
+      for (ix = 0; ix < n; ix++) {
+        wx = Math.floor(x0 + ix + 0.5);
+        wz = Math.floor(z0 + iz + 0.5);
+        if (wx < 0 || wz < 0 || wx >= W || wz >= D) continue;
+        top = highestSolid(wx, wz);
+        id = top >= 0 ? at(wx, top, wz) : AIR;
+        if (top >= 0 && top < SEA - 1 && at(wx, SEA - 1, wz) === WATER) id = WATER;
+        col = COL[id] || [0.2, 0.22, 0.3];
+        ctx.fillStyle = 'rgb(' + (col[0] * 255 | 0) + ',' + (col[1] * 255 | 0) + ',' + (col[2] * 255 | 0) + ')';
+        ctx.fillRect(ix * cell, iz * cell, cell, cell);
+      }
+    }
+    function toScreen(wx, wz, clamp) {
+      var x = (wx - x0) * cell, y = (wz - z0) * cell;
+      var max = n * cell - 2, outside = x < 2 || y < 2 || x > max || y > max;
+      if (clamp) {
+        if (x < 2) x = 2;
+        if (y < 2) y = 2;
+        if (x > max) x = max;
+        if (y > max) y = max;
+      }
+      return { x: x, y: y, outside: outside };
+    }
+    function dot(wx, wz, color, rad, clamp) {
+      var p = toScreen(wx, wz, clamp);
+      if (!clamp && p.outside) return;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (village) dot(village.x, village.z, '#ffe07a', 2.2, false);
+    for (ix = 0; ix < villagers.length; ix++) dot(villagers[ix].x, villagers[ix].z, '#7dff6a', 1.6, false);
+    dot(spawn.x, spawn.z, '#fff4b0', 1.8, false);
+    for (id in remotes) dot(remotes[id].x, remotes[id].z, '#e23b3b', 2.4, true);
+    sx = (px - x0) * cell;
+    sy = (pz - z0) * cell;
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.rotate(state.yaw);
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.moveTo(0, -4.5);
+    ctx.lineTo(3.2, 3.4);
+    ctx.lineTo(-3.2, 3.4);
+    ctx.fill();
+    ctx.restore();
   }
 
   function bootGL() {
@@ -1382,7 +2140,7 @@
   }
 
   function setHold(name) {
-    if (name !== 'hand' && name !== 'torch' && name !== 'boat') return;
+    if (name !== 'hand' && name !== 'torch' && name !== 'boat' && name !== 'bed') return;
     state.hold = name;
     renderHud();
   }
@@ -1398,6 +2156,7 @@
     var cancel = $('netCancel');
     if (cancel) cancel.hidden = true;
     if (typeof document !== 'undefined' && document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    setWait('');
     renderHud();
     if (lock) wantLock();
   }
@@ -1429,7 +2188,13 @@
     if (netRole === 'host') return bcLinked || peerConns.length > 0 || netLinked;
     return !!(bcLinked || netLinked);
   }
-  function netWindowKey(offset) { return Math.floor(Date.now() / 60000) + (offset || 0); }
+  var lastHostId = '';
+  var lastHeard = 0;
+  var roomLockAt = 0;
+  var netWatch = null;
+  var reconnecting = false;
+  function netWindowKey(offset) { return Math.floor(Date.now() / 600000) + (offset || 0); }
+  function markHeard() { lastHeard = Date.now(); }
   function netPairIds() {
     var ids = [], w, i, key;
     for (w = 0; w >= -1; w--) {
@@ -1485,6 +2250,29 @@
     bcSend(obj);
     peerSend(obj, fromConn);
   }
+  function packMobs(list, cow) {
+    var i, e, row, out = [];
+    for (i = 0; i < list.length; i++) {
+      e = list[i];
+      row = [Math.round(e.x * 10) / 10, Math.round(e.y * 10) / 10, Math.round(e.z * 10) / 10, e.hp | 0, e.alive ? 1 : 0];
+      if (cow) row.push(e.mad ? 1 : 0);
+      out.push(row);
+    }
+    return out;
+  }
+  function applyMobPack(msg) {
+    var i, e, row;
+    var pigsIn = msg.pigs || [], cowsIn = msg.cows || [];
+    for (i = 0; i < pigsIn.length && i < pigs.length; i++) {
+      row = pigsIn[i]; e = pigs[i];
+      e.x = +row[0]; e.y = +row[1]; e.z = +row[2]; e.hp = row[3] | 0; e.alive = !!row[4];
+    }
+    for (i = 0; i < cowsIn.length && i < cows.length; i++) {
+      row = cowsIn[i]; e = cows[i];
+      e.x = +row[0]; e.y = +row[1]; e.z = +row[2]; e.hp = row[3] | 0; e.alive = !!row[4];
+      if (row.length > 5) e.mad = !!row[5];
+    }
+  }
   function worldPacket() {
     return {
       t: 'hi', host: 1, seed: worldSeed, edits: collectEdits(),
@@ -1523,13 +2311,19 @@
     r.pitch = isFinite(+msg.pitch) ? +msg.pitch : 0;
     r.w = msg.w | 0;
     r.hd = msg.hd | 0;
+    r.vy = isFinite(+msg.vy) ? +msg.vy : 0;
+    r.hop = r.vy > 2 ? 1 : 0;
     r.seen = Date.now();
-    if (msg.host && netRole === 'guest' && isFinite(+msg.clock)) state.clock = +msg.clock;
+    if (msg.host && netRole === 'guest' && isFinite(+msg.clock) && +msg.clock + 0.4 >= state.clock) state.clock = +msg.clock;
+    markHeard();
+    setNetStatus();
   }
   function applyHostWorld(msg) {
     var first = !state.gotHost;
     var px = state.px, py = state.py, pz = state.pz, ride = state.ride;
+    if (!first) suppressMobs = true;
     grow(msg.seed | 0, true);
+    if (!first) suppressMobs = false;
     applyEdits(msg.edits || []);
     findSpawn();
     boats.splice(0, boats.length);
@@ -1566,12 +2360,32 @@
     if (msg.from && msg.from === selfId) return;
     if (msg.session && netSession && msg.session !== netSession && msg.t !== 'room' && msg.t !== 'hi' && msg.t !== 'join') return;
     if (msg.t === 'room' && netRole === 'guest' && !state.gotHost) {
+      if (msg.code) lastHostId = String(msg.code);
       if (!linkedSession) {
         netSession = msg.session;
         bcLinked = true;
+        roomLockAt = Date.now();
+        if (msg.code) lastHostId = String(msg.code);
         bcSend(stamp({ t: 'join', session: msg.session, name: state.name, from: selfId }));
         setWait('小宇：看见房主了，正在进同一张地图…');
       }
+      return;
+    }
+    if (msg.t === 'hb') {
+      markHeard();
+      if (msg.host && netRole === 'guest' && isFinite(+msg.clock) && +msg.clock + 0.4 >= state.clock) state.clock = +msg.clock;
+      if (via === 'peer' && netRole === 'host') relay(msg, fromConn);
+      return;
+    }
+    if (msg.t === 'clock' && isFinite(+msg.clock)) {
+      if (+msg.clock + 0.4 >= state.clock) state.clock = +msg.clock;
+      if (netRole === 'host') relay({ t: 'clock', clock: state.clock, from: msg.from || selfId }, fromConn);
+      markHeard();
+      return;
+    }
+    if (msg.t === 'snap' && netRole === 'host') {
+      sendHiBc();
+      if (fromConn) sendHiConn(fromConn);
       return;
     }
     if (msg.t === 'join' && netRole === 'host' && via === 'bc' && msg.session === netSession) {
@@ -1603,16 +2417,27 @@
       return;
     }
     if (msg.t === 'boat') addBoat(+msg.x, +msg.z, true, fromConn);
+    if (msg.t === 'mob') {
+      var list = msg.k === 'cow' ? cows : pigs;
+      if (list[msg.i | 0]) {
+        list[msg.i | 0].hp = msg.hp | 0;
+        list[msg.i | 0].alive = (msg.hp | 0) > 0;
+        if (msg.k === 'cow' && list[msg.i | 0].alive) list[msg.i | 0].mad = true;
+      }
+      if (netRole === 'host') relay({ t: 'mob', k: msg.k, i: msg.i | 0, hp: msg.hp | 0, from: msg.from || selfId }, fromConn);
+    }
+    if (msg.t === 'mobs' && netRole === 'guest') applyMobPack(msg);
   }
   function stopBcPulse() {
     if (bcPulse) { clearInterval(bcPulse); bcPulse = null; }
   }
   function startBcPulse() {
     stopBcPulse();
-    bcSend(stamp({ t: 'room', session: netSession, name: state.name, from: selfId }));
+    bcSend(stamp({ t: 'room', session: netSession, name: state.name, from: selfId, code: netCode || '' }));
     bcPulse = setInterval(function () {
       if (netAbort || netRole !== 'host') { stopBcPulse(); return; }
-      bcSend(stamp({ t: 'room', session: netSession, name: state.name, from: selfId }));
+      bcSend(stamp({ t: 'room', session: netSession, name: state.name, from: selfId, code: netCode || '' }));
+      bcSend(stamp({ t: 'hb', host: 1, clock: state.clock, name: state.name, from: selfId }));
     }, 1000);
   }
   function onHostConn(conn) {
@@ -1670,7 +2495,18 @@
         netPeer = peer;
         netCode = claimed;
         peer.on('connection', onHostConn);
-        peer.on('disconnected', function () { try { peer.reconnect(); } catch (e) {} });
+        peer.on('disconnected', function () {
+          setTimeout(function () {
+            if (netAbort || netRole !== 'host' || netPeer !== peer) return;
+            try { peer.reconnect(); } catch (e) {}
+          }, 400);
+        });
+        peer.on('close', function () {
+          if (netAbort || netRole !== 'host' || netPeer !== peer) return;
+          netPeer = null;
+          netLinked = peerConns.length > 0;
+          claimHost();
+        });
         peer.on('error', function (err) { if (err && err.type === 'peer-unavailable') return; });
       }, tryNext);
     }
@@ -1716,7 +2552,11 @@
     conn.on('open', opened);
     conn.on('data', function (msg) { onNet(msg, 'peer', conn); });
     conn.on('close', function () {
-      if (netConn === conn) { netLinked = false; toast('小宇：和朋友断开了'); }
+      if (netConn !== conn) return;
+      netLinked = false;
+      if (netAbort || netRole !== 'guest') return;
+      toast('小宇：信号断了，正在重连');
+      setTimeout(reconnectGuest, 700);
     });
     conn.on('error', function () {});
     if (conn.open) opened();
@@ -1749,6 +2589,7 @@
           }
           if (won) {
             netCode = won.id;
+            lastHostId = won.id;
             wireGuest(won.conn);
             setWait('找到了，正在连上…');
             return;
@@ -1763,6 +2604,65 @@
       if (!state.gotHost && netRole === 'guest') setWait('联网信号不稳。同一台电脑的两个窗口也可以一起玩。');
     });
   }
+  function reconnectGuest() {
+    if (netAbort || netRole !== 'guest' || reconnecting) return;
+    if (bcLinked && Date.now() - lastHeard < 6000) return;
+    reconnecting = true;
+    var id = lastHostId;
+    function giveUp() {
+      if (!reconnecting) return;
+      reconnecting = false;
+      if (netAbort || netRole !== 'guest' || (state.gotHost && bcLinked)) return;
+      probeGuestNow();
+    }
+    setTimeout(function () { if (reconnecting) giveUp(); }, 5000);
+    if (!id || typeof Peer === 'undefined') { giveUp(); return; }
+    var peer = netPeer;
+    if (!peer || peer.destroyed) {
+      try { peer = netNewPeer(); netPeer = peer; }
+      catch (e) { giveUp(); return; }
+      peer.on('open', function () { connectKnown(); });
+      peer.on('error', function () {});
+      return;
+    }
+    function connectKnown() {
+      var conn, timer;
+      try { conn = peer.connect(id, { reliable: true }); }
+      catch (e2) { giveUp(); return; }
+      timer = setTimeout(function () {
+        try { conn.close(); } catch (e3) {}
+        giveUp();
+      }, 4000);
+      conn.on('open', function () {
+        clearTimeout(timer);
+        reconnecting = false;
+        wireGuest(conn);
+        try { conn.send(stamp({ t: 'snap', from: selfId, session: netSession || '' })); } catch (e4) {}
+        toast('小宇：重新连上了');
+      });
+      conn.on('error', function () {});
+    }
+    if (peer.open) connectKnown();
+    else peer.on('open', function () { if (reconnecting) connectKnown(); });
+  }
+  function startNetWatch() {
+    if (netWatch) clearInterval(netWatch);
+    lastHeard = Date.now();
+    roomLockAt = Date.now();
+    netWatch = setInterval(function () {
+      if (netAbort || !netRole) return;
+      if (netRole === 'guest' && !state.gotHost && linkedSession && roomLockAt && Date.now() - roomLockAt > 5000) {
+        linkedSession = '';
+        netSession = '';
+        bcLinked = false;
+        roomLockAt = 0;
+      }
+      if (netRole === 'guest' && state.gotHost && Date.now() - lastHeard > 6000) reconnectGuest();
+    }, 1000);
+  }
+  function stopNetWatch() {
+    if (netWatch) { clearInterval(netWatch); netWatch = null; }
+  }
   function beginHost() {
     openBC();
     netAbort = false;
@@ -1770,6 +2670,7 @@
     netSession = 'mw' + ((Date.now() / 1000) | 0).toString(36) + Math.random().toString(36).slice(2, 6);
     enterGame(false);
     startBcPulse();
+    startNetWatch();
     toast('小宇：你是房主。另一台点「加入朋友」。');
     setTimeout(function () {
       ensurePeer(function (ok) {
@@ -1791,6 +2692,7 @@
     linkedSession = '';
     netSession = '';
     setWait('小宇：正在找房主。请让另一台先点「当房主」。');
+    startNetWatch();
     var cancel = $('netCancel');
     if (cancel) cancel.hidden = false;
     ensurePeer(function (ok) {
@@ -1808,6 +2710,8 @@
     var playing = state.started;
     netAbort = true;
     stopBcPulse();
+    stopNetWatch();
+    reconnecting = false;
     try { if (netConn) netConn.close(); } catch (e) {}
     try { if (netPeer) netPeer.destroy(); } catch (e2) {}
     netPeer = null;
@@ -1818,12 +2722,13 @@
     netRole = null;
     linkedSession = '';
     netSession = '';
-    remotes = {};
+    var rk;
+    for (rk in remotes) delete remotes[rk];
     state.gotHost = false;
     var cancel = $('netCancel');
     if (cancel) cancel.hidden = true;
     setNetStatus();
-    if (wasGuest && playing) toast('小宇：已经分开。刷新后回到你自己的地图，背包会留下。');
+    if (wasGuest && playing) toast('小宇：已经分开。再打开页面是新的一局。');
     else if (wasHost && playing) toast('小宇：已经单独玩');
     else if (wasGuest) setWait('已取消');
   }
@@ -1876,6 +2781,9 @@
       if (e.code === 'Digit1') { setHold('hand'); return; }
       if (e.code === 'Digit2') { setHold('torch'); return; }
       if (e.code === 'Digit3') { setHold('boat'); return; }
+      if (e.code === 'Digit4') { setHold('bed'); return; }
+      if (e.code === 'KeyB') { toggleSit(); return; }
+      if (e.code === 'KeyN') { sleepNow(); return; }
       keys[e.code] = true;
     });
     document.addEventListener('keyup', function (e) { keys[e.code] = false; });
@@ -1953,6 +2861,17 @@
     if (makeBtn) makeBtn.addEventListener('click', function (e) { e.preventDefault(); toggleCraft(); });
     var rideBtn = $('ride');
     if (rideBtn) rideBtn.addEventListener('click', function (e) { e.preventDefault(); toggleRide(); });
+    var sitBtn = $('sit');
+    if (sitBtn) sitBtn.addEventListener('click', function (e) { e.preventDefault(); toggleSit(); });
+    var sleepBtn = $('sleepBtn');
+    if (sleepBtn) sleepBtn.addEventListener('click', function (e) { e.preventDefault(); sleepNow(); });
+    var mapBtn = $('mapBtn');
+    if (mapBtn) mapBtn.addEventListener('click', function () {
+      mapOpen = !mapOpen;
+      mapBtn.classList.toggle('on', mapOpen);
+      var canvas = $('map');
+      if (canvas) canvas.hidden = !mapOpen;
+    });
     var closeCraft = $('craftClose');
     if (closeCraft) closeCraft.addEventListener('click', function () { var c = $('craft'); if (c) c.hidden = true; });
     var craftBtns = typeof document !== 'undefined' ? document.querySelectorAll('#craft button[data-craft]') : [];
@@ -2005,7 +2924,7 @@
   var api = {
     TIP: TIP, STORE: STORE, W: W, H: H, D: D, SEA: SEA, DAY: DAY,
     AIR: AIR, GRASS: GRASS, DIRT: DIRT, LOG: LOG, LEAF: LEAF, STONE: STONE,
-    WATER: WATER, SAND: SAND, FLOWER: FLOWER, GOLD: GOLD, TORCH: TORCH, CHEST: CHEST,
+    WATER: WATER, SAND: SAND, FLOWER: FLOWER, GOLD: GOLD, TORCH: TORCH, CHEST: CHEST, BED: BED,
     NET_PEER_OPTS: NET_PEER_OPTS, KID_NAMES: KID_NAMES,
     state: state, boats: boats, remotes: remotes,
     at: at, put: put, grow: grow, loadRaw: loadRaw, save: save, scan: scan,
@@ -2015,6 +2934,10 @@
     setClock: function (s) { state.clock = s; },
     weaponCode: weaponCode, handKind: handKind, inWaterAt: inWaterAt, sim: sim, overlaps: overlaps, tryPlace: tryPlace,
     feetClear: feetClear, pickSurface: pickSurface, putOnGround: putOnGround,
+    solid: solid, pigs: pigs, cows: cows, villagers: villagers,
+    cowBump: cowBump, tryShoot: tryShoot, mapDots: mapDots, wearingArmor: wearingArmor,
+    columnSurface: columnSurface, tryShore: tryShore, toggleRide: toggleRide, toggleSit: toggleSit,
+    sleepNow: sleepNow, lightPoints: lightPoints, load: load, dayPhase: dayPhase,
     press: function (code, on) { keys[code] = !!on; },
     selfId: function () { return selfId; },
     setSelfForTest: function (id) { selfId = id; },
