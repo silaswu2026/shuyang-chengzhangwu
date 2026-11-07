@@ -4,6 +4,8 @@
 
 https://silaswu2026.github.io/shuyang-chengzhangwu/shuyang-ai/learn/my-world/?v=mw6
 
+Pages：2026-11-07 重新请求发布。版本仍是 mw6。
+
 小屋首页旁路有入口。助手叫小宇。给伍澍暘和芃芃一起看。
 
 - 存档钥匙：`xygo-my-world`（v3：背包、装备、金币、小船、火把、敲过和放过的方块、昼夜。v1 / v2 里的木头、树叶、泥土、石头会带过来；旧地图太小，敲过的坑会重新长好）
