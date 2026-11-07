@@ -1,8 +1,8 @@
-/* 方块小世界 mw6 · 右下角始终看得见自己的手和手里的东西。 */
+/* 方块小世界 mw7 · 镜头稍宽，手里的方块收小。世界格子仍是原来的一格。 */
 (function () {
   'use strict';
 
-  var TIP = 'mw6';
+  var TIP = 'mw7';
   var STORE = 'xygo-my-world';
   var W = 40, H = 22, D = 40, SEA = 8, DAY = 72;
   var AIR = 0, GRASS = 1, DIRT = 2, LOG = 3, LEAF = 4, STONE = 5;
@@ -108,7 +108,7 @@
   function openBC() {
     if (netBC || typeof document === 'undefined' || typeof BroadcastChannel === 'undefined') return;
     try {
-      netBC = new BroadcastChannel('xygo-my-world-mw6');
+      netBC = new BroadcastChannel('xygo-my-world-mw7');
       netBC.onmessage = function (ev) { onNet(ev && ev.data, 'bc', null); };
     } catch (eBc) { netBC = null; }
   }
@@ -1149,24 +1149,28 @@
     }
   }
   function pushViewHand(data, origin, right, up, fwd) {
+    var S = 0.68;
+    function box(lx, ly, lz, sx, sy, sz, rgb) {
+      pushViewBox(data, origin, right, up, fwd, lx * S, ly * S, lz * S, sx * S, sy * S, sz * S, rgb);
+    }
     var sleeve = state.equip.armor === 'armor' ? [0.28, 0.72, 0.38] : [0.2, 0.32, 0.62];
     var skin = [0.96, 0.78, 0.62];
-    pushViewBox(data, origin, right, up, fwd, 0.06, -0.34, 0.18, 0.14, 0.18, 0.28, sleeve);
-    pushViewBox(data, origin, right, up, fwd, 0.05, -0.22, 0.42, 0.18, 0.14, 0.16, skin);
+    box(0.06, -0.34, 0.18, 0.14, 0.18, 0.28, sleeve);
+    box(0.05, -0.22, 0.42, 0.18, 0.14, 0.16, skin);
     var kind = handKind();
     if (kind === 'swordWood' || kind === 'swordStone') {
       var blade = kind === 'swordStone' ? [0.78, 0.82, 0.88] : [0.66, 0.42, 0.18];
-      pushViewBox(data, origin, right, up, fwd, 0.09, -0.16, 0.5, 0.06, 0.5, 0.07, blade);
-      pushViewBox(data, origin, right, up, fwd, 0.02, -0.18, 0.48, 0.22, 0.05, 0.09, [0.42, 0.26, 0.12]);
+      box(0.09, -0.16, 0.5, 0.06, 0.5, 0.07, blade);
+      box(0.02, -0.18, 0.48, 0.22, 0.05, 0.09, [0.42, 0.26, 0.12]);
     } else if (kind === 'pick') {
-      pushViewBox(data, origin, right, up, fwd, 0.1, -0.2, 0.5, 0.05, 0.42, 0.05, [0.42, 0.28, 0.14]);
-      pushViewBox(data, origin, right, up, fwd, 0.02, 0.16, 0.46, 0.22, 0.08, 0.08, [0.62, 0.64, 0.68]);
+      box(0.1, -0.2, 0.5, 0.05, 0.42, 0.05, [0.42, 0.28, 0.14]);
+      box(0.02, 0.16, 0.46, 0.22, 0.08, 0.08, [0.62, 0.64, 0.68]);
     } else if (kind === 'torch') {
-      pushViewBox(data, origin, right, up, fwd, 0.1, -0.18, 0.48, 0.05, 0.4, 0.05, [0.45, 0.28, 0.12]);
-      pushViewBox(data, origin, right, up, fwd, 0.05, 0.16, 0.44, 0.14, 0.14, 0.14, [1, 0.78, 0.25]);
+      box(0.1, -0.18, 0.48, 0.05, 0.4, 0.05, [0.45, 0.28, 0.12]);
+      box(0.05, 0.16, 0.44, 0.14, 0.14, 0.14, [1, 0.78, 0.25]);
     } else if (kind === 'boat') {
-      pushViewBox(data, origin, right, up, fwd, 0.0, -0.24, 0.46, 0.28, 0.1, 0.18, [0.52, 0.32, 0.14]);
-      pushViewBox(data, origin, right, up, fwd, 0.1, -0.16, 0.5, 0.04, 0.16, 0.04, [0.62, 0.4, 0.18]);
+      box(0.0, -0.24, 0.46, 0.28, 0.1, 0.18, [0.52, 0.32, 0.14]);
+      box(0.1, -0.16, 0.5, 0.04, 0.16, 0.04, [0.62, 0.4, 0.18]);
     }
   }
   function drawDyn(data, uMin, uFog, uAmb) {
@@ -1224,7 +1228,7 @@
     if (dirty) { buildMesh(); dirty = false; }
     var dir = look();
     var eyeY = state.py + 1.5;
-    var proj = perspective(70 * Math.PI / 180, canvas.width / Math.max(1, canvas.height), 0.08, 90);
+    var proj = perspective(80 * Math.PI / 180, canvas.width / Math.max(1, canvas.height), 0.08, 90);
     var view = lookAt(state.px, eyeY, state.pz, state.px + dir[0], eyeY + dir[1], state.pz + dir[2]);
     var mvp = mul(proj, view);
     gl.useProgram(prog);
