@@ -6,10 +6,10 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
   <meta name="theme-color" content="#0f1230"/>
-  <meta name="xy-tip" content="mw7"/>
+  <meta name="xy-tip" content="mw9"/>
   <title>伍澍暘的方块小世界</title>
   <link rel="stylesheet" href="../../../brand-tokens.css"/>
-  <link rel="stylesheet" href="my-world.css?v=mw7"/>
+  <link rel="stylesheet" href="my-world.css?v=mw9"/>
 </head>
 <body>
   <canvas id="view"></canvas>
@@ -17,8 +17,9 @@
   <div id="hud">
     <p id="disclaimer">自研小游戏，不是正版《我的世界》。</p>
     <p id="peace">这游戏没有怪物。</p>
-    <p id="hint">小宇：敲木头做火把和小船。夜里会变暗。</p>
-    <p id="meta"><span id="bag"></span><span class="tip">mw7</span></p>
+    <p id="hint">小宇：先敲到木头。有 1 个木头就能做火把和小船。枪能打小猪和牛。</p>
+    <p id="meta"><span id="bag"></span><span class="tip">mw9</span></p>
+    <p id="hpLine"><span id="hpText">血 6</span><i id="hpTrack"><i id="hpFill"></i></i></p>
     <p id="net"><span id="netText"></span> <button type="button" id="leave" hidden>断开</button></p>
     <div id="equip">
       <span id="coins">金币 0</span>
@@ -26,6 +27,12 @@
       <button type="button" id="slotArmor" data-slot="armor">护甲 空</button>
       <button type="button" id="slotTool" data-slot="tool">工具 空</button>
     </div>
+    <div id="mapWrap">
+      <button type="button" id="mapBtn" class="on">地图</button>
+      <canvas id="map" width="82" height="82"></canvas>
+    </div>
+    <div id="hurt" aria-hidden="true"></div>
+    <div id="sleep" hidden></div>
     <div id="cross" aria-hidden="true"></div>
     <div id="bar" aria-hidden="true"><i id="barFill"></i></div>
     <div id="joy" aria-hidden="true"><i id="knob"></i></div>
@@ -33,6 +40,7 @@
       <button type="button" data-hold="hand" class="on">手</button>
       <button type="button" data-hold="torch">火把</button>
       <button type="button" data-hold="boat">船</button>
+      <button type="button" data-hold="bed">床</button>
     </div>
     <div id="actions">
       <button type="button" id="jump">跳</button>
@@ -40,14 +48,19 @@
       <button type="button" id="place">放</button>
       <button type="button" id="make">做</button>
       <button type="button" id="ride" hidden>上船</button>
+      <button type="button" id="sit" hidden>坐下</button>
+      <button type="button" id="sleepBtn" hidden>睡觉</button>
     </div>
     <p id="keys">WASD 走 · 鼠标看 · 左键敲 · 右键放 · 空格跳</p>
     <p id="toast" aria-live="polite"></p>
     <div id="craft" hidden>
       <div class="card">
         <p class="who">小宇的制作</p>
-        <button type="button" data-craft="torch">火把 · 1木头</button>
-        <button type="button" data-craft="boat">小船 · 5木头</button>
+        <p id="woodGate">先敲到 1 个木头，才能做火把和小船</p>
+        <button type="button" data-craft="torch" data-wood-gate="1">火把 · 3木头</button>
+        <button type="button" data-craft="boat" data-wood-gate="1">小船 · 10木头</button>
+        <button type="button" data-craft="gun">枪 · 2石头1木头</button>
+        <button type="button" data-craft="bed">床 · 3木头2树叶</button>
         <button type="button" data-craft="swordWood">木剑 · 3木头</button>
         <button type="button" data-craft="swordStone">石剑 · 2石头1木头</button>
         <button type="button" data-craft="armor">叶衣 · 8树叶</button>
@@ -60,7 +73,7 @@
   <div id="start">
     <p class="who">小宇</p>
     <h1>方块小世界</h1>
-    <p class="lead">伍澍暘，海、河、山和树都是方块。敲木头可以做火把和小船。夜里会变暗。另一台浏览器可以进来，互相看见。</p>
+    <p class="lead">伍澍暘，每次打开都是新的一局。海是一格一格的水，可以游，也可以上船。夜里来得慢。床可以睡觉到早上。</p>
     <p class="nameRow">你叫 <b id="nameLabel">乐乐</b></p>
     <div class="goRow">
       <button type="button" id="rename">换名字</button>
@@ -74,6 +87,6 @@
     <p class="peace">这游戏没有怪物。</p>
   </div>
   <script src="../../../vendor/peerjs/peerjs.min.js"></script>
-  <script src="my-world.js?v=mw7"></script>
+  <script src="my-world.js?v=mw9"></script>
 </body>
 </html>

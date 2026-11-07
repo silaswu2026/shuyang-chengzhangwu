@@ -17,10 +17,11 @@ function eq(actual, expected, msg) {
 var mem = {};
 global.localStorage = {
   getItem: function (k) { return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; },
-  setItem: function (k, v) { mem[k] = String(v); }
+  setItem: function (k, v) { mem[k] = String(v); },
+  removeItem: function (k) { delete mem[k]; }
 };
 
-eq(MW.TIP, 'mw7', 'tip');
+eq(MW.TIP, 'mw9', 'tip');
 eq(MW.STORE, 'xygo-my-world', 'store');
 if (MW.KID_NAMES.length < 8) fail('kid names');
 MW.KID_NAMES.forEach(function (n) {
@@ -161,6 +162,15 @@ MW.setClock(0);
 if (!(MW.dayFactor() > 0.85)) fail('day ' + MW.dayFactor());
 var daySky = MW.skyRGB();
 MW.setClock(36);
+if (!(MW.dayFactor() > 0.85)) fail('still bright at 36s ' + MW.dayFactor());
+var dusk = 0.66 * MW.DAY;
+MW.setClock(dusk);
+var duskA = MW.dayFactor();
+MW.setClock(dusk + 20);
+var duskB = MW.dayFactor();
+if (!(duskA > duskB + 0.02)) fail('sunset not moving ' + duskA + ' -> ' + duskB);
+if (duskA - duskB > 0.22) fail('sunset too fast ' + (duskA - duskB));
+MW.setClock(0.93 * MW.DAY);
 if (!(MW.dayFactor() < 0.12)) fail('night ' + MW.dayFactor());
 var nightSky = MW.skyRGB();
 if (!(nightSky[2] < daySky[2] - 0.4)) fail('night sky');
@@ -200,7 +210,7 @@ MW.state.inv.gold = 9;
 MW.save();
 var saved = JSON.parse(localStorage.getItem('xygo-my-world'));
 eq(saved.v, 3, 'save v');
-eq(saved.tip, 'mw7', 'save tip');
+eq(saved.tip, 'mw9', 'save tip');
 eq(saved.seed, 11, 'guest keeps own map');
 eq(saved.inv.gold, 9, 'guest keeps coins');
 eq(saved.inv.wood, 2, 'guest keeps wood');
@@ -213,18 +223,19 @@ var peace = '这游戏没有怪物。';
 var made = '自研小游戏，不是正版《我的世界》。';
 if (html.split(peace).length < 3) fail('peace twice in page');
 if (html.split(made).length < 3) fail('disclaimer twice in page');
-if (html.indexOf('xy-tip" content="mw7"') < 0) fail('meta tip');
-if (html.indexOf('my-world.css?v=mw7') < 0 || html.indexOf('my-world.js?v=mw7') < 0) fail('cache bust');
+if (html.indexOf('xy-tip" content="mw9"') < 0) fail('meta tip');
+if (html.indexOf('my-world.css?v=mw9') < 0 || html.indexOf('my-world.js?v=mw9') < 0) fail('cache bust');
 if (html.indexOf('vendor/peerjs/peerjs.min.js') < 0) fail('vendor peerjs');
-if (html.indexOf('>mw7<') < 0) fail('hud tip');
+if (html.indexOf('>mw9<') < 0) fail('hud tip');
 if (learn.indexOf(peace) < 0 || learn.indexOf('不是正版《我的世界》') < 0) fail('learn disclaimers');
-if (learn.indexOf('?v=mw7') < 0) fail('learn url');
+if (learn.indexOf('?v=mw9') < 0) fail('learn url');
 if (learn.indexOf('出生') < 0) fail('learn spawn');
 if (learn.indexOf('台阶') < 0) fail('learn step');
 if (learn.indexOf('看不见自己的手') < 0) fail('learn hand');
 if (learn.indexOf('xygo-my-world') < 0) fail('learn key');
-if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw7') < 0) fail('hub tip');
-if (hub.indexOf('my-world/?v=mw6') >= 0) fail('old hub tip');
+if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw9') < 0) fail('hub tip');
+if (hub.indexOf('my-world/?v=mw7') >= 0 || hub.indexOf('my-world/?v=mw8') >= 0) fail('old hub tip');
+if (learn.indexOf('小猪') < 0 || learn.indexOf('护甲') < 0) fail('learn mobs');
 
 function standAt(spot) {
   MW.state.px = spot.x;
@@ -325,8 +336,173 @@ MW.state.hold = 'hand';
 MW.state.equip.armor = 'armor';
 eq(MW.handKind(), 'pick', 'armor keeps the tool');
 
+if (!(MW.W >= 52 && MW.D >= 52)) fail('world size ' + MW.W + 'x' + MW.D);
+MW.grow(4);
+if (!MW.villagers || MW.villagers.length < 3) fail('villagers');
+if (!MW.pigs || MW.pigs.length < 3) fail('pigs');
+if (!MW.cows || MW.cows.length < 2) fail('cows');
+var bottom = MW.at(4, 0, 4);
+if (!bottom) fail('no bottom block');
+MW.breakBlock({ x: 4, y: 0, z: 4 });
+eq(MW.at(4, 0, 4), MW.AIR, 'bottom dug');
+if (MW.solid(4, -1, 4)) fail('bedrock plane still solid');
+
+MW.state.inv.wood = 0;
+if (MW.craft('torch')) fail('torch locked');
+MW.state.inv.wood = 1;
+if (MW.craft('torch')) fail('torch costs 3');
+MW.state.inv.wood = 3;
+if (!MW.craft('torch')) fail('torch crafts');
+eq(MW.state.inv.torch, 1, 'got torch');
+MW.state.inv.wood = 9;
+if (MW.craft('boat')) fail('boat costs 10');
+MW.state.inv.wood = 10;
+if (!MW.craft('boat')) fail('boat crafts');
+
+MW.state.started = true;
+MW.state.hold = 'hand';
+MW.state.yaw = 0;
+MW.state.pitch = 0;
+var pig = MW.pigs[0];
+pig.alive = true;
+pig.hp = 1;
+pig.x = MW.state.px;
+pig.y = MW.state.py;
+pig.z = MW.state.pz - 2;
+MW.state.equip.weapon = 'gun';
+MW.state.inv.gun = 1;
+if (!MW.tryShoot()) fail('gun missed pig');
+if (pig.alive) fail('pig should die in one shot');
+var cow = MW.cows[0];
+cow.alive = true;
+cow.hp = 3;
+cow.x = MW.state.px;
+cow.y = MW.state.py;
+cow.z = MW.state.pz - 2;
+if (!MW.tryShoot() || cow.hp !== 2 || !cow.alive) fail('cow first shot');
+MW.tryShoot();
+if (cow.hp !== 1 || !cow.alive) fail('cow second shot');
+MW.tryShoot();
+if (cow.alive) fail('cow third shot');
+
+MW.state.equip.armor = '';
+MW.state.inv.armor = 0;
+MW.state.hp = 6;
+MW.state.px = cow.x + 1.2;
+MW.state.pz = cow.z;
+MW.state.py = cow.y;
+MW.state.knockX = 0;
+MW.state.knockZ = 0;
+MW.state.vy = 0;
+cow.alive = true;
+cow.cool = 0;
+MW.cowBump(cow);
+if (Math.abs(MW.state.knockX) + Math.abs(MW.state.knockZ) < 1) fail('cow did not knock');
+if (!(MW.state.vy > 4)) fail('cow did not launch');
+MW.state.equip.armor = 'armor';
+MW.state.inv.armor = 1;
+MW.state.knockX = 0;
+MW.state.knockZ = 0;
+MW.state.vy = 0;
+cow.cool = 0;
+MW.cowBump(cow);
+if (Math.abs(MW.state.knockX) + Math.abs(MW.state.knockZ) > 0.01) fail('armor still knocked');
+if (MW.state.vy > 1) fail('armor still launched');
+
+MW.remotes.pal = { name: '豆豆', x: MW.state.px + 3, y: MW.state.py, z: MW.state.pz + 1, seen: Date.now() };
+var dots = MW.mapDots();
+var selfDot = null, redDot = null, di;
+for (di = 0; di < dots.dots.length; di++) {
+  if (dots.dots[di].kind === 'self') selfDot = dots.dots[di];
+  if (dots.dots[di].kind === 'other') redDot = dots.dots[di];
+}
+if (!selfDot || selfDot.color !== '#111') fail('self not black');
+if (!redDot || redDot.color !== '#e23b3b') fail('friend not red');
+if (dots.n < 30 || dots.cell > 3) fail('map cells');
+delete MW.remotes.pal;
+
+MW.grow(8);
+var poolX = 8, poolZ = 20, shoreTop = 8, waterDepth = 4, yy;
+for (yy = 0; yy < MW.H; yy++) {
+  MW.put(poolX, yy, poolZ, MW.AIR);
+  MW.put(poolX + 1, yy, poolZ, MW.AIR);
+}
+for (yy = 0; yy < shoreTop - waterDepth; yy++) MW.put(poolX, yy, poolZ, MW.STONE);
+for (yy = shoreTop - waterDepth; yy < shoreTop; yy++) MW.put(poolX, yy, poolZ, MW.WATER);
+for (yy = 0; yy <= shoreTop; yy++) MW.put(poolX + 1, yy, poolZ, MW.DIRT);
+var waterCol = MW.columnSurface(poolX, poolZ);
+if (!waterCol || waterCol.depth !== waterDepth) fail('water depth ' + (waterCol && waterCol.depth));
+if (waterCol.surface === MW.SEA && shoreTop !== MW.SEA) fail('water still pinned to sea');
+MW.state.started = true;
+MW.state.ride = -1;
+MW.state.sitting = null;
+MW.state.pitch = 0;
+MW.state.px = poolX + 0.5;
+MW.state.pz = poolZ + 0.5;
+MW.state.py = shoreTop - 1.15;
+MW.state.vy = 0;
+MW.state.yaw = Math.PI / 2;
+MW.state.onGround = false;
+for (hop = 0; hop < 36; hop++) {
+  MW.press('KeyW', true);
+  MW.press('Space', true);
+  MW.sim(0.05);
+}
+MW.press('KeyW', false);
+MW.press('Space', false);
+if (MW.state.py < shoreTop + 0.9) fail('did not climb shore ' + MW.state.py);
+if (MW.state.px < poolX + 1) fail('still in pool x ' + MW.state.px);
+if (MW.overlaps(MW.state.px, MW.state.py, MW.state.pz)) fail('stuck in shore');
+for (yy = 0; yy <= shoreTop + 1; yy++) MW.put(poolX + 1, yy, poolZ, MW.STONE);
+MW.state.px = poolX + 0.5;
+MW.state.pz = poolZ + 0.5;
+MW.state.py = shoreTop - 1.15;
+MW.state.vy = 0;
+MW.state.onGround = false;
+for (hop = 0; hop < 24; hop++) {
+  MW.press('KeyW', true);
+  MW.press('Space', true);
+  MW.sim(0.05);
+}
+MW.press('KeyW', false);
+MW.press('Space', false);
+if (MW.state.py > shoreTop + 1.35) fail('climbed two-block bank ' + MW.state.py);
+
+MW.state.hold = 'torch';
+MW.state.inv.torch = 1;
+var heldLit = false, lightI, lightList = MW.lightPoints();
+for (lightI = 0; lightI < lightList.length; lightI++) if (lightList[lightI].held) heldLit = true;
+if (!heldLit) fail('held torch does not light');
+MW.setClock(0.93 * MW.DAY);
+MW.put(poolX + 3, 4, poolZ, MW.TORCH);
+if (MW.at(poolX + 3, 4, poolZ) !== MW.TORCH) fail('torch vanished at night');
+MW.state.hold = 'hand';
+
+var bedX = Math.floor(MW.state.px), bedZ = Math.floor(MW.state.pz), bedY = Math.floor(MW.state.py);
+if (bedY < 1) bedY = 4;
+MW.put(bedX, bedY - 1, bedZ, MW.DIRT);
+MW.put(bedX, bedY, bedZ, MW.BED);
+MW.put(bedX, bedY + 1, bedZ, MW.AIR);
+MW.state.px = bedX + 0.5;
+MW.state.pz = bedZ + 0.5;
+MW.state.py = bedY;
+MW.state.ride = -1;
+MW.toggleSit();
+if (!MW.state.sitting) fail('did not sit');
+MW.setClock(0.93 * MW.DAY);
+if (!MW.sleepNow()) fail('sleep');
+if (!(MW.dayFactor() > 0.85)) fail('did not wake at morning ' + MW.dayFactor());
+
+localStorage.setItem('xygo-my-world', JSON.stringify({ v: 3, tip: 'mw9', seed: 11, px: 1, py: 1, pz: 1, inv: { wood: 9, gold: 4 } }));
+MW.load();
+eq(MW.state.inv.wood, 0, 'fresh wood');
+eq(MW.state.inv.gold, 0, 'fresh gold');
+if (MW.scan().seed === 11) fail('resumed old seed');
+if (!MW.feetClear(MW.state.px, MW.state.py, MW.state.pz)) fail('fresh spawn');
+if (localStorage.getItem('xygo-my-world')) fail('old save kept');
+
 if (failed) {
   console.error(failed + ' failed');
   process.exit(1);
 }
-console.log('my-world mw7 ok');
+console.log('my-world mw9 ok');

@@ -30,6 +30,25 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1024;color:var(--in
 #hold button.on{color:#062014;background:var(--gold)}
 #coins{background:#0f1230cc;border:1px solid var(--gold2);color:var(--gold);border-radius:999px;
   padding:4px 10px;font-weight:900;font-size:14px}
+#hpLine{margin:2px 12px 0;font-size:13px;font-weight:900;color:#fff;text-shadow:0 1px 2px #000}
+#hpText{margin-right:6px}
+#hpTrack{display:inline-block;width:88px;height:8px;border-radius:99px;background:#0f1230cc;border:1px solid var(--stroke);vertical-align:middle;overflow:hidden}
+#hpFill{display:block;height:100%;width:100%;background:var(--green)}
+#mapWrap{position:absolute;left:12px;top:78px;pointer-events:auto;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+#mapWrap[hidden]{display:none}
+#mapBtn{border:1px solid var(--stroke);background:#0f1230cc;color:var(--gold);font:inherit;font-weight:900;font-size:13px;border-radius:999px;padding:3px 10px;min-height:28px}
+#mapBtn.on{color:#062014;background:var(--gold)}
+#map{width:112px;height:112px;border:2px solid var(--stroke);border-radius:10px;background:#14182e;image-rendering:pixelated}
+#map[hidden]{display:none}
+#hurt{position:fixed;inset:0;pointer-events:none;background:#c62828;opacity:0;z-index:4}
+#hurt.on{animation:hurtFlash .45s ease-out}
+#sleep{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:6}
+#sleep.on{animation:sleepBlack 1.15s ease}
+@keyframes sleepBlack{0%{opacity:0}18%{opacity:1}68%{opacity:1}100%{opacity:0}}
+#sit[hidden],#sleepBtn[hidden]{display:none}
+@keyframes hurtFlash{0%{opacity:.45}100%{opacity:0}}
+#craft button:disabled{opacity:.4;filter:grayscale(.6)}
+#woodGate{flex:1 0 100%;margin:0;font-weight:800;color:var(--gold)}
 #cross{position:absolute;left:50%;top:46%;width:14px;height:14px;margin:-7px 0 0 -7px}
 #cross::before,#cross::after{content:"";position:absolute;background:#fff;box-shadow:0 0 0 1px #0008}
 #cross::before{left:6px;top:0;width:2px;height:14px}
@@ -91,6 +110,9 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1024;color:var(--in
   #equip{top:4px;right:6px;gap:4px}
   #equip button,#hold button{font-size:12px;min-height:28px;padding:2px 7px}
   #coins{font-size:12px;padding:2px 8px}
+  #map{width:84px;height:84px}
+  #mapWrap{top:62px;left:8px}
+  #hpLine{font-size:11px}
   #joy{width:88px;height:88px;left:8px;bottom:8px}
   #knob{left:24px;top:24px;width:36px;height:36px}
   #hold{right:74px;bottom:10px}
@@ -103,4 +125,22 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1024;color:var(--in
   #go,#host,#join,#rename,#netCancel{min-height:40px;font-size:16px}
   #craft .card{padding:8px;gap:6px}
   #craft button{min-height:36px;font-size:14px}
+}
+@media (orientation:portrait){
+  #hint,#keys{display:none}
+  #disclaimer,#peace{font-size:11px}
+  #map{width:72px;height:72px}
+  #mapWrap{top:auto;bottom:168px;left:8px}
+  #equip{top:4px;right:6px;max-width:62%;gap:4px}
+  #hpLine{margin-left:8px}
+  #cross{top:40%}
+  #joy{left:10px;bottom:18px;width:108px;height:108px}
+  #knob{left:34px;top:34px}
+  #hold{left:8px;right:auto;bottom:132px;flex-direction:row}
+  #actions{right:8px;bottom:16px;gap:6px}
+  #actions button{width:64px;height:48px;font-size:16px}
+  #toast{top:22%;font-size:16px}
+}
+@media (pointer:coarse){
+  #actions button,#hold button,#mapBtn,#jump{min-height:44px}
 }
