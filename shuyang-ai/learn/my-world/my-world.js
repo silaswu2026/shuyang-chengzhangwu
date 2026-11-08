@@ -1,8 +1,8 @@
-/* 方块小世界 mw12 · 树林、野猪羊牛鸡、铁剑、更快昼夜、表情、雪地。 */
+/* 方块小世界 mw13 · 树干露在叶子下面，敲下去才进木头。 */
 (function () {
   'use strict';
 
-  var TIP = 'mw12';
+  var TIP = 'mw13';
   var STORE = 'xygo-my-world';
   var W = 72, H = 22, D = 72, SEA = 8, DAY = 360;
   var HP_MAX = 10;
@@ -151,7 +151,7 @@
   function openBC() {
     if (netBC || typeof document === 'undefined' || typeof BroadcastChannel === 'undefined') return;
     try {
-      netBC = new BroadcastChannel('xygo-my-world-mw12');
+      netBC = new BroadcastChannel('xygo-my-world-mw13');
       netBC.onmessage = function (ev) { onNet(ev && ev.data, 'bc', null); };
     } catch (eBc) { netBC = null; }
   }
@@ -234,11 +234,12 @@
     if (at(x, h + 1, z) !== AIR || at(x, h + 2, z) !== AIR || at(x, top, z) !== AIR) return false;
     var y, dx, dz, leafY;
     for (y = h + 1; y <= top; y++) put(x, y, z, LOG);
-    for (leafY = top - 1; leafY <= top + 1; leafY++) {
-      for (dx = -2; dx <= 2; dx++) {
-        for (dz = -2; dz <= 2; dz++) {
-          if (dx === 0 && dz === 0 && leafY <= top) continue;
-          if (Math.abs(dx) === 2 && Math.abs(dz) === 2) continue;
+    // Leaves stay on the crown. The trunk below the top log is bare, so an
+    // eye-level punch hits LOG and drops wood instead of a leaf in front.
+    for (leafY = top; leafY <= top + 1; leafY++) {
+      for (dx = -1; dx <= 1; dx++) {
+        for (dz = -1; dz <= 1; dz++) {
+          if (dx === 0 && dz === 0 && leafY === top) continue;
           if (leafY === top + 1 && Math.abs(dx) + Math.abs(dz) > 1) continue;
           if (at(x + dx, leafY, z + dz) === AIR) put(x + dx, leafY, z + dz, LEAF);
         }
@@ -3201,7 +3202,7 @@
   }
   function claimHost() {
     if (!roomPin) roomPin = String(1000 + ((Math.random() * 9000) | 0));
-    var id = 'xygo-mw12-' + roomPin;
+    var id = 'xygo-mw13-' + roomPin;
     netCode = roomPin;
     showRoom(roomPin);
     netClaim(id, function (peer, claimed) {
@@ -3384,7 +3385,7 @@
     if (netWatch) { clearInterval(netWatch); netWatch = null; }
   }
   function connectGuestCode(pin) {
-    var id = 'xygo-mw12-' + pin;
+    var id = 'xygo-mw13-' + pin;
     lastHostId = id;
     var peer;
     try { peer = netNewPeer(); } catch (e) { setWait('连不上房间'); return; }
@@ -3437,7 +3438,7 @@
     var pin = String(code || '').replace(/\D/g, '').slice(0, 4);
     if (pin.length === 4) {
       roomPin = pin;
-      lastHostId = 'xygo-mw12-' + pin;
+      lastHostId = 'xygo-mw13-' + pin;
       setWait('正在连房间 ' + pin);
     } else {
       setWait('同一台电脑可以直接加入。跨网络请输入房主的 4 位房间码。');
@@ -3719,6 +3720,7 @@
     treeStats: treeStats, meleeDmg: meleeDmg, sendEmote: sendEmote, inSnowTerritory: inSnowTerritory,
     clockText: clockText, selectPack: selectPack, villageAt: function () { return village; },
     press: function (code, on) { keys[code] = !!on; },
+    setPunch: function (on) { punching = !!on; pointerPunch = !!on; },
     selfId: function () { return selfId; },
     setSelfForTest: function (id) { selfId = id; },
     setRole: function (role) { netRole = role; }

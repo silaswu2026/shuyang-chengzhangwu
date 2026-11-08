@@ -21,7 +21,7 @@ global.localStorage = {
   removeItem: function (k) { delete mem[k]; }
 };
 
-eq(MW.TIP, 'mw12', 'tip');
+eq(MW.TIP, 'mw13', 'tip');
 eq(MW.STORE, 'xygo-my-world', 'store');
 if (MW.KID_NAMES.length < 8) fail('kid names');
 MW.KID_NAMES.forEach(function (n) {
@@ -212,7 +212,7 @@ MW.state.inv.gold = 9;
 MW.save();
 var saved = JSON.parse(localStorage.getItem('xygo-my-world'));
 eq(saved.v, 3, 'save v');
-eq(saved.tip, 'mw12', 'save tip');
+eq(saved.tip, 'mw13', 'save tip');
 eq(saved.seed, 11, 'guest keeps own map');
 eq(saved.inv.gold, 9, 'guest keeps coins');
 eq(saved.inv.wood, 2, 'guest keeps wood');
@@ -225,18 +225,18 @@ var peace = '这游戏没有怪物。';
 var made = '自研小游戏，不是正版《我的世界》。';
 if (html.split(peace).length < 3) fail('peace twice in page');
 if (html.split(made).length < 3) fail('disclaimer twice in page');
-if (html.indexOf('xy-tip" content="mw12"') < 0) fail('meta tip');
-if (html.indexOf('my-world.css?v=mw12') < 0 || html.indexOf('my-world.js?v=mw12') < 0) fail('cache bust');
+if (html.indexOf('xy-tip" content="mw13"') < 0) fail('meta tip');
+if (html.indexOf('my-world.css?v=mw13') < 0 || html.indexOf('my-world.js?v=mw13') < 0) fail('cache bust');
 if (html.indexOf('vendor/peerjs/peerjs.min.js') < 0) fail('vendor peerjs');
-if (html.indexOf('>mw12<') < 0) fail('hud tip');
+if (html.indexOf('>mw13<') < 0) fail('hud tip');
 if (learn.indexOf(peace) < 0 || learn.indexOf('不是正版《我的世界》') < 0) fail('learn disclaimers');
-if (learn.indexOf('?v=mw12') < 0) fail('learn url');
+if (learn.indexOf('?v=mw13') < 0) fail('learn url');
 if (learn.indexOf('出生') < 0) fail('learn spawn');
 if (learn.indexOf('台阶') < 0) fail('learn step');
 if (learn.indexOf('看不见自己的手') < 0) fail('learn hand');
 if (learn.indexOf('xygo-my-world') < 0) fail('learn key');
-if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw12') < 0) fail('hub tip');
-if (hub.indexOf('my-world/?v=mw11') >= 0 || hub.indexOf('my-world/?v=mw10') >= 0) fail('old hub tip');
+if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw13') < 0) fail('hub tip');
+if (hub.indexOf('my-world/?v=mw12') >= 0 || hub.indexOf('my-world/?v=mw11') >= 0) fail('old hub tip');
 if (learn.indexOf('野猪') < 0 || learn.indexOf('护甲') < 0) fail('learn mobs');
 if (learn.indexOf('鸡') < 0 || learn.indexOf('雪') < 0 || learn.indexOf('铁剑') < 0 || learn.indexOf('表情') < 0) fail('learn mw12');
 
@@ -766,8 +766,67 @@ MW.applyNet({ mw: 3, t: 'emote', from: 'pal2', e: 'hi' });
 if (MW.remotes.pal2.emote !== 'hi') fail('peer emote');
 delete MW.remotes.pal2;
 
+MW.grow(5);
+var trunk = null, tx, tz, ty, tys, hi, isHouse;
+var homeV = MW.villageAt();
+for (tz = 2; tz < MW.D - 2 && !trunk; tz++) {
+  for (tx = 2; tx < MW.W - 2 && !trunk; tx++) {
+    tys = [];
+    for (ty = 0; ty < MW.H; ty++) if (MW.at(tx, ty, tz) === MW.LOG) tys.push(ty);
+    if (tys.length < 3 || tys[1] !== tys[0] + 1) continue;
+    isHouse = false;
+    if (homeV && homeV.houses) {
+      for (hi = 0; hi < homeV.houses.length; hi++) {
+        var hh = homeV.houses[hi];
+        if (tx >= hh.x && tx < hh.x + 5 && tz >= hh.z && tz < hh.z + 5) isHouse = true;
+      }
+    }
+    if (isHouse) continue;
+    if (MW.at(tx + 1, tys[0] - 1, tz) !== MW.GRASS) continue;
+    if (MW.at(tx + 1, tys[0], tz) !== MW.AIR) continue;
+    if (MW.at(tx + 1, tys[0] + 1, tz) !== MW.AIR) continue;
+    if (MW.at(tx, tys[0] + 1, tz) !== MW.LOG) continue;
+    trunk = { x: tx, z: tz, y: tys[0] + 1, lows: tys };
+  }
+}
+if (!trunk) fail('no bare trunk to chop');
+else {
+  var mi3;
+  for (mi3 = 0; mi3 < MW.pigs.length; mi3++) MW.pigs[mi3].alive = false;
+  for (mi3 = 0; mi3 < MW.cows.length; mi3++) MW.cows[mi3].alive = false;
+  for (mi3 = 0; mi3 < MW.sheep.length; mi3++) MW.sheep[mi3].alive = false;
+  for (mi3 = 0; mi3 < MW.chickens.length; mi3++) MW.chickens[mi3].alive = false;
+  MW.state.started = true;
+  MW.state.ride = -1;
+  MW.state.sitting = null;
+  MW.state.hold = 'hand';
+  MW.state.equip.weapon = '';
+  MW.state.equip.tool = '';
+  MW.state.inv.wood = 0;
+  MW.state.inv.torch = 0;
+  MW.state.inv.leaf = 0;
+  MW.state.px = trunk.x + 1.5;
+  MW.state.py = trunk.y - 1;
+  MW.state.pz = trunk.z + 0.5;
+  MW.state.vy = 0;
+  MW.state.onGround = true;
+  MW.state.yaw = -Math.PI / 2;
+  MW.state.pitch = 0;
+  MW.setPunch(true);
+  for (hop = 0; hop < 40; hop++) MW.sim(0.05);
+  MW.setPunch(false);
+  if (!(MW.state.inv.wood > 0)) fail('chopping the trunk gave no wood ' + MW.state.inv.wood);
+  if (MW.at(trunk.x, trunk.y, trunk.z) === MW.LOG) fail('eye-level log still there');
+  for (hi = 0; hi < trunk.lows.length; hi++) {
+    if (MW.at(trunk.x, trunk.lows[hi], trunk.z) === MW.LOG) MW.breakBlock({ x: trunk.x, y: trunk.lows[hi], z: trunk.z });
+  }
+  if (MW.state.inv.wood < 3) fail('trunk did not drop 3 wood ' + MW.state.inv.wood);
+  if (!MW.craft('torch')) fail('torch after chopping wood');
+  eq(MW.state.inv.torch, 1, 'torch from trunk wood');
+}
+
 if (failed) {
   console.error(failed + ' failed');
   process.exit(1);
 }
-console.log('my-world mw12 ok');
+console.log('my-world mw13 ok');
