@@ -1,10 +1,10 @@
-/* 方块小世界 mw9 · 小地图、村庄、床、水柱、联机重连。世界格子仍可整片挖空。 */
+/* 方块小世界 mw10 · 上台阶要跳、背包格子、更艳的颜色。世界格子仍可整片挖空。 */
 (function () {
   'use strict';
 
-  var TIP = 'mw9';
+  var TIP = 'mw10';
   var STORE = 'xygo-my-world';
-  var W = 56, H = 22, D = 56, SEA = 8, DAY = 420;
+  var W = 56, H = 22, D = 56, SEA = 8, DAY = 320;
   var HP_MAX = 6;
   var WALK = 3.0;
   var MAP_N = 41;
@@ -12,18 +12,18 @@
   var AIR = 0, GRASS = 1, DIRT = 2, LOG = 3, LEAF = 4, STONE = 5;
   var WATER = 6, SAND = 7, FLOWER = 8, GOLD = 9, TORCH = 10, CHEST = 11, BED = 12;
   var COL = {
-    1: [0.36, 0.72, 0.32],
-    2: [0.55, 0.36, 0.22],
-    3: [0.52, 0.32, 0.14],
-    4: [0.22, 0.62, 0.28],
-    5: [0.55, 0.55, 0.58],
-    6: [0.15, 0.42, 0.82],
-    7: [0.84, 0.76, 0.46],
-    8: [0.93, 0.45, 0.58],
-    9: [0.86, 0.68, 0.18],
-    10: [1, 0.86, 0.35],
-    11: [0.72, 0.46, 0.16],
-    12: [0.82, 0.28, 0.32]
+    1: [0.28, 0.82, 0.22],
+    2: [0.72, 0.40, 0.16],
+    3: [0.62, 0.34, 0.12],
+    4: [0.16, 0.74, 0.22],
+    5: [0.62, 0.66, 0.78],
+    6: [0.12, 0.52, 0.98],
+    7: [0.96, 0.78, 0.28],
+    8: [0.98, 0.28, 0.55],
+    9: [1, 0.82, 0.12],
+    10: [1, 0.62, 0.12],
+    11: [0.86, 0.42, 0.12],
+    12: [0.95, 0.22, 0.38]
   };
   var SHADE = [1, 0.55, 0.82, 0.68, 0.9, 0.64];
   var FACES = [
@@ -124,7 +124,7 @@
   function openBC() {
     if (netBC || typeof document === 'undefined' || typeof BroadcastChannel === 'undefined') return;
     try {
-      netBC = new BroadcastChannel('xygo-my-world-mw9');
+      netBC = new BroadcastChannel('xygo-my-world-mw10');
       netBC.onmessage = function (ev) { onNet(ev && ev.data, 'bc', null); };
     } catch (eBc) { netBC = null; }
   }
@@ -443,12 +443,34 @@
     village = { x: cx + 2.5, z: cz + 6.5, y: gy + 1 };
     armorDrop = { x: cx + 2.5, y: gy + 1, z: cz - 2.5, taken: false };
   }
+  function openPads(n) {
+    var out = [], pass, x, z, spot, i, ok;
+    for (pass = 0; pass < 2 && out.length < n; pass++) {
+      for (z = 4; z < D - 4 && out.length < n; z += 3) {
+        for (x = 6; x < W - 6 && out.length < n; x += 3) {
+          spot = standColumn(x, z);
+          if (!spot || spot.ground !== GRASS) continue;
+          if (pass === 0 && (spot.top < SEA || spot.top > SEA + 3)) continue;
+          if (Math.abs(z - riverZ(x)) < 5) continue;
+          if (village && Math.hypot(spot.x - village.x, spot.z - village.z) < 9) continue;
+          if (Math.hypot(spot.x - spawn.x, spot.z - spawn.z) < 7) continue;
+          ok = true;
+          for (i = 0; i < out.length; i++) {
+            if (Math.hypot(out[i].x - spot.x, out[i].z - spot.z) < 5) ok = false;
+          }
+          if (ok) out.push(spot);
+        }
+      }
+    }
+    while (out.length < n) out.push({ x: 12 + out.length * 2.5, z: 22, y: SEA + 1, top: SEA });
+    return out;
+  }
   function spawnMobs() {
     pigs.splice(0, pigs.length);
     cows.splice(0, cows.length);
     villagers.splice(0, villagers.length);
     if (!village) return;
-    var i, feet;
+    var i, feet, pads = openPads(7);
     for (i = 0; i < 4; i++) {
       villagers.push({
         x: village.x + (i - 1.5) * 1.4,
@@ -460,11 +482,11 @@
       });
     }
     for (i = 0; i < 4; i++) {
-      feet = groundFeet(village.x + 3 + i, village.z + 4);
+      feet = groundFeet(pads[i].x, pads[i].z);
       pigs.push({
-        x: village.x + 2 + i * 1.3,
-        z: village.z + 4,
-        y: feet == null ? village.y : feet,
+        x: pads[i].x,
+        z: pads[i].z,
+        y: feet == null ? pads[i].top + 1 : feet,
         yaw: i,
         alive: true,
         hp: 1,
@@ -472,11 +494,11 @@
       });
     }
     for (i = 0; i < 3; i++) {
-      feet = groundFeet(village.x - 3, village.z + i * 1.6);
+      feet = groundFeet(pads[4 + i].x, pads[4 + i].z);
       cows.push({
-        x: village.x - 3,
-        z: village.z + i * 1.6,
-        y: feet == null ? village.y : feet,
+        x: pads[4 + i].x,
+        z: pads[4 + i].z,
+        y: feet == null ? pads[4 + i].top + 1 : feet,
         yaw: 1.2,
         alive: true,
         hp: 3,
@@ -693,24 +715,8 @@
       state.pz += dz;
       if (overlaps(state.px, state.py, state.pz)) { state.pz = oz; zHit = true; }
     }
-    var nearFloor = state.onGround || (state.vy <= 0.4 && overlaps(ox, oy - 0.22, oz));
     if ((xHit || zHit) && (dx || dz) && inWaterAt(ox, oy, oz)) {
       if (!tryShore(ox, oy, oz, dx, dz)) { /* stay blocked */ }
-    } else if ((xHit || zHit) && (dx || dz) && nearFloor && !inWaterAt(ox, oy, oz)) {
-      var slidX = state.px, slidZ = state.pz;
-      var rises = [0.35, 0.7, 1.02];
-      var r, stepped = false;
-      for (r = 0; r < rises.length; r++) {
-        state.py = oy + rises[r];
-        state.px = ox + dx;
-        state.pz = oz + dz;
-        if (!overlaps(state.px, state.py, state.pz) && overlaps(state.px, state.py - 0.3, state.pz)) {
-          if (state.vy < 0) state.vy = 0;
-          stepped = true;
-          break;
-        }
-      }
-      if (!stepped) { state.px = slidX; state.py = oy; state.pz = slidZ; }
     }
     if (dy) {
       var steps = Math.max(1, Math.ceil(Math.abs(dy) / 0.15));
@@ -817,24 +823,10 @@
     toastUntil = Date.now() + 1400;
   }
   function renderHud() {
-    var el = $('bag');
-    if (el) {
-      var bits = [];
-      BAG_SHOW.forEach(function (pair, idx) {
-        var n = state.inv[pair[0]] | 0;
-        if (idx < 4 || n > 0) bits.push('<span>' + pair[1] + ' ' + n + '</span>');
-      });
-      el.innerHTML = bits.join('');
-    }
     var coins = $('coins');
     if (coins) coins.textContent = '金币 ' + (state.inv.gold | 0);
-    var w = $('slotWeapon'), a = $('slotArmor'), t = $('slotTool');
-    if (w) w.textContent = SLOT_WORD.weapon[state.equip.weapon] || '武器 空';
-    if (a) a.textContent = SLOT_WORD.armor[state.equip.armor] || '护甲 空';
-    if (t) t.textContent = SLOT_WORD.tool[state.equip.tool] || '工具 空';
-    var holdBtns = typeof document !== 'undefined' ? document.querySelectorAll('#hold button') : [];
+    renderPack();
     var i;
-    for (i = 0; i < holdBtns.length; i++) holdBtns[i].classList.toggle('on', holdBtns[i].getAttribute('data-hold') === state.hold);
     var nameLabel = $('nameLabel');
     if (nameLabel && !state.started) nameLabel.textContent = state.name;
     var gate = $('woodGate');
@@ -844,7 +836,67 @@
       for (i = 0; i < gates.length; i++) gates[i].disabled = (state.inv.wood | 0) < 1;
     }
     renderHp();
+    paintClock();
     setNetStatus();
+  }
+  var PACK = [
+    { id: 'swordWood', name: '木剑', bg: '#d06a22' },
+    { id: 'swordStone', name: '石剑', bg: '#8ea0c8' },
+    { id: 'gun', name: '枪', bg: '#3a4258' },
+    { id: 'armor', name: '叶衣', bg: '#1fa84a' },
+    { id: 'pick', name: '石稿', bg: '#6d7488' },
+    { id: 'torch', name: '火把', bg: '#f08a12' },
+    { id: 'boat', name: '船', bg: '#c47a28' },
+    { id: 'bed', name: '床', bg: '#e23b55' },
+    { id: 'wood', name: '木头', bg: '#b56a2a' },
+    { id: 'leaf', name: '树叶', bg: '#2fbf4a' },
+    { id: 'dirt', name: '泥土', bg: '#a15a28' },
+    { id: 'stone', name: '石头', bg: '#7f8cae' },
+    { id: 'sand', name: '沙子', bg: '#e6c04a' },
+    { id: 'gold', name: '金币', bg: '#f0c020' }
+  ];
+  function packOn(cell) {
+    if (cell.id === 'torch' || cell.id === 'boat' || cell.id === 'bed') return state.hold === cell.id;
+    if (cell.id === 'armor') return state.equip.armor === 'armor';
+    if (cell.id === 'pick') return state.equip.tool === 'pick' && !state.equip.weapon && state.hold === 'hand';
+    if (cell.id === 'swordWood' || cell.id === 'swordStone' || cell.id === 'gun') return state.equip.weapon === cell.id && state.hold === 'hand';
+    return false;
+  }
+  function selectPack(id) {
+    var n = state.inv[id] | 0;
+    if (n < 1 && id !== 'gold') { toast('小宇：背包里还没有'); return false; }
+    if (id === 'swordWood' || id === 'swordStone' || id === 'gun') {
+      state.equip.weapon = state.equip.weapon === id ? '' : id;
+      state.hold = 'hand';
+    } else if (id === 'armor') {
+      if (n < 1) return false;
+      state.equip.armor = state.equip.armor === 'armor' ? '' : 'armor';
+      state.hold = 'hand';
+    } else if (id === 'pick') {
+      state.equip.tool = state.equip.tool === 'pick' ? '' : 'pick';
+      if (state.equip.tool === 'pick') state.equip.weapon = '';
+      state.hold = 'hand';
+    } else if (id === 'torch' || id === 'boat' || id === 'bed') {
+      state.hold = state.hold === id ? 'hand' : id;
+    } else {
+      state.hold = 'hand';
+      toast(NAMES[id] ? (NAMES[id] + '在背包格子里') : '在背包里');
+    }
+    save();
+    renderHud();
+    return true;
+  }
+  function renderPack() {
+    var box = $('pack');
+    if (!box) return;
+    var html = '', i, cell, n, on;
+    for (i = 0; i < PACK.length; i++) {
+      cell = PACK[i];
+      n = state.inv[cell.id] | 0;
+      on = packOn(cell);
+      html += '<button type="button" data-pack="' + cell.id + '" class="' + (on ? 'on' : '') + (n ? '' : ' empty') + '" style="background:' + cell.bg + '"><b>' + cell.name + '</b><i>' + n + '</i></button>';
+    }
+    if (box._html !== html) { box.innerHTML = html; box._html = html; }
   }
   function craft(name) {
     var r = RECIPES[name];
@@ -1118,6 +1170,7 @@
       feet = floor + 1;
       if (feet - base > 1.08) continue;
       if (feet < oy - 0.35) continue;
+      if (feet > oy + 0.34 && !(jumping || keys.Space)) continue;
       if (solid(cx, feet, cz) || solid(cx, feet + 1, cz)) continue;
       if (at(cx, feet, cz) === WATER) continue;
       state.px = cx + 0.5;
@@ -1547,22 +1600,38 @@
   }
   function sunElev() {
     var p = dayPhase();
-    if (p < 0.42) return 0.28 + 0.72 * Math.sin((p / 0.42) * Math.PI);
-    if (p < 0.9) {
-      var u = smooth01((p - 0.42) / 0.48);
+    if (p < 0.46) return 0.28 + 0.72 * Math.sin((p / 0.46) * Math.PI);
+    if (p < 0.70) {
+      var u = smooth01((p - 0.46) / 0.24);
       return 0.28 * (1 - u) - 0.62 * u;
     }
-    if (p < 0.96) return -0.62;
-    return -0.62 + 0.9 * smooth01((p - 0.96) / 0.04);
+    if (p < 0.82) return -0.62;
+    return -0.62 + 0.9 * smooth01((p - 0.82) / 0.18);
   }
   function dayFactor() {
     var p = dayPhase();
     var d;
-    if (p < 0.42) d = 1;
-    else if (p < 0.9) d = 1 - smooth01((p - 0.42) / 0.48);
-    else if (p < 0.96) d = 0;
-    else d = smooth01((p - 0.96) / 0.04);
+    if (p < 0.46) d = 1;
+    else if (p < 0.70) d = 1 - smooth01((p - 0.46) / 0.24);
+    else if (p < 0.82) d = 0;
+    else d = smooth01((p - 0.82) / 0.18);
     return d;
+  }
+  function clockText() {
+    var p = dayPhase();
+    var mins = (6 * 60 + Math.floor(p * 24 * 60)) % (24 * 60);
+    var hh = (mins / 60) | 0;
+    var mm = mins % 60;
+    var two = function (n) { return (n < 10 ? '0' : '') + n; };
+    var sun = '白天';
+    if (p < 0.08 || p >= 0.82) sun = '太阳升起';
+    else if (p >= 0.46 && p < 0.70) sun = '太阳落下';
+    else if (p >= 0.70 && p < 0.82) sun = '夜里';
+    return sun + ' · ' + two(hh) + ':' + two(mm);
+  }
+  function paintClock() {
+    var el = $('sunClock');
+    if (el) el.textContent = clockText();
   }
   function skyRGB() {
     var d = dayFactor();
@@ -1610,7 +1679,13 @@
             pushCube(data, x + 0.35, y, z + 0.35, 0.3, 0.55, 0.3, rgb);
             continue;
           }
-          rgb = COL[id] || [1, 1, 1];
+          rgb = (COL[id] || [1, 1, 1]).slice();
+          if (id === GRASS || id === DIRT || id === STONE || id === SAND) {
+            var jit = (hash2(x, z, id + 3) - 0.5) * 0.16;
+            rgb[0] = Math.max(0, Math.min(1, rgb[0] + jit));
+            rgb[1] = Math.max(0, Math.min(1, rgb[1] + jit * 0.35));
+            rgb[2] = Math.max(0, Math.min(1, rgb[2] - jit * 0.25));
+          }
           for (f = 0; f < 6; f++) {
             nx = f === 2 ? 1 : f === 3 ? -1 : 0;
             ny = f === 0 ? 1 : f === 1 ? -1 : 0;
@@ -1814,7 +1889,7 @@
     }
   }
   function pushPig(data, e) {
-    var y = e.y, pink = [0.93, 0.55, 0.62], dark = [0.72, 0.32, 0.4];
+    var y = e.y, pink = [0.98, 0.42, 0.62], dark = [0.86, 0.22, 0.42];
     pushCube(data, e.x - 0.16, y, e.z - 0.16, 0.1, 0.16, 0.1, dark);
     pushCube(data, e.x + 0.08, y, e.z - 0.16, 0.1, 0.16, 0.1, dark);
     pushCube(data, e.x - 0.16, y, e.z + 0.08, 0.1, 0.16, 0.1, dark);
@@ -1825,7 +1900,7 @@
   function pushCow(data, e) {
     var y = e.y;
     var fx = Math.sin(e.yaw || 0), fz = -Math.cos(e.yaw || 0);
-    var brown = [0.48, 0.28, 0.13], dark = [0.3, 0.16, 0.08], white = [0.95, 0.95, 0.92];
+    var brown = [0.62, 0.32, 0.1], dark = [0.28, 0.12, 0.06], white = [0.98, 0.98, 0.96];
     pushCube(data, e.x - 0.26, y, e.z - 0.32, 0.12, 0.26, 0.12, dark);
     pushCube(data, e.x + 0.14, y, e.z - 0.32, 0.12, 0.26, 0.12, dark);
     pushCube(data, e.x - 0.26, y, e.z + 0.16, 0.12, 0.26, 0.12, dark);
@@ -1988,6 +2063,7 @@
     }
     drawNames(mvp);
     drawMap();
+    paintClock();
     setNetStatus();
   }
   function mapDots() {
@@ -2001,6 +2077,14 @@
     for (i = 0; i < villagers.length; i++) {
       e = villagers[i];
       dots.push({ kind: 'villager', x: e.x, z: e.z, color: '#7dff6a' });
+    }
+    for (i = 0; i < pigs.length; i++) {
+      e = pigs[i];
+      if (e.alive) dots.push({ kind: 'pig', x: e.x, z: e.z, color: '#ff4f93' });
+    }
+    for (i = 0; i < cows.length; i++) {
+      e = cows[i];
+      if (e.alive) dots.push({ kind: 'cow', x: e.x, z: e.z, color: '#e08a28' });
     }
     dots.push({ kind: 'spawn', x: spawn.x, z: spawn.z, color: '#fff4b0' });
     return { n: MAP_N, cell: MAP_CELL, dots: dots };
@@ -2055,6 +2139,8 @@
     }
     if (village) dot(village.x, village.z, '#ffe07a', 2.2, false);
     for (ix = 0; ix < villagers.length; ix++) dot(villagers[ix].x, villagers[ix].z, '#7dff6a', 1.6, false);
+    for (ix = 0; ix < pigs.length; ix++) if (pigs[ix].alive) dot(pigs[ix].x, pigs[ix].z, '#ff4f93', 2, false);
+    for (ix = 0; ix < cows.length; ix++) if (cows[ix].alive) dot(cows[ix].x, cows[ix].z, '#e08a28', 2.2, false);
     dot(spawn.x, spawn.z, '#fff4b0', 1.8, false);
     for (id in remotes) dot(remotes[id].x, remotes[id].z, '#e23b3b', 2.4, true);
     sx = (px - x0) * cell;
@@ -2881,14 +2967,13 @@
         craft(e.currentTarget.getAttribute('data-craft'));
       });
     }
-    var slotBtns = typeof document !== 'undefined' ? document.querySelectorAll('#equip button[data-slot]') : [];
-    for (ci = 0; ci < slotBtns.length; ci++) {
-      slotBtns[ci].addEventListener('click', function (e) { cycleSlot(e.currentTarget.getAttribute('data-slot')); });
-    }
-    var holdBtns = typeof document !== 'undefined' ? document.querySelectorAll('#hold button') : [];
-    for (ci = 0; ci < holdBtns.length; ci++) {
-      holdBtns[ci].addEventListener('click', function (e) { setHold(e.currentTarget.getAttribute('data-hold')); });
-    }
+    var packBox = $('pack');
+    if (packBox) packBox.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('button') : null;
+      if (!btn) return;
+      e.preventDefault();
+      selectPack(btn.getAttribute('data-pack'));
+    });
     document.addEventListener('visibilitychange', function () { if (document.hidden) save(); });
     window.addEventListener('pagehide', save);
   }
@@ -2938,6 +3023,7 @@
     cowBump: cowBump, tryShoot: tryShoot, mapDots: mapDots, wearingArmor: wearingArmor,
     columnSurface: columnSurface, tryShore: tryShore, toggleRide: toggleRide, toggleSit: toggleSit,
     sleepNow: sleepNow, lightPoints: lightPoints, load: load, dayPhase: dayPhase,
+    clockText: clockText, selectPack: selectPack, villageAt: function () { return village; },
     press: function (code, on) { keys[code] = !!on; },
     selfId: function () { return selfId; },
     setSelfForTest: function (id) { selfId = id; },
