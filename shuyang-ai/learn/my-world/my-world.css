@@ -83,6 +83,11 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1024;color:var(--in
 #place{background:#2f8cff}
 #make{background:#2fbf4a;color:#04210c}
 #ride,#sit,#sleepBtn{background:#ff8a3d}
+#emote{background:#ffe07a;color:#3a2a00}
+#emotes{position:absolute;right:86px;bottom:24px;display:flex;flex-direction:column;gap:4px;pointer-events:auto;z-index:5}
+#emotes[hidden]{display:none}
+#emotes button{width:44px;height:44px;border:0;border-radius:12px;font-size:22px;background:#fff;line-height:1}
+#myEmote{position:absolute;left:50%;top:46px;transform:translateX(-50%);margin:0;font-size:32px;line-height:1;pointer-events:none;text-shadow:0 2px 0 #000}
 #pack{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:min(420px,54vw);
   display:grid;grid-template-columns:repeat(7,1fr);gap:3px;pointer-events:auto;z-index:4}
 #pack button{position:relative;min-height:36px;border-radius:8px;border:2px solid #fff8;color:#fff;
@@ -145,6 +150,9 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1024;color:var(--in
   #keys{left:104px;bottom:96px;font-size:11px}
   #sunClock{font-size:12px;top:2px}
   #hint{margin-top:22px}
+  #emotes{right:68px;bottom:8px}
+  #emotes button{width:36px;height:36px;font-size:18px}
+  #myEmote{top:28px;font-size:26px}
   #pack{bottom:4px;width:min(360px,48vw)}
   #pack button{min-height:30px;font-size:10px}
   #start{gap:4px;padding:8px}
@@ -168,6 +176,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1024;color:var(--in
   #sunClock{font-size:12px;top:2px;max-width:70vw}
   #disclaimer,#peace{padding-top:26px}
   #actions{right:8px;bottom:16px;gap:6px}
+  #emotes{right:78px;bottom:120px}
+  #myEmote{top:34px;font-size:28px}
   #actions button{width:64px;height:48px;font-size:16px}
   #toast{top:22%;font-size:16px}
 }

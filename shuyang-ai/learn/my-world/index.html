@@ -6,10 +6,10 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
   <meta name="theme-color" content="#0f1230"/>
-  <meta name="xy-tip" content="mw11"/>
+  <meta name="xy-tip" content="mw12"/>
   <title>伍澍暘的方块小世界</title>
   <link rel="stylesheet" href="../../../brand-tokens.css"/>
-  <link rel="stylesheet" href="my-world.css?v=mw11"/>
+  <link rel="stylesheet" href="my-world.css?v=mw12"/>
 </head>
 <body>
   <canvas id="view"></canvas>
@@ -19,7 +19,7 @@
     <p id="peace">这游戏没有怪物。</p>
     <p id="sunClock">太阳升起 · 06:00</p>
     <p id="hint">小宇：上一级台阶要按跳。背包格子里点一下，就能换手里的东西。</p>
-    <p id="meta"><span class="tip">mw11</span></p>
+    <p id="meta"><span class="tip">mw12</span></p>
     <p id="roomCode" hidden>房间码</p>
     <div id="stickers"></div>
     <div id="rain" aria-hidden="true"></div>
@@ -47,7 +47,16 @@
       <button type="button" id="sit" hidden>坐下</button>
       <button type="button" id="sleepBtn" hidden>睡觉</button>
       <button type="button" id="trade" hidden>换火把</button>
+      <button type="button" id="emote">表情</button>
     </div>
+    <div id="emotes" hidden>
+      <button type="button" data-emote="hi">👋</button>
+      <button type="button" data-emote="happy">😄</button>
+      <button type="button" data-emote="wow">😮</button>
+      <button type="button" data-emote="love">❤️</button>
+      <button type="button" data-emote="sad">😢</button>
+    </div>
+    <p id="myEmote"></p>
     <p id="keys">WASD 走 · 鼠标看 · 左键敲 · 右键放 · 空格跳</p>
     <p id="toast" aria-live="polite"></p>
     <div id="craft" hidden>
@@ -66,6 +75,7 @@
         <button type="button" data-craft="wheat">小麦 · 2树叶</button>
         <button type="button" data-craft="swordWood">木剑 · 3木头</button>
         <button type="button" data-craft="swordStone">石剑 · 2石头1木头</button>
+        <button type="button" data-craft="swordIron">铁剑 · 2铁1木头</button>
         <button type="button" data-craft="armor">叶衣 · 8树叶</button>
         <button type="button" data-craft="pick">石稿 · 3石头1木头</button>
         <button type="button" data-craft="sell">卖木头 · 1木头换1金币</button>
@@ -76,7 +86,7 @@
   <div id="start">
     <p class="who">小宇</p>
     <h1>方块小世界</h1>
-    <p class="lead">伍澍暘，每次打开都是新的一局。上一级台阶要按跳。背包是一格一格的，点一下就换手里的东西。</p>
+    <p class="lead">伍澍暘，每次打开都是新的一局。林子里能砍到木头。野猪会追，羊和鸡会跑，牛又慢又耐打。山上有雪，待久了会冷。</p>
     <p class="nameRow">你叫 <b id="nameLabel">乐乐</b></p>
     <div class="goRow">
       <button type="button" id="rename">换名字</button>
@@ -91,6 +101,6 @@
     <p class="peace">这游戏没有怪物。</p>
   </div>
   <script src="../../../vendor/peerjs/peerjs.min.js"></script>
-  <script src="my-world.js?v=mw11"></script>
+  <script src="my-world.js?v=mw12"></script>
 </body>
 </html>
