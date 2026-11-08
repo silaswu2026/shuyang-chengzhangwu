@@ -6,10 +6,10 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
   <meta name="theme-color" content="#0f1230"/>
-  <meta name="xy-tip" content="mw10"/>
+  <meta name="xy-tip" content="mw11"/>
   <title>伍澍暘的方块小世界</title>
   <link rel="stylesheet" href="../../../brand-tokens.css"/>
-  <link rel="stylesheet" href="my-world.css?v=mw10"/>
+  <link rel="stylesheet" href="my-world.css?v=mw11"/>
 </head>
 <body>
   <canvas id="view"></canvas>
@@ -19,7 +19,10 @@
     <p id="peace">这游戏没有怪物。</p>
     <p id="sunClock">太阳升起 · 06:00</p>
     <p id="hint">小宇：上一级台阶要按跳。背包格子里点一下，就能换手里的东西。</p>
-    <p id="meta"><span class="tip">mw10</span></p>
+    <p id="meta"><span class="tip">mw11</span></p>
+    <p id="roomCode" hidden>房间码</p>
+    <div id="stickers"></div>
+    <div id="rain" aria-hidden="true"></div>
     <p id="hpLine"><span id="hpText">血 6</span><i id="hpTrack"><i id="hpFill"></i></i></p>
     <p id="net"><span id="netText"></span> <button type="button" id="leave" hidden>断开</button></p>
     <div id="equip">
@@ -43,6 +46,7 @@
       <button type="button" id="ride" hidden>上船</button>
       <button type="button" id="sit" hidden>坐下</button>
       <button type="button" id="sleepBtn" hidden>睡觉</button>
+      <button type="button" id="trade" hidden>换火把</button>
     </div>
     <p id="keys">WASD 走 · 鼠标看 · 左键敲 · 右键放 · 空格跳</p>
     <p id="toast" aria-live="polite"></p>
@@ -53,7 +57,13 @@
         <button type="button" data-craft="torch" data-wood-gate="1">火把 · 3木头</button>
         <button type="button" data-craft="boat" data-wood-gate="1">小船 · 10木头</button>
         <button type="button" data-craft="gun">枪 · 2石头1木头</button>
-        <button type="button" data-craft="bed">床 · 3木头2树叶</button>
+        <button type="button" data-craft="bed">床 · 3木头2羊毛</button>
+        <button type="button" data-craft="axe">木斧 · 3木头</button>
+        <button type="button" data-craft="pickIron">铁镐 · 3铁1木头</button>
+        <button type="button" data-craft="armorWood">木甲 · 6木头</button>
+        <button type="button" data-craft="armorIron">铁甲 · 6铁</button>
+        <button type="button" data-craft="shears">剪刀 · 2铁</button>
+        <button type="button" data-craft="wheat">小麦 · 2树叶</button>
         <button type="button" data-craft="swordWood">木剑 · 3木头</button>
         <button type="button" data-craft="swordStone">石剑 · 2石头1木头</button>
         <button type="button" data-craft="armor">叶衣 · 8树叶</button>
@@ -74,12 +84,13 @@
       <button type="button" id="host">当房主</button>
       <button type="button" id="join">加入朋友</button>
     </div>
+    <p class="nameRow">跨网络房间码 <input id="roomIn" inputmode="numeric" maxlength="4" placeholder="4位数字"/></p>
     <p id="roomWait"></p>
     <button type="button" id="netCancel" hidden>取消</button>
     <p class="disclaimer">自研小游戏，不是正版《我的世界》。</p>
     <p class="peace">这游戏没有怪物。</p>
   </div>
   <script src="../../../vendor/peerjs/peerjs.min.js"></script>
-  <script src="my-world.js?v=mw10"></script>
+  <script src="my-world.js?v=mw11"></script>
 </body>
 </html>

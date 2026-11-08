@@ -11,6 +11,15 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1024;color:var(--in
   text-shadow:0 1px 2px #000a}
 #peace,.peace{margin:0;padding:0 10px;font-size:12px;font-weight:800;color:var(--green);
   text-shadow:0 1px 2px #000a}
+#roomCode{position:absolute;left:50%;top:36px;transform:translateX(-50%);margin:0;padding:2px 10px;
+  font-weight:900;color:#062014;background:#fff;border-radius:999px;z-index:5}
+#roomCode[hidden]{display:none}
+#stickers{position:absolute;right:8px;top:86px;display:flex;flex-direction:column;gap:4px;z-index:5}
+#stickers i{background:#ffe07a;color:#3a2a00;font-style:normal;font-weight:900;font-size:12px;border-radius:999px;padding:2px 8px}
+#rain{position:fixed;inset:0;pointer-events:none;opacity:0;z-index:2;
+  background:repeating-linear-gradient(115deg, transparent 0 10px, #9ecbff22 10px 12px)}
+#rain.on{opacity:1}
+#roomIn{width:7em;font:inherit;font-weight:900;border-radius:999px;border:1px solid var(--stroke);padding:6px 10px;text-align:center}
 #sunClock{position:absolute;left:50%;top:6px;transform:translateX(-50%);margin:0;padding:3px 12px;
   font-size:14px;font-weight:900;color:#1a1204;background:#ffe07a;border-radius:999px;
   border:2px solid #fff;box-shadow:0 2px 0 #c9a227;z-index:5;pointer-events:none;white-space:nowrap}
