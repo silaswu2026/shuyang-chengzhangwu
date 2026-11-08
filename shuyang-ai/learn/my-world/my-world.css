@@ -11,8 +11,11 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1024;color:var(--in
   text-shadow:0 1px 2px #000a}
 #peace,.peace{margin:0;padding:0 10px;font-size:12px;font-weight:800;color:var(--green);
   text-shadow:0 1px 2px #000a}
-#hint{margin:2px 12px 0;font-size:15px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000c;
-  max-width:58%}
+#sunClock{position:absolute;left:50%;top:6px;transform:translateX(-50%);margin:0;padding:3px 12px;
+  font-size:14px;font-weight:900;color:#1a1204;background:#ffe07a;border-radius:999px;
+  border:2px solid #fff;box-shadow:0 2px 0 #c9a227;z-index:5;pointer-events:none;white-space:nowrap}
+#hint{margin:28px 12px 0;font-size:15px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000c;
+  max-width:46%}
 #meta{margin:4px 12px 0;font-size:14px;font-weight:800;color:var(--gold);text-shadow:0 1px 2px #000a;
   max-width:62%}
 #bag{display:inline-flex;gap:6px;flex-wrap:wrap;vertical-align:middle}
@@ -65,7 +68,19 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1024;color:var(--in
 #actions{position:absolute;right:14px;bottom:18px;display:flex;flex-direction:column;gap:8px;
   pointer-events:auto}
 #actions button{width:64px;height:44px;border:0;border-radius:14px;font-weight:900;font-size:16px;
-  font-family:inherit;color:#062014;background:var(--green)}
+  font-family:inherit;color:#fff;background:#3aa0ff}
+#jump{background:#ffe07a;color:#3a2a00}
+#punch{background:#ff4d6a}
+#place{background:#2f8cff}
+#make{background:#2fbf4a;color:#04210c}
+#ride,#sit,#sleepBtn{background:#ff8a3d}
+#pack{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:min(420px,54vw);
+  display:grid;grid-template-columns:repeat(7,1fr);gap:3px;pointer-events:auto;z-index:4}
+#pack button{position:relative;min-height:36px;border-radius:8px;border:2px solid #fff8;color:#fff;
+  font:inherit;font-weight:900;font-size:11px;padding:2px 2px 10px;text-shadow:0 1px 1px #000a}
+#pack button.empty{opacity:.38}
+#pack button.on{border-color:#fff;box-shadow:0 0 0 2px #ffe07a;transform:translateY(-2px)}
+#pack button i{position:absolute;right:3px;bottom:1px;font-style:normal;font-size:10px}
 #actions button:active{transform:translateY(1px)}
 #ride[hidden]{display:none}
 #keys{position:absolute;left:140px;bottom:14px;margin:0;font-size:12px;font-weight:700;color:#fff;
@@ -118,7 +133,11 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1024;color:var(--in
   #hold{right:74px;bottom:10px}
   #actions{right:8px;bottom:8px;gap:4px}
   #actions button{width:52px;height:36px;font-size:14px;border-radius:12px}
-  #keys{left:104px;bottom:6px;font-size:11px}
+  #keys{left:104px;bottom:96px;font-size:11px}
+  #sunClock{font-size:12px;top:2px}
+  #hint{margin-top:22px}
+  #pack{bottom:4px;width:min(360px,48vw)}
+  #pack button{min-height:30px;font-size:10px}
   #start{gap:4px;padding:8px}
   #start h1{font-size:24px}
   #start .lead{font-size:13px;line-height:1.35}
@@ -136,7 +155,9 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1024;color:var(--in
   #cross{top:40%}
   #joy{left:10px;bottom:18px;width:108px;height:108px}
   #knob{left:34px;top:34px}
-  #hold{left:8px;right:auto;bottom:132px;flex-direction:row}
+  #pack{bottom:78px;width:min(250px,64vw);grid-template-columns:repeat(5,1fr)}
+  #sunClock{font-size:12px;top:2px;max-width:70vw}
+  #disclaimer,#peace{padding-top:26px}
   #actions{right:8px;bottom:16px;gap:6px}
   #actions button{width:64px;height:48px;font-size:16px}
   #toast{top:22%;font-size:16px}

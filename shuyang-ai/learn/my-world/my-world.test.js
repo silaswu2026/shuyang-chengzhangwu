@@ -21,7 +21,7 @@ global.localStorage = {
   removeItem: function (k) { delete mem[k]; }
 };
 
-eq(MW.TIP, 'mw9', 'tip');
+eq(MW.TIP, 'mw10', 'tip');
 eq(MW.STORE, 'xygo-my-world', 'store');
 if (MW.KID_NAMES.length < 8) fail('kid names');
 MW.KID_NAMES.forEach(function (n) {
@@ -163,14 +163,15 @@ if (!(MW.dayFactor() > 0.85)) fail('day ' + MW.dayFactor());
 var daySky = MW.skyRGB();
 MW.setClock(36);
 if (!(MW.dayFactor() > 0.85)) fail('still bright at 36s ' + MW.dayFactor());
-var dusk = 0.66 * MW.DAY;
+var dusk = 0.55 * MW.DAY;
 MW.setClock(dusk);
 var duskA = MW.dayFactor();
 MW.setClock(dusk + 20);
 var duskB = MW.dayFactor();
-if (!(duskA > duskB + 0.02)) fail('sunset not moving ' + duskA + ' -> ' + duskB);
-if (duskA - duskB > 0.22) fail('sunset too fast ' + (duskA - duskB));
-MW.setClock(0.93 * MW.DAY);
+if (!(duskA > duskB + 0.08)) fail('sunset not moving ' + duskA + ' -> ' + duskB);
+if (duskA - duskB > 0.5) fail('sunset too fast ' + (duskA - duskB));
+if (duskA - duskB < 0.12) fail('sunset still as slow as mw9 ' + (duskA - duskB));
+MW.setClock(0.76 * MW.DAY);
 if (!(MW.dayFactor() < 0.12)) fail('night ' + MW.dayFactor());
 var nightSky = MW.skyRGB();
 if (!(nightSky[2] < daySky[2] - 0.4)) fail('night sky');
@@ -210,7 +211,7 @@ MW.state.inv.gold = 9;
 MW.save();
 var saved = JSON.parse(localStorage.getItem('xygo-my-world'));
 eq(saved.v, 3, 'save v');
-eq(saved.tip, 'mw9', 'save tip');
+eq(saved.tip, 'mw10', 'save tip');
 eq(saved.seed, 11, 'guest keeps own map');
 eq(saved.inv.gold, 9, 'guest keeps coins');
 eq(saved.inv.wood, 2, 'guest keeps wood');
@@ -223,18 +224,18 @@ var peace = '这游戏没有怪物。';
 var made = '自研小游戏，不是正版《我的世界》。';
 if (html.split(peace).length < 3) fail('peace twice in page');
 if (html.split(made).length < 3) fail('disclaimer twice in page');
-if (html.indexOf('xy-tip" content="mw9"') < 0) fail('meta tip');
-if (html.indexOf('my-world.css?v=mw9') < 0 || html.indexOf('my-world.js?v=mw9') < 0) fail('cache bust');
+if (html.indexOf('xy-tip" content="mw10"') < 0) fail('meta tip');
+if (html.indexOf('my-world.css?v=mw10') < 0 || html.indexOf('my-world.js?v=mw10') < 0) fail('cache bust');
 if (html.indexOf('vendor/peerjs/peerjs.min.js') < 0) fail('vendor peerjs');
-if (html.indexOf('>mw9<') < 0) fail('hud tip');
+if (html.indexOf('>mw10<') < 0) fail('hud tip');
 if (learn.indexOf(peace) < 0 || learn.indexOf('不是正版《我的世界》') < 0) fail('learn disclaimers');
-if (learn.indexOf('?v=mw9') < 0) fail('learn url');
+if (learn.indexOf('?v=mw10') < 0) fail('learn url');
 if (learn.indexOf('出生') < 0) fail('learn spawn');
 if (learn.indexOf('台阶') < 0) fail('learn step');
 if (learn.indexOf('看不见自己的手') < 0) fail('learn hand');
 if (learn.indexOf('xygo-my-world') < 0) fail('learn key');
-if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw9') < 0) fail('hub tip');
-if (hub.indexOf('my-world/?v=mw7') >= 0 || hub.indexOf('my-world/?v=mw8') >= 0) fail('old hub tip');
+if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw10') < 0) fail('hub tip');
+if (hub.indexOf('my-world/?v=mw9') >= 0) fail('old hub tip');
 if (learn.indexOf('小猪') < 0 || learn.indexOf('护甲') < 0) fail('learn mobs');
 
 function standAt(spot) {
@@ -287,7 +288,7 @@ for (hop = 0; hop < 24; hop++) {
   MW.sim(0.05);
 }
 MW.press('KeyW', false);
-if (!(MW.state.py >= yBefore + 0.9)) fail('walk step py ' + yBefore + ' -> ' + MW.state.py);
+if (MW.state.py >= yBefore + 0.45) fail('walk auto-stepped ' + yBefore + ' -> ' + MW.state.py);
 
 MW.grow(2);
 ledge = MW.scan().spawn;
@@ -335,6 +336,9 @@ eq(MW.handKind(), 'boat', 'boat in hand');
 MW.state.hold = 'hand';
 MW.state.equip.armor = 'armor';
 eq(MW.handKind(), 'pick', 'armor keeps the tool');
+MW.state.inv.gun = 1;
+MW.selectPack('gun');
+eq(MW.handKind(), 'gun', 'pack selects gun');
 
 if (!(MW.W >= 52 && MW.D >= 52)) fail('world size ' + MW.W + 'x' + MW.D);
 MW.grow(4);
@@ -354,6 +358,8 @@ if (MW.craft('torch')) fail('torch costs 3');
 MW.state.inv.wood = 3;
 if (!MW.craft('torch')) fail('torch crafts');
 eq(MW.state.inv.torch, 1, 'got torch');
+MW.selectPack('torch');
+eq(MW.handKind(), 'torch', 'pack selects torch');
 MW.state.inv.wood = 9;
 if (MW.craft('boat')) fail('boat costs 10');
 MW.state.inv.wood = 10;
@@ -418,6 +424,27 @@ for (di = 0; di < dots.dots.length; di++) {
 }
 if (!selfDot || selfDot.color !== '#111') fail('self not black');
 if (!redDot || redDot.color !== '#e23b3b') fail('friend not red');
+var pigDot = null, cowDot = null;
+for (di = 0; di < dots.dots.length; di++) {
+  if (dots.dots[di].kind === 'pig') pigDot = dots.dots[di];
+  if (dots.dots[di].kind === 'cow') cowDot = dots.dots[di];
+}
+if (!pigDot || pigDot.color !== '#ff4f93') fail('pig not on map');
+if (!cowDot || cowDot.color !== '#e08a28') fail('cow not on map');
+var home = MW.villageAt();
+if (home) {
+  var far = true, mi;
+  for (mi = 0; mi < MW.pigs.length; mi++) {
+    if (Math.hypot(MW.pigs[mi].x - home.x, MW.pigs[mi].z - home.z) < 8) far = false;
+  }
+  for (mi = 0; mi < MW.cows.length; mi++) {
+    if (Math.hypot(MW.cows[mi].x - home.x, MW.cows[mi].z - home.z) < 8) far = false;
+  }
+  if (!far) fail('animals spawned inside the village');
+}
+var clk = MW.clockText();
+if (clk.indexOf('太阳') < 0 && clk.indexOf('白天') < 0 && clk.indexOf('夜里') < 0) fail('clock label ' + clk);
+if (!/\d\d:\d\d/.test(clk)) fail('clock time ' + clk);
 if (dots.n < 30 || dots.cell > 3) fail('map cells');
 delete MW.remotes.pal;
 
@@ -493,7 +520,7 @@ MW.setClock(0.93 * MW.DAY);
 if (!MW.sleepNow()) fail('sleep');
 if (!(MW.dayFactor() > 0.85)) fail('did not wake at morning ' + MW.dayFactor());
 
-localStorage.setItem('xygo-my-world', JSON.stringify({ v: 3, tip: 'mw9', seed: 11, px: 1, py: 1, pz: 1, inv: { wood: 9, gold: 4 } }));
+localStorage.setItem('xygo-my-world', JSON.stringify({ v: 3, tip: 'mw10', seed: 11, px: 1, py: 1, pz: 1, inv: { wood: 9, gold: 4 } }));
 MW.load();
 eq(MW.state.inv.wood, 0, 'fresh wood');
 eq(MW.state.inv.gold, 0, 'fresh gold');
@@ -505,4 +532,4 @@ if (failed) {
   console.error(failed + ' failed');
   process.exit(1);
 }
-console.log('my-world mw9 ok');
+console.log('my-world mw10 ok');
