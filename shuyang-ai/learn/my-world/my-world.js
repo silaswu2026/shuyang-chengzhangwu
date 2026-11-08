@@ -1,20 +1,23 @@
-/* 方块小世界 mw11 · 动物数值、食物护甲、12分钟昼夜、房间码联机。 */
+/* 方块小世界 mw12 · 树林、野猪羊牛鸡、铁剑、更快昼夜、表情、雪地。 */
 (function () {
   'use strict';
 
-  var TIP = 'mw11';
+  var TIP = 'mw12';
   var STORE = 'xygo-my-world';
-  var W = 56, H = 22, D = 56, SEA = 8, DAY = 720;
+  var W = 72, H = 22, D = 72, SEA = 8, DAY = 360;
   var HP_MAX = 10;
   var WALK = 3.0;
   var GUN_DMG = 4;
-  var PIG_HP = 4, PIG_DMG = 1, PIG_SPEED = WALK * 0.9;
-  var COW_HP = 12, COW_DMG = 2, COW_SPEED = WALK * 0.8;
-  var SHEEP_HP = 6;
+  var PIG_HP = 4, PIG_DMG = 1, BOAR_SPEED = WALK * 1.15;
+  var BOAR_AGGRO = 6.5, BOAR_AGGRO_NIGHT = 11, BOAR_HIT = 1.25;
+  var COW_HP = 28, COW_DMG = 2, COW_SPEED = WALK * 0.32;
+  var SHEEP_HP = 6, SHEEP_FEAR = 6, SHEEP_FLEE = WALK * 1.05;
+  var CHICKEN_HP = 3, CHICKEN_FEAR = 5.2, CHICKEN_FLEE = WALK * 1.55;
+  var COLD_EVERY = 3.2;
   var MAP_N = 41;
   var MAP_CELL = 2;
   var AIR = 0, GRASS = 1, DIRT = 2, LOG = 3, LEAF = 4, STONE = 5;
-  var WATER = 6, SAND = 7, FLOWER = 8, GOLD = 9, TORCH = 10, CHEST = 11, BED = 12, IRON_ORE = 13;
+  var WATER = 6, SAND = 7, FLOWER = 8, GOLD = 9, TORCH = 10, CHEST = 11, BED = 12, IRON_ORE = 13, SNOW = 14;
   var COL = {
     1: [0.28, 0.82, 0.22],
     2: [0.72, 0.40, 0.16],
@@ -28,7 +31,8 @@
     10: [1, 0.62, 0.12],
     11: [0.86, 0.42, 0.12],
     12: [0.95, 0.22, 0.38],
-    13: [0.72, 0.74, 0.78]
+    13: [0.58, 0.62, 0.70],
+    14: [0.93, 0.96, 1]
   };
   var SHADE = [1, 0.55, 0.82, 0.68, 0.9, 0.64];
   var FACES = [
@@ -40,9 +44,9 @@
     [1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0]
   ];
   var KID_NAMES = ['乐乐', '豆豆', '果果', '星星', '月月', '安安', '米米', '桃桃', '橙橙', '森森', '洋洋', '贝贝', '糖糖', '泡泡', '朵朵', '球球', '木木', '小河', '小船', '小金', '小山', '小树', '阳光', '棉花', '南瓜', '葡萄', '荔枝', '樱桃', '云朵', '海星', '贝壳', '松果'];
-  var INV_KEYS = ['wood', 'leaf', 'dirt', 'stone', 'sand', 'torch', 'boat', 'bed', 'swordWood', 'swordStone', 'armor', 'armorWood', 'armorIron', 'pick', 'pickIron', 'axe', 'shears', 'gun', 'gold', 'iron', 'wool', 'wheat', 'raw', 'cooked'];
+  var INV_KEYS = ['wood', 'leaf', 'dirt', 'stone', 'sand', 'torch', 'boat', 'bed', 'swordWood', 'swordStone', 'swordIron', 'armor', 'armorWood', 'armorIron', 'pick', 'pickIron', 'axe', 'shears', 'gun', 'gold', 'iron', 'wool', 'wheat', 'raw', 'cooked'];
   var BAG_SHOW = [['wood', '木头'], ['leaf', '树叶'], ['dirt', '泥土'], ['stone', '石头'], ['sand', '沙子'], ['torch', '火把'], ['boat', '小船'], ['bed', '床'], ['swordWood', '木剑'], ['swordStone', '石剑'], ['armor', '叶衣'], ['pick', '石稿'], ['gun', '枪']];
-  var NAMES = { wood: '木头', leaf: '树叶', dirt: '泥土', stone: '石头', sand: '沙子', torch: '火把', boat: '小船', bed: '床', swordWood: '木剑', swordStone: '石剑', armor: '叶衣', armorWood: '木甲', armorIron: '铁甲', pick: '石镐', pickIron: '铁镐', axe: '木斧', shears: '剪刀', gun: '枪', gold: '金币', iron: '铁', wool: '羊毛', wheat: '小麦', raw: '生肉', cooked: '熟肉' };
+  var NAMES = { wood: '木头', leaf: '树叶', dirt: '泥土', stone: '石头', sand: '沙子', torch: '火把', boat: '小船', bed: '床', swordWood: '木剑', swordStone: '石剑', swordIron: '铁剑', armor: '叶衣', armorWood: '木甲', armorIron: '铁甲', pick: '石镐', pickIron: '铁镐', axe: '木斧', shears: '剪刀', gun: '枪', gold: '金币', iron: '铁', wool: '羊毛', wheat: '小麦', raw: '生肉', cooked: '熟肉' };
   var ARMOR_CUT = { armor: 0.2, armorWood: 0.35, armorIron: 0.55 };
   var ARMOR_MAX = { armor: 20, armorWood: 40, armorIron: 80 };
   var TOOL_MAX = { axe: 40, pick: 80, pickIron: 160 };
@@ -51,6 +55,7 @@
     boat: { cost: { wood: 10 }, give: 'boat', n: 1, say: '小船', woodGate: 1 },
     swordWood: { cost: { wood: 3 }, give: 'swordWood', n: 1, say: '木剑', slot: 'weapon' },
     swordStone: { cost: { stone: 2, wood: 1 }, give: 'swordStone', n: 1, say: '石剑', slot: 'weapon' },
+    swordIron: { cost: { iron: 2, wood: 1 }, give: 'swordIron', n: 1, say: '铁剑', slot: 'weapon' },
     armor: { cost: { leaf: 8 }, give: 'armor', n: 1, say: '叶衣', slot: 'armor' },
     pick: { cost: { stone: 3, wood: 1 }, give: 'pick', n: 1, say: '石稿', slot: 'tool' },
     gun: { cost: { stone: 2, wood: 1 }, give: 'gun', n: 1, say: '枪', slot: 'weapon' },
@@ -64,10 +69,17 @@
     sell: { cost: { wood: 1 }, give: 'gold', n: 1, say: '金币' }
   };
   var SLOT_WORD = {
-    weapon: { '': '武器 空', swordWood: '武器 木剑', swordStone: '武器 石剑', gun: '武器 枪' },
+    weapon: { '': '武器 空', swordWood: '武器 木剑', swordStone: '武器 石剑', swordIron: '武器 铁剑', gun: '武器 枪' },
     armor: { '': '护甲 空', armor: '护甲 叶衣' },
     tool: { '': '工具 空', pick: '工具 石稿' }
   };
+  var EMOTES = [
+    { id: 'hi', face: '👋' },
+    { id: 'happy', face: '😄' },
+    { id: 'wow', face: '😮' },
+    { id: 'love', face: '❤️' },
+    { id: 'sad', face: '😢' }
+  ];
   var NET_PREFIX = 'xygo-mw';
   var NET_SLOTS = 8;
   var NET_PROBE_MS = 1500;
@@ -93,6 +105,7 @@
   var pigs = [];
   var cows = [];
   var sheep = [];
+  var chickens = [];
   var villagers = [];
   var village = null;
   var armorDrop = null;
@@ -138,13 +151,13 @@
   function openBC() {
     if (netBC || typeof document === 'undefined' || typeof BroadcastChannel === 'undefined') return;
     try {
-      netBC = new BroadcastChannel('xygo-my-world-mw11');
+      netBC = new BroadcastChannel('xygo-my-world-mw12');
       netBC.onmessage = function (ev) { onNet(ev && ev.data, 'bc', null); };
     } catch (eBc) { netBC = null; }
   }
 
   function blankInv() {
-    return { wood: 0, leaf: 0, dirt: 0, stone: 0, sand: 0, torch: 0, boat: 0, bed: 0, swordWood: 0, swordStone: 0, armor: 0, armorWood: 0, armorIron: 0, pick: 0, pickIron: 0, axe: 0, shears: 0, gun: 0, gold: 0, iron: 0, wool: 0, wheat: 0, raw: 0, cooked: 0 };
+    return { wood: 0, leaf: 0, dirt: 0, stone: 0, sand: 0, torch: 0, boat: 0, bed: 0, swordWood: 0, swordStone: 0, swordIron: 0, armor: 0, armorWood: 0, armorIron: 0, pick: 0, pickIron: 0, axe: 0, shears: 0, gun: 0, gold: 0, iron: 0, wool: 0, wheat: 0, raw: 0, cooked: 0 };
   }
   function $(id) {
     return (typeof document !== 'undefined') ? document.getElementById(id) : null;
@@ -212,18 +225,91 @@
     return n;
   }
   function placeTree(x, z, h) {
-    put(x, h + 1, z, LOG);
-    put(x, h + 2, z, LOG);
-    put(x, h + 3, z, LOG);
-    var y, dx, dz;
-    for (y = h + 3; y <= h + 4; y++) {
-      for (dx = -1; dx <= 1; dx++) {
-        for (dz = -1; dz <= 1; dz++) {
-          if (dx === 0 && dz === 0 && y === h + 3) continue;
-          if (Math.abs(dx) + Math.abs(dz) > 2) continue;
-          if (at(x + dx, y, z + dz) === AIR) put(x + dx, y, z + dz, LEAF);
+    x |= 0; z |= 0; h |= 0;
+    if (x < 1 || z < 1 || x >= W - 1 || z >= D - 1) return false;
+    var tall = hash2(x, z, 19) < 0.4 ? 1 : 0;
+    var top = h + 3 + tall;
+    if (top + 1 >= H) return false;
+    if (at(x, h, z) !== GRASS) return false;
+    if (at(x, h + 1, z) !== AIR || at(x, h + 2, z) !== AIR || at(x, top, z) !== AIR) return false;
+    var y, dx, dz, leafY;
+    for (y = h + 1; y <= top; y++) put(x, y, z, LOG);
+    for (leafY = top - 1; leafY <= top + 1; leafY++) {
+      for (dx = -2; dx <= 2; dx++) {
+        for (dz = -2; dz <= 2; dz++) {
+          if (dx === 0 && dz === 0 && leafY <= top) continue;
+          if (Math.abs(dx) === 2 && Math.abs(dz) === 2) continue;
+          if (leafY === top + 1 && Math.abs(dx) + Math.abs(dz) > 1) continue;
+          if (at(x + dx, leafY, z + dz) === AIR) put(x + dx, leafY, z + dz, LEAF);
         }
       }
+    }
+    return true;
+  }
+  function forestCenters() {
+    return [
+      { x: 11 + (worldSeed % 8), z: 28 + ((worldSeed >> 3) % 12), r: 11 },
+      { x: 36 + ((worldSeed >> 5) % 16), z: 16 + ((worldSeed >> 8) % 10), r: 8.5 }
+    ];
+  }
+  function inForest(x, z, centers) {
+    var i, c;
+    for (i = 0; i < centers.length; i++) {
+      c = centers[i];
+      if (Math.hypot(x - c.x, z - c.z) < c.r) return true;
+    }
+    return false;
+  }
+  function houseAt(x, z) {
+    var houses = village && village.houses, i, h;
+    if (!houses) return false;
+    for (i = 0; i < houses.length; i++) {
+      h = houses[i];
+      if (x >= h.x && x < h.x + 5 && z >= h.z && z < h.z + 5) return true;
+    }
+    return false;
+  }
+  function listTrees() {
+    var out = [], x, z, y, n;
+    for (z = 0; z < D; z++) {
+      for (x = 0; x < W; x++) {
+        if (houseAt(x, z)) continue;
+        n = 0;
+        for (y = 0; y < H; y++) if (at(x, y, z) === LOG) n++;
+        if (n >= 3) out.push({ x: x, z: z });
+      }
+    }
+    return out;
+  }
+  function treeStats() {
+    var trees = listTrees(), i, d, best = 999, near = 0;
+    for (i = 0; i < trees.length; i++) {
+      d = Math.hypot(trees[i].x + 0.5 - spawn.x, trees[i].z + 0.5 - spawn.z);
+      if (d < best) best = d;
+      if (d <= 18) near++;
+    }
+    return { n: trees.length, near: near, nearest: best };
+  }
+  function ensureGrove() {
+    var trees = listTrees(), i, d, best = 999, near = 0, guard = 0, n = 0, ang, rad, x, z, top;
+    for (i = 0; i < trees.length; i++) {
+      d = Math.hypot(trees[i].x + 0.5 - 18.5, trees[i].z + 0.5 - 12.5);
+      if (d < best) best = d;
+      if (d <= 16) near++;
+    }
+    if (trees.length >= 12 && best <= 15 && near >= 4) return;
+    while (n < 8 && guard < 140) {
+      guard++;
+      ang = guard * 2.399963;
+      rad = 9 + (guard % 5);
+      x = Math.round(18 + Math.cos(ang) * rad);
+      z = Math.round(12 + Math.sin(ang) * rad);
+      if (x < 2 || z < 2 || x >= W - 2 || z >= D - 2) continue;
+      top = highestSolid(x, z);
+      if (top < 2 || at(x, top, z) !== GRASS) continue;
+      if (Math.abs(z - riverZ(x)) < 3.4) continue;
+      if (Math.hypot(x - 18, z - 12) < 8) continue;
+      if (placeTree(x, z, top)) n++;
     }
   }
   function ensureChests() {
@@ -432,6 +518,8 @@
     for (dx = 0; dx <= 4; dx++) {
       for (dz = 0; dz <= 4; dz++) put(x + dx, floorY + 4, z + dz, LEAF);
     }
+    put(x + 1, floorY + 1, z + 2, BED);
+    put(x + 3, floorY + 1, z + 2, CHEST);
   }
   function buildVillage() {
     var best = null, bestScore = 1e9, x, z, spot, sc, pass;
@@ -462,9 +550,10 @@
     }
     if (!best) best = { x: 24.5, z: 36.5, top: 8, ground: GRASS };
     var cx = best.x | 0, cz = best.z | 0, gy = best.top;
-    var dx, dz, y;
-    for (dx = -6; dx <= 8; dx++) {
-      for (dz = -6; dz <= 8; dz++) {
+    var houses = [{ x: cx, z: cz }, { x: cx + 6, z: cz + 1 }, { x: cx + 1, z: cz + 6 }];
+    var dx, dz, y, hi;
+    for (dx = -4; dx <= 12; dx++) {
+      for (dz = -4; dz <= 12; dz++) {
         x = cx + dx; z = cz + dz;
         if (x < 1 || z < 1 || x >= W - 1 || z >= D - 1) continue;
         for (y = gy + 1; y < H; y++) if (at(x, y, z)) put(x, y, z, AIR);
@@ -474,11 +563,12 @@
         }
       }
     }
-    carveHouse(cx, cz, gy);
-    carveHouse(cx + 6, cz + 1, gy);
-    put(cx + 1, gy + 1, cz + 2, BED);
-    village = { x: cx + 2.5, z: cz + 6.5, y: gy + 1 };
-    armorDrop = { x: cx + 2.5, y: gy + 1, z: cz - 2.5, taken: false };
+    for (hi = 0; hi < houses.length; hi++) {
+      if (houses[hi].x < 1 || houses[hi].z < 1 || houses[hi].x + 4 >= W || houses[hi].z + 4 >= D) continue;
+      carveHouse(houses[hi].x, houses[hi].z, gy);
+    }
+    village = { x: cx + 5.5, z: cz + 5.5, y: gy + 1, houses: houses };
+    armorDrop = { x: cx - 1.5, y: gy + 1, z: cz + 2.5, taken: false };
   }
   function canopy(x, z) {
     var n = 0, dx, dz, y, id;
@@ -519,17 +609,17 @@
     pigs.splice(0, pigs.length);
     cows.splice(0, cows.length);
     sheep.splice(0, sheep.length);
+    chickens.splice(0, chickens.length);
     villagers.splice(0, villagers.length);
     if (!village) return;
-    var i, feet, pads = openPads(13);
+    var i, feet, pads = openPads(17);
     for (i = 0; i < 4; i++) {
       villagers.push({
-        x: village.x + (i - 1.5) * 1.4,
-        z: village.z + 0.6,
+        x: village.x + (i - 1.5) * 1.6,
+        z: village.z + 1.2,
         y: village.y,
         yaw: 0.4 * i,
-        alive: true,
-        hue: i % 3
+        alive: true
       });
     }
     for (i = 0; i < 5; i++) {
@@ -556,19 +646,28 @@
         yaw: 0.4, alive: true, hp: SHEEP_HP, cool: 0, flee: 0, wool: 1
       });
     }
+    for (i = 0; i < 4; i++) {
+      feet = groundFeet(pads[13 + i].x, pads[13 + i].z);
+      chickens.push({
+        x: pads[13 + i].x, z: pads[13 + i].z,
+        y: feet == null ? pads[13 + i].top + 1 : feet,
+        yaw: 0.8, alive: true, hp: CHICKEN_HP, flee: 0
+      });
+    }
   }
   function grow(seed, keepPos) {
     worldSeed = (seed >>> 0) || 1;
     blocks = new Uint8Array(W * H * D);
     village = null;
     armorDrop = null;
-    var x, z, y, h, id, topId;
+    var x, z, y, h, id, topId, woods, centers = forestCenters();
     for (z = 0; z < D; z++) {
       for (x = 0; x < W; x++) {
         h = heightAt(x, z);
         topId = GRASS;
-        if (h >= SEA + 6) topId = STONE;
+        if (h >= SEA + 5) topId = SNOW;
         else if (h <= SEA) topId = SAND;
+        if (topId === SNOW && hash2(x, z, 15) < 0.07) topId = IRON_ORE;
         for (y = 0; y <= h; y++) {
           id = STONE;
           if (topId === GRASS) {
@@ -576,25 +675,37 @@
             else if (y >= h - 2) id = DIRT;
           } else if (topId === SAND) {
             if (y >= h - 1) id = SAND;
+          } else if (topId === SNOW) {
+            if (y === h) id = SNOW;
+            else if (y >= h - 1) id = DIRT;
+          } else if (topId === IRON_ORE) {
+            if (y === h) id = IRON_ORE;
+            else if (y >= h - 1) id = DIRT;
           }
           if (id === STONE && y > 0 && y <= 5 && y < h && hash2(x + y * 17, z + y * 3, 4) < 0.04) id = GOLD;
-          else if (id === STONE && y > 1 && y <= 6 && y < h && hash2(x + y * 9, z + 4, 6) < 0.035) id = IRON_ORE;
+          else if (id === STONE && y > 1 && y <= 8 && y < h && hash2(x + y * 9, z + 4, 6) < 0.05) id = IRON_ORE;
           put(x, y, z, id);
         }
         if (h < SEA) {
           for (y = h + 1; y < SEA; y++) put(x, y, z, WATER);
         }
-        var meadow = Math.hypot(x - 18, z - 12) < 16 || Math.hypot(x - 26, z - 38) < 14;
-        if (!meadow && topId === GRASS && h < SEA + 5 && h + 4 < H && Math.abs(z - riverZ(x)) > 4.5 && hash2(x, z, 9) < 0.016) {
-          placeTree(x, z, h);
-        } else if (topId === GRASS && hash2(x, z, 10) < 0.1 && at(x, h + 1, z) === AIR) {
-          put(x, h + 1, z, FLOWER);
-        } else if (topId === GRASS && hash2(x, z, 11) < 0.02 && at(x, h + 1, z) === AIR) {
-          put(x, h + 1, z, CHEST);
-        }
+      }
+    }
+    for (z = 1; z < D - 1; z++) {
+      for (x = 1; x < W - 1; x++) {
+        h = highestSolid(x, z);
+        if (h < 2 || at(x, h, z) !== GRASS) continue;
+        if (Math.abs(z - riverZ(x)) < 3.6) continue;
+        if (Math.hypot(x - 18, z - 12) < 7.5) continue;
+        woods = inForest(x, z, centers);
+        if (woods && hash2(x, z, 9) < 0.55) placeTree(x, z, h);
+        else if (!woods && hash2(x, z, 9) < 0.02) placeTree(x, z, h);
+        else if (hash2(x, z, 10) < 0.08 && at(x, h + 1, z) === AIR) put(x, h + 1, z, FLOWER);
+        else if (hash2(x, z, 11) < 0.01 && at(x, h + 1, z) === AIR) put(x, h + 1, z, CHEST);
       }
     }
     buildVillage();
+    ensureGrove();
     findSpawn();
     ensureChests();
     if (!feetClear(spawn.x, spawn.y, spawn.z)) findSpawn();
@@ -617,7 +728,7 @@
       var p = String(row).split(',');
       if (p.length < 4) return;
       var id = +p[3];
-      if (id < 0 || id > IRON_ORE) return;
+      if (id < 0 || id > SNOW) return;
       put(+p[0], +p[1], +p[2], id);
     });
     dirty = true;
@@ -706,6 +817,10 @@
     state.armorLeft = 0;
     state.dur = { axe: 40, pick: 80, pickIron: 160 };
     state.ach = {};
+    state.cold = 0;
+    state.coldTold = 0;
+    state.emote = '';
+    state.emoteUntil = 0;
     fallPeak = null;
     grow(newSeed(), false);
     try { localStorage.removeItem(STORE); } catch (e) {}
@@ -866,6 +981,7 @@
     var base = 0.4;
     if (id === LEAF || id === FLOWER || id === TORCH) base = 0.16;
     else if (id === LOG) base = 0.55;
+    else if (id === SNOW) base = 0.22;
     else if (id === STONE || id === GOLD || id === IRON_ORE) base = 0.75;
     else if (id === CHEST) base = 0.4;
     var eff = 0.55;
@@ -885,6 +1001,42 @@
     if (id === BED) return 'bed';
     if (id === IRON_ORE) return 'iron';
     return null;
+  }
+  function meleeDmg() {
+    if (state.equip.weapon === 'swordIron') return 4;
+    if (state.equip.weapon === 'swordStone') return 3;
+    if (state.equip.weapon === 'swordWood') return 2;
+    return 1;
+  }
+  function inSnowTerritory() {
+    var x = state.px | 0, z = state.pz | 0, top = highestSolid(x, z), feet;
+    if (at(x, top, z) === SNOW) return true;
+    feet = (state.py + 0.15) | 0;
+    return at(x, feet, z) === SNOW || at(x, feet - 1, z) === SNOW;
+  }
+  function tickCold(dt) {
+    if (!inSnowTerritory()) { state.cold = 0; state.coldTold = 0; return; }
+    state.cold = (state.cold || 0) + dt;
+    if (!state.coldTold) { state.coldTold = 1; toast('小宇：山上冷，待久了会掉血'); }
+    if (state.cold < COLD_EVERY) return;
+    state.cold = 0;
+    state.hp -= 1;
+    if (state.hp < 0) state.hp = 0;
+    var flash = $('hurt');
+    if (flash) {
+      flash.classList.remove('on');
+      void flash.offsetWidth;
+      flash.classList.add('on');
+    }
+    renderHp();
+    if (state.hp <= 0) {
+      state.hp = HP_MAX;
+      state.cold = 0;
+      findSpawn();
+      putOnGround(spawn);
+      renderHp();
+      toast('冻着了，回到地面');
+    }
   }
   function cleanName(s) {
     s = String(s || '').replace(/\s+/g, '').slice(0, 8);
@@ -959,6 +1111,7 @@
   var PACK = [
     { id: 'swordWood', name: '木剑', bg: '#d06a22' },
     { id: 'swordStone', name: '石剑', bg: '#8ea0c8' },
+    { id: 'swordIron', name: '铁剑', bg: '#c5ccd8' },
     { id: 'gun', name: '枪', bg: '#3a4258' },
     { id: 'armor', name: '叶衣', bg: '#1fa84a' },
     { id: 'pick', name: '石稿', bg: '#6d7488' },
@@ -986,13 +1139,13 @@
     if (cell.id === 'torch' || cell.id === 'boat' || cell.id === 'bed') return state.hold === cell.id;
     if (ARMOR_CUT[cell.id]) return state.equip.armor === cell.id;
     if (cell.id === 'pick' || cell.id === 'axe' || cell.id === 'pickIron') return state.equip.tool === cell.id && state.hold === 'hand';
-    if (cell.id === 'swordWood' || cell.id === 'swordStone' || cell.id === 'gun') return state.equip.weapon === cell.id && state.hold === 'hand';
+    if (cell.id === 'swordWood' || cell.id === 'swordStone' || cell.id === 'swordIron' || cell.id === 'gun') return state.equip.weapon === cell.id && state.hold === 'hand';
     return false;
   }
   function selectPack(id) {
     var n = state.inv[id] | 0;
     if (n < 1 && id !== 'gold') { toast('小宇：背包里还没有'); return false; }
-    if (id === 'swordWood' || id === 'swordStone' || id === 'gun') {
+    if (id === 'swordWood' || id === 'swordStone' || id === 'swordIron' || id === 'gun') {
       state.equip.weapon = state.equip.weapon === id ? '' : id;
       state.hold = 'hand';
     } else if (id === 'armor' || id === 'armorWood' || id === 'armorIron') {
@@ -1022,7 +1175,7 @@
     for (i = 0; i < PACK.length; i++) {
       cell = PACK[i];
       n = state.inv[cell.id] | 0;
-      if (i >= 14 && n < 1 && !packOn(cell)) continue;
+      if (i >= 15 && n < 1 && !packOn(cell)) continue;
       shown++;
       on = packOn(cell);
       html += '<button type="button" data-pack="' + cell.id + '" class="' + (on ? 'on' : '') + (n ? '' : ' empty') + '" style="background:' + cell.bg + '"><b>' + cell.name + '</b><i>' + n + '</i></button>';
@@ -1058,6 +1211,7 @@
     if (slot === 'weapon') {
       if (state.inv.swordWood) opts.push('swordWood');
       if (state.inv.swordStone) opts.push('swordStone');
+      if (state.inv.swordIron) opts.push('swordIron');
       if (state.inv.gun) opts.push('gun');
     } else if (slot === 'armor') {
       if (state.inv.armor) opts.push('armor');
@@ -1170,7 +1324,7 @@
     return true;
   }
   function placeBed() {
-    if ((state.inv.bed | 0) < 1) { toast('小宇：床要 3 个木头和 2 片树叶'); return false; }
+    if ((state.inv.bed | 0) < 1) { toast('小宇：床要 3 个木头和 2 份羊毛'); return false; }
     var hit = ray(4.5, true);
     if (!hit) { toast('小宇：对准要放床的方块'); return false; }
     var x = hit.px, y = hit.py, z = hit.pz;
@@ -1361,6 +1515,7 @@
         if (dot > 0.82) { best = { e: e, kind: kind, i: i }; bestD = dist; }
       }
     }
+    scan(chickens, 'chicken');
     scan(sheep, 'sheep');
     scan(pigs, 'pig');
     scan(cows, 'cow');
@@ -1376,7 +1531,7 @@
     var e = hit.e;
     e.hp = (e.hp | 0) - dmg;
     if (hit.kind === 'cow') e.mad = true;
-    if (hit.kind === 'sheep') e.flee = state.clock + 3;
+    if (hit.kind === 'sheep' || hit.kind === 'chicken') e.flee = state.clock + 3;
     var resist = hit.kind === 'cow' ? 0.3 : 0;
     var dx = e.x - state.px, dz = e.z - state.pz;
     var len = Math.hypot(dx, dz) || 1;
@@ -1385,7 +1540,7 @@
     if (e.hp <= 0) {
       e.alive = false;
       grantMeat(hit.kind);
-    } else toast((hit.kind === 'pig' ? '小猪' : hit.kind === 'cow' ? '牛' : '羊') + '还剩 ' + e.hp);
+    } else toast((hit.kind === 'pig' ? '野猪' : hit.kind === 'cow' ? '牛' : hit.kind === 'chicken' ? '鸡' : '羊') + '还剩 ' + e.hp);
     emit({ t: 'mob', k: hit.kind, i: hit.i, hp: e.hp });
   }
   function tryShoot() {
@@ -1429,7 +1584,7 @@
     if (punching && !shotLock && state.equip.weapon !== 'gun') {
       shotLock = true;
       var bite = animalInSight();
-      if (bite && Math.hypot(bite.e.x - state.px, bite.e.z - state.pz) < 2.4) strikeAnimal(bite, 1);
+      if (bite && Math.hypot(bite.e.x - state.px, bite.e.z - state.pz) < 2.4) strikeAnimal(bite, meleeDmg());
       else pokeFriend();
     }
     if (!punching) shotLock = false;
@@ -1473,6 +1628,7 @@
       return;
     }
     state.clock += dt;
+    tickCold(dt);
     if (state.cooking > 0) {
       state.cooking -= dt;
       setBar(true, (1 - state.cooking / 4) * 100);
@@ -1622,14 +1778,14 @@
     if (!e || !e.alive || e.cool > 0) return;
     e.cool = 1.1;
     if (wearingArmor()) {
-      toast('护甲挡住了小猪');
+      toast('护甲挡住了野猪');
       return;
     }
     var dx = state.px - e.x, dz = state.pz - e.z;
     var len = Math.hypot(dx, dz) || 1;
     state.knockX = dx / len * 3.2;
     state.knockZ = dz / len * 3.2;
-    hurt(1, '小猪撞过来了');
+    hurt(1, '野猪撞过来了');
   }
   function cowBump(e) {
     if (!e || !e.alive) return;
@@ -1674,29 +1830,30 @@
       dx = state.px - e.x; dz = state.pz - e.z;
       dist = Math.hypot(dx, dz);
       if (guestView) {
-        if (state.started && dist < 1.15) pigNip(e);
+        if (state.started && dist < BOAR_HIT) pigNip(e);
         continue;
       }
       var who = nearestBody(e.x, e.z);
-      var chaseR = dayFactor() < 0.2 ? 13 : 8;
+      var chaseR = dayFactor() < 0.2 ? BOAR_AGGRO_NIGHT : BOAR_AGGRO;
       var chase = state.started && (netRole === 'host' ? who.d < chaseR : dist < chaseR);
       var aim = chase ? (netRole === 'host' ? who : { x: state.px, z: state.pz }) : null;
       if (aim) {
         dx = aim.x - e.x; dz = aim.z - e.z;
         len = Math.hypot(dx, dz) || 1;
         if (len > 0.2) {
-          nx = e.x + dx / len * dt * PIG_SPEED * (dayFactor() < 0.2 ? 1.15 : 1);
-          nz = e.z + dz / len * dt * 2.1;
+          var bspd = BOAR_SPEED * (dayFactor() < 0.2 ? 1.12 : 1);
+          nx = e.x + dx / len * dt * bspd;
+          nz = e.z + dz / len * dt * bspd;
           feet = groundFeet(nx, nz);
           if (feet != null && Math.abs(feet - e.y) <= 1.15) {
             e.x = nx; e.z = nz; e.y = feet; e.yaw = Math.atan2(dx, -dz);
           }
         }
-        if (Math.hypot(state.px - e.x, state.pz - e.z) < 1.15) pigNip(e);
+        if (Math.hypot(state.px - e.x, state.pz - e.z) < BOAR_HIT) pigNip(e);
       } else {
         ang = state.clock * 0.45 + i * 2.3;
-        nx = e.x + Math.sin(ang) * dt * 0.9;
-        nz = e.z + Math.cos(ang * 1.3) * dt * 0.9;
+        nx = e.x + Math.sin(ang) * dt * 0.55;
+        nz = e.z + Math.cos(ang * 1.3) * dt * 0.55;
         feet = groundFeet(nx, nz);
         if (feet != null && Math.abs(feet - e.y) <= 1.05) { e.x = nx; e.z = nz; e.y = feet; e.yaw = ang; }
       }
@@ -1723,8 +1880,8 @@
         dx = cowAim.x - e.x; dz = cowAim.z - e.z;
         dist = Math.hypot(dx, dz);
         len = dist || 1;
-        nx = e.x + dx / len * dt * COW_SPEED * (dayFactor() < 0.2 ? 1.1 : 1);
-        nz = e.z + dz / len * dt * 2.4;
+        nx = e.x + dx / len * dt * COW_SPEED;
+        nz = e.z + dz / len * dt * COW_SPEED;
         feet = groundFeet(nx, nz);
         if (feet != null && Math.abs(feet - e.y) <= 1.2) {
           e.x = nx; e.z = nz; e.y = feet; e.yaw = Math.atan2(dx, -dz);
@@ -1732,8 +1889,8 @@
         if (Math.hypot(state.px - e.x, state.pz - e.z) < 1.25) cowBump(e);
       } else {
         ang = state.clock * 0.3 + i;
-        nx = e.x + Math.sin(ang) * dt * 0.55;
-        nz = e.z + Math.cos(ang) * dt * 0.55;
+        nx = e.x + Math.sin(ang) * dt * 0.22;
+        nz = e.z + Math.cos(ang) * dt * 0.22;
         feet = groundFeet(nx, nz);
         if (feet != null && Math.abs(feet - e.y) <= 1.05) { e.x = nx; e.z = nz; e.y = feet; }
       }
@@ -1742,13 +1899,13 @@
       e = sheep[i];
       if (!e.alive) continue;
       if (guestView) continue;
-      var away = e.flee && state.clock < e.flee;
       var target = nearestBody(e.x, e.z);
+      var away = (e.flee && state.clock < e.flee) || (state.started && target.d < SHEEP_FEAR);
       if (away) {
         dx = e.x - target.x; dz = e.z - target.z;
         len = Math.hypot(dx, dz) || 1;
-        nx = e.x + dx / len * dt * (WALK * 0.95);
-        nz = e.z + dz / len * dt * (WALK * 0.95);
+        nx = e.x + dx / len * dt * SHEEP_FLEE;
+        nz = e.z + dz / len * dt * SHEEP_FLEE;
         feet = groundFeet(nx, nz);
         if (feet != null && Math.abs(feet - e.y) <= 1.2) {
           e.x = nx; e.z = nz; e.y = feet; e.yaw = Math.atan2(dx, -dz);
@@ -1758,7 +1915,30 @@
         nx = e.x + Math.sin(ang) * dt * 0.35;
         nz = e.z + Math.cos(ang) * dt * 0.35;
         feet = groundFeet(nx, nz);
-        if (feet != null && Math.abs(feet - e.y) <= 1.05) { e.x = nx; e.z = nz; e.y = feet; }
+        if (feet != null && Math.abs(feet - e.y) <= 1.05) { e.x = nx; e.z = nz; e.y = feet; e.yaw = ang; }
+      }
+    }
+    for (i = 0; i < chickens.length; i++) {
+      e = chickens[i];
+      if (!e.alive) continue;
+      if (guestView) continue;
+      target = nearestBody(e.x, e.z);
+      away = (e.flee && state.clock < e.flee) || (state.started && target.d < CHICKEN_FEAR);
+      if (away) {
+        dx = e.x - target.x; dz = e.z - target.z;
+        len = Math.hypot(dx, dz) || 1;
+        nx = e.x + dx / len * dt * CHICKEN_FLEE;
+        nz = e.z + dz / len * dt * CHICKEN_FLEE;
+        feet = groundFeet(nx, nz);
+        if (feet != null && Math.abs(feet - e.y) <= 1.2) {
+          e.x = nx; e.z = nz; e.y = feet; e.yaw = Math.atan2(dx, -dz);
+        }
+      } else {
+        ang = state.clock * 0.7 + i;
+        nx = e.x + Math.sin(ang) * dt * 0.85;
+        nz = e.z + Math.cos(ang) * dt * 0.85;
+        feet = groundFeet(nx, nz);
+        if (feet != null && Math.abs(feet - e.y) <= 1.05) { e.x = nx; e.z = nz; e.y = feet; e.yaw = ang; }
       }
     }
   }
@@ -1821,12 +2001,13 @@
         mobAcc += dt;
         if (mobAcc >= 0.4) {
           state._mobAcc = 0;
-          emit({ t: 'mobs', pigs: packMobs(pigs), cows: packMobs(cows, true), sheep: packMobs(sheep) });
+          emit({ t: 'mobs', pigs: packMobs(pigs), cows: packMobs(cows, true), sheep: packMobs(sheep), chickens: packMobs(chickens) });
         } else state._mobAcc = mobAcc;
       }
     }
   }
   function weaponCode() {
+    if (state.equip.weapon === 'swordIron') return 4;
     if (state.equip.weapon === 'gun') return 3;
     if (state.equip.weapon === 'swordStone') return 2;
     if (state.equip.weapon === 'swordWood') return 1;
@@ -1841,9 +2022,12 @@
     if (state.hold === 'torch') return 'torch';
     if (state.hold === 'boat') return 'boat';
     if (state.hold === 'bed') return 'bed';
+    if (state.equip.weapon === 'swordIron') return 'swordIron';
     if (state.equip.weapon === 'gun') return 'gun';
     if (state.equip.weapon === 'swordStone') return 'swordStone';
     if (state.equip.weapon === 'swordWood') return 'swordWood';
+    if (state.equip.tool === 'pickIron') return 'pickIron';
+    if (state.equip.tool === 'axe') return 'axe';
     if (state.equip.tool === 'pick') return 'pick';
     return 'hand';
   }
@@ -1932,7 +2116,11 @@
             continue;
           }
           rgb = (COL[id] || [1, 1, 1]).slice();
-          if (id === GRASS || id === DIRT || id === STONE || id === SAND) {
+          if (id === LEAF) {
+            var leafJ = (hash2(x, y + z, 23) - 0.5) * 0.2;
+            rgb[1] = Math.max(0, Math.min(1, rgb[1] + leafJ));
+          }
+          if (id === GRASS || id === DIRT || id === STONE || id === SAND || id === SNOW) {
             var jit = (hash2(x, z, id + 3) - 0.5) * 0.16;
             rgb[0] = Math.max(0, Math.min(1, rgb[0] + jit));
             rgb[1] = Math.max(0, Math.min(1, rgb[1] + jit * 0.35));
@@ -1948,6 +2136,13 @@
             s = SHADE[f];
             for (v = 0; v < 18; v += 3) {
               data.push(x + face[v], y + face[v + 1], z + face[v + 2], rgb[0] * s, rgb[1] * s, rgb[2] * s);
+            }
+            if (id === IRON_ORE) {
+              if (ny > 0) pushCube(data, x + 0.28, y + 0.62, z + 0.28, 0.44, 0.38, 0.44, [0.95, 0.52, 0.14]);
+              else if (nx > 0) pushCube(data, x + 0.62, y + 0.28, z + 0.28, 0.38, 0.44, 0.44, [0.95, 0.52, 0.14]);
+              else if (nx < 0) pushCube(data, x, y + 0.28, z + 0.28, 0.38, 0.44, 0.44, [0.95, 0.52, 0.14]);
+              else if (nz > 0) pushCube(data, x + 0.28, y + 0.28, z + 0.62, 0.44, 0.44, 0.38, [0.95, 0.52, 0.14]);
+              else if (nz < 0) pushCube(data, x + 0.28, y + 0.28, z, 0.44, 0.44, 0.38, [0.95, 0.52, 0.14]);
             }
           }
         }
@@ -2069,26 +2264,64 @@
     for (i = 0; i < name.length; i++) h = (h * 33 + name.charCodeAt(i)) >>> 0;
     return cloth[h % 3];
   }
-  function pushAvatar(data, p) {
-    var cloth = colorOfName(p.name || '朋友');
-    var yaw = p.yaw || 0;
-    var fx = Math.sin(yaw), fz = -Math.cos(yaw);
-    pushCube(data, p.x - 0.22, p.y, p.z - 0.14, 0.44, 0.42, 0.28, [0.12, 0.16, 0.32]);
-    pushCube(data, p.x - 0.26, p.y + 0.42, p.z - 0.16, 0.52, 0.48, 0.32, cloth);
-    pushCube(data, p.x - 0.2, p.y + 0.92, p.z - 0.2, 0.4, 0.4, 0.4, [0.96, 0.84, 0.7]);
-    pushCube(data, p.x - 0.2, p.y + 1.22, p.z - 0.2, 0.4, 0.12, 0.4, [0.28, 0.18, 0.1]);
-    pushCube(data, p.x + fx * 0.24 - 0.05, p.y + 1.05, p.z + fz * 0.24 - 0.05, 0.1, 0.1, 0.1, [0.45, 0.24, 0.2]);
-    if (p.hd === 1) {
-      pushCube(data, p.x + fx * 0.34 - 0.04, p.y + 0.55, p.z + fz * 0.34 - 0.04, 0.08, 0.46, 0.08, [0.45, 0.28, 0.12]);
-      pushCube(data, p.x + fx * 0.34 - 0.08, p.y + 0.98, p.z + fz * 0.34 - 0.08, 0.16, 0.16, 0.16, [1, 0.82, 0.28]);
-    } else if (p.hd === 2) {
-      pushCube(data, p.x + fx * 0.4 - 0.16, p.y + 0.55, p.z + fz * 0.4 - 0.1, 0.32, 0.12, 0.2, [0.5, 0.3, 0.12]);
-    } else if (p.w === 3) {
-      pushCube(data, p.x + fx * 0.36 - 0.04, p.y + 0.7, p.z + fz * 0.36 - 0.04, 0.08, 0.08, 0.28, [0.16, 0.16, 0.18]);
-    } else if (p.w) {
-      var rgb = p.w === 2 ? [0.75, 0.78, 0.84] : [0.62, 0.4, 0.16];
-      pushCube(data, p.x + fx * 0.38 - 0.05, p.y + 0.42, p.z + fz * 0.38 - 0.05, 0.1, 0.78, 0.1, rgb);
+  function pushLocal(data, ox, oy, oz, yaw, lx, ly, lz, sx, sy, sz, rgb) {
+    var c = Math.cos(yaw), s = Math.sin(yaw);
+    var f, v, face, sh, px, py, pz, wx, wz;
+    for (f = 0; f < 6; f++) {
+      face = FACES[f];
+      sh = SHADE[f];
+      for (v = 0; v < 18; v += 3) {
+        px = lx + face[v] * sx;
+        py = ly + face[v + 1] * sy;
+        pz = lz + face[v + 2] * sz;
+        wx = px * c - pz * s;
+        wz = px * s + pz * c;
+        data.push(ox + wx, oy + py, oz + wz, rgb[0] * sh, rgb[1] * sh, rgb[2] * sh);
+      }
     }
+  }
+  function pushPerson(data, p, withHead) {
+    var yaw = p.yaw || 0;
+    var cloth = p.cloth || colorOfName(p.name || '朋友');
+    var skin = [0.96, 0.8, 0.66];
+    var hair = [0.32, 0.18, 0.1];
+    var pants = [0.16, 0.2, 0.36];
+    var shoe = [0.12, 0.12, 0.14];
+    function box(lx, ly, lz, sx, sy, sz, rgb) {
+      pushLocal(data, p.x, p.y, p.z, yaw, lx, ly, lz, sx, sy, sz, rgb);
+    }
+    box(-0.18, 0, -0.08, 0.14, 0.14, 0.18, shoe);
+    box(0.04, 0, -0.08, 0.14, 0.14, 0.18, shoe);
+    box(-0.17, 0.14, -0.07, 0.13, 0.3, 0.16, pants);
+    box(0.04, 0.14, -0.07, 0.13, 0.3, 0.16, pants);
+    box(-0.2, 0.42, -0.13, 0.4, 0.4, 0.26, cloth);
+    box(-0.3, 0.48, -0.1, 0.1, 0.3, 0.14, cloth);
+    box(0.2, 0.48, -0.1, 0.1, 0.3, 0.14, skin);
+    if (withHead) {
+      box(-0.16, 0.84, -0.16, 0.32, 0.3, 0.32, skin);
+      box(-0.18, 1.08, -0.18, 0.36, 0.1, 0.34, hair);
+      box(-0.12, 0.98, -0.2, 0.07, 0.06, 0.04, [0.1, 0.08, 0.08]);
+      box(0.05, 0.98, -0.2, 0.07, 0.06, 0.04, [0.1, 0.08, 0.08]);
+      box(-0.04, 0.9, -0.22, 0.08, 0.07, 0.08, [0.9, 0.62, 0.52]);
+    }
+    if (p.hd === 1) {
+      box(0.22, 0.42, -0.46, 0.06, 0.42, 0.06, [0.45, 0.28, 0.12]);
+      box(0.18, 0.8, -0.5, 0.14, 0.14, 0.14, [1, 0.82, 0.28]);
+    } else if (p.hd === 2) {
+      box(0.12, 0.46, -0.55, 0.28, 0.1, 0.16, [0.5, 0.3, 0.12]);
+    } else if (p.w === 4) {
+      box(0.2, 0.36, -0.62, 0.06, 0.5, 0.05, [0.86, 0.9, 0.96]);
+      box(0.14, 0.34, -0.42, 0.18, 0.05, 0.08, [0.3, 0.22, 0.12]);
+    } else if (p.w === 3) {
+      box(0.2, 0.5, -0.55, 0.06, 0.06, 0.32, [0.16, 0.16, 0.18]);
+    } else if (p.w) {
+      box(0.2, 0.34, -0.62, 0.06, 0.52, 0.06, p.w === 2 ? [0.75, 0.78, 0.84] : [0.62, 0.4, 0.16]);
+      box(0.14, 0.32, -0.4, 0.18, 0.05, 0.08, [0.42, 0.26, 0.12]);
+    }
+  }
+  function pushAvatar(data, p) {
+    p.cloth = colorOfName(p.name || '朋友');
+    pushPerson(data, p, true);
   }
   function pushViewBox(data, origin, right, up, fwd, lx, ly, lz, sx, sy, sz, rgb) {
     var f, v, face, s, px, py, pz;
@@ -2113,19 +2346,27 @@
     function box(lx, ly, lz, sx, sy, sz, rgb) {
       pushViewBox(data, origin, right, up, fwd, lx * S, ly * S, lz * S, sx * S, sy * S, sz * S, rgb);
     }
-    var sleeve = state.equip.armor === 'armor' ? [0.28, 0.72, 0.38] : [0.2, 0.32, 0.62];
+    var sleeve = state.equip.armor === 'armor' ? [0.28, 0.72, 0.38] : (state.equip.armor === 'armorIron' ? [0.7, 0.74, 0.82] : (state.equip.armor === 'armorWood' ? [0.62, 0.4, 0.18] : [0.2, 0.32, 0.62]));
     var skin = [0.96, 0.78, 0.62];
-    box(0.06, -0.34, 0.18, 0.14, 0.18, 0.28, sleeve);
-    if (wearingArmor()) box(0.02, -0.28, 0.22, 0.2, 0.12, 0.16, [0.22, 0.78, 0.4]);
-    box(0.05, -0.22, 0.42, 0.18, 0.14, 0.16, skin);
+    box(0.1, -0.46, 0.06, 0.12, 0.16, 0.2, sleeve);
+    box(0.08, -0.36, 0.22, 0.14, 0.14, 0.22, sleeve);
+    if (wearingArmor()) box(0.04, -0.32, 0.24, 0.18, 0.1, 0.14, [0.22, 0.78, 0.4]);
+    box(0.05, -0.26, 0.4, 0.16, 0.12, 0.14, skin);
+    box(0.04, -0.22, 0.52, 0.04, 0.05, 0.08, skin);
+    box(0.1, -0.22, 0.52, 0.04, 0.05, 0.08, skin);
+    box(0.16, -0.22, 0.5, 0.04, 0.05, 0.07, skin);
     var kind = handKind();
-    if (kind === 'swordWood' || kind === 'swordStone') {
-      var blade = kind === 'swordStone' ? [0.78, 0.82, 0.88] : [0.66, 0.42, 0.18];
-      box(0.09, -0.16, 0.5, 0.06, 0.5, 0.07, blade);
+    if (kind === 'swordWood' || kind === 'swordStone' || kind === 'swordIron') {
+      var blade = kind === 'swordIron' ? [0.86, 0.9, 0.96] : (kind === 'swordStone' ? [0.78, 0.82, 0.88] : [0.66, 0.42, 0.18]);
+      box(0.09, -0.16, 0.5, 0.05, 0.52, 0.06, blade);
       box(0.02, -0.18, 0.48, 0.22, 0.05, 0.09, [0.42, 0.26, 0.12]);
-    } else if (kind === 'pick') {
+    } else if (kind === 'axe') {
       box(0.1, -0.2, 0.5, 0.05, 0.42, 0.05, [0.42, 0.28, 0.14]);
-      box(0.02, 0.16, 0.46, 0.22, 0.08, 0.08, [0.62, 0.64, 0.68]);
+      box(0.02, 0.12, 0.46, 0.2, 0.12, 0.06, [0.72, 0.74, 0.78]);
+    } else if (kind === 'pick' || kind === 'pickIron') {
+      var head = kind === 'pickIron' ? [0.82, 0.86, 0.92] : [0.62, 0.64, 0.68];
+      box(0.1, -0.2, 0.5, 0.05, 0.42, 0.05, [0.42, 0.28, 0.14]);
+      box(0.02, 0.16, 0.46, 0.22, 0.08, 0.08, head);
     } else if (kind === 'torch') {
       box(0.1, -0.18, 0.48, 0.05, 0.4, 0.05, [0.45, 0.28, 0.12]);
       box(0.05, 0.16, 0.44, 0.14, 0.14, 0.14, [1, 0.78, 0.25]);
@@ -2141,41 +2382,95 @@
     }
   }
   function pushPig(data, e) {
-    var y = e.y, pink = [0.98, 0.42, 0.62], dark = [0.86, 0.22, 0.42];
-    pushCube(data, e.x - 0.16, y, e.z - 0.16, 0.1, 0.16, 0.1, dark);
-    pushCube(data, e.x + 0.08, y, e.z - 0.16, 0.1, 0.16, 0.1, dark);
-    pushCube(data, e.x - 0.16, y, e.z + 0.08, 0.1, 0.16, 0.1, dark);
-    pushCube(data, e.x + 0.08, y, e.z + 0.08, 0.1, 0.16, 0.1, dark);
-    pushCube(data, e.x - 0.22, y + 0.16, e.z - 0.26, 0.44, 0.28, 0.5, pink);
-    pushCube(data, e.x - 0.1, y + 0.2, e.z - 0.38, 0.2, 0.14, 0.14, dark);
+    var hide = [0.52, 0.3, 0.16], dark = [0.26, 0.13, 0.08], snout = [0.7, 0.4, 0.26];
+    function box(lx, ly, lz, sx, sy, sz, rgb) {
+      pushLocal(data, e.x, e.y, e.z, e.yaw || 0, lx, ly, lz, sx, sy, sz, rgb);
+    }
+    box(-0.22, 0, -0.28, 0.12, 0.22, 0.12, dark);
+    box(0.1, 0, -0.28, 0.12, 0.22, 0.12, dark);
+    box(-0.22, 0, 0.1, 0.12, 0.22, 0.12, dark);
+    box(0.1, 0, 0.1, 0.12, 0.22, 0.12, dark);
+    box(-0.28, 0.2, -0.34, 0.56, 0.32, 0.68, hide);
+    box(-0.18, 0.28, -0.6, 0.36, 0.28, 0.28, hide);
+    box(-0.1, 0.3, -0.74, 0.2, 0.14, 0.16, snout);
+    box(-0.12, 0.22, -0.72, 0.06, 0.1, 0.06, [0.95, 0.92, 0.82]);
+    box(0.06, 0.22, -0.72, 0.06, 0.1, 0.06, [0.95, 0.92, 0.82]);
+    box(-0.2, 0.52, -0.5, 0.1, 0.1, 0.08, dark);
+    box(0.1, 0.52, -0.5, 0.1, 0.1, 0.08, dark);
+    box(-0.14, 0.4, -0.62, 0.06, 0.06, 0.04, [0.08, 0.06, 0.06]);
+    box(0.08, 0.4, -0.62, 0.06, 0.06, 0.04, [0.08, 0.06, 0.06]);
+    box(-0.04, 0.38, 0.32, 0.08, 0.08, 0.1, dark);
   }
   function pushSheep(data, e) {
-    var y = e.y, wool = e.wool ? [0.96, 0.96, 0.98] : [0.9, 0.84, 0.8];
-    pushCube(data, e.x - 0.18, y, e.z - 0.2, 0.36, 0.28, 0.4, wool);
-    pushCube(data, e.x - 0.1, y + 0.2, e.z - 0.28, 0.2, 0.16, 0.16, [0.2, 0.16, 0.14]);
+    var wool = e.wool ? [0.97, 0.97, 0.98] : [0.84, 0.68, 0.62];
+    var face = [0.32, 0.24, 0.2], leg = [0.28, 0.22, 0.18];
+    function box(lx, ly, lz, sx, sy, sz, rgb) {
+      pushLocal(data, e.x, e.y, e.z, e.yaw || 0, lx, ly, lz, sx, sy, sz, rgb);
+    }
+    box(-0.16, 0, -0.16, 0.1, 0.18, 0.1, leg);
+    box(0.06, 0, -0.16, 0.1, 0.18, 0.1, leg);
+    box(-0.16, 0, 0.08, 0.1, 0.18, 0.1, leg);
+    box(0.06, 0, 0.08, 0.1, 0.18, 0.1, leg);
+    box(-0.24, 0.16, -0.26, 0.48, 0.32, 0.52, wool);
+    if (e.wool) box(-0.16, 0.42, -0.16, 0.32, 0.12, 0.36, wool);
+    box(-0.12, 0.28, -0.46, 0.24, 0.2, 0.22, face);
+    box(-0.14, 0.44, -0.4, 0.08, 0.1, 0.06, wool);
+    box(0.06, 0.44, -0.4, 0.08, 0.1, 0.06, wool);
+    box(-0.08, 0.36, -0.48, 0.05, 0.05, 0.04, [0.08, 0.08, 0.08]);
+    box(0.03, 0.36, -0.48, 0.05, 0.05, 0.04, [0.08, 0.08, 0.08]);
   }
   function pushCow(data, e) {
-    var y = e.y;
-    var fx = Math.sin(e.yaw || 0), fz = -Math.cos(e.yaw || 0);
-    var brown = [0.62, 0.32, 0.1], dark = [0.28, 0.12, 0.06], white = [0.98, 0.98, 0.96];
-    pushCube(data, e.x - 0.26, y, e.z - 0.32, 0.12, 0.26, 0.12, dark);
-    pushCube(data, e.x + 0.14, y, e.z - 0.32, 0.12, 0.26, 0.12, dark);
-    pushCube(data, e.x - 0.26, y, e.z + 0.16, 0.12, 0.26, 0.12, dark);
-    pushCube(data, e.x + 0.14, y, e.z + 0.16, 0.12, 0.26, 0.12, dark);
-    pushCube(data, e.x - 0.32, y + 0.26, e.z - 0.4, 0.64, 0.4, 0.82, brown);
-    pushCube(data, e.x - 0.06, y + 0.52, e.z - 0.08, 0.24, 0.12, 0.2, white);
-    pushCube(data, e.x - 0.28, y + 0.36, e.z + 0.02, 0.14, 0.16, 0.18, white);
-    var hx = e.x + fx * 0.52, hz = e.z + fz * 0.52;
-    pushCube(data, hx - 0.24, y + 0.28, hz - 0.22, 0.48, 0.4, 0.4, brown);
-    pushCube(data, hx - 0.16, y + 0.36, hz - 0.18, 0.32, 0.18, 0.14, white);
-    pushCube(data, hx - 0.22, y + 0.66, hz - 0.06, 0.08, 0.14, 0.08, [0.86, 0.82, 0.7]);
-    pushCube(data, hx + 0.12, y + 0.66, hz - 0.06, 0.08, 0.14, 0.08, [0.86, 0.82, 0.7]);
+    var brown = [0.58, 0.3, 0.12], dark = [0.22, 0.1, 0.05], white = [0.96, 0.96, 0.94];
+    function box(lx, ly, lz, sx, sy, sz, rgb) {
+      pushLocal(data, e.x, e.y, e.z, e.yaw || 0, lx, ly, lz, sx, sy, sz, rgb);
+    }
+    box(-0.28, 0, -0.32, 0.14, 0.28, 0.14, dark);
+    box(0.14, 0, -0.32, 0.14, 0.28, 0.14, dark);
+    box(-0.28, 0, 0.16, 0.14, 0.28, 0.14, dark);
+    box(0.14, 0, 0.16, 0.14, 0.28, 0.14, dark);
+    box(-0.34, 0.26, -0.42, 0.68, 0.42, 0.86, brown);
+    box(-0.12, 0.52, -0.1, 0.24, 0.12, 0.28, white);
+    box(-0.1, 0.22, -0.02, 0.2, 0.1, 0.16, [0.95, 0.75, 0.78]);
+    box(-0.22, 0.32, -0.78, 0.44, 0.36, 0.38, brown);
+    box(-0.16, 0.38, -0.86, 0.32, 0.16, 0.12, white);
+    box(-0.2, 0.66, -0.7, 0.08, 0.14, 0.08, [0.86, 0.82, 0.7]);
+    box(0.12, 0.66, -0.7, 0.08, 0.14, 0.08, [0.86, 0.82, 0.7]);
+    box(-0.16, 0.46, -0.8, 0.06, 0.06, 0.04, [0.08, 0.06, 0.06]);
+    box(0.1, 0.46, -0.8, 0.06, 0.06, 0.04, [0.08, 0.06, 0.06]);
+    box(-0.04, 0.4, 0.42, 0.08, 0.16, 0.08, dark);
+  }
+  function pushChicken(data, e) {
+    var white = [0.97, 0.97, 0.95], red = [0.86, 0.16, 0.14], yellow = [0.95, 0.78, 0.18], orange = [0.9, 0.46, 0.12];
+    function box(lx, ly, lz, sx, sy, sz, rgb) {
+      pushLocal(data, e.x, e.y, e.z, e.yaw || 0, lx, ly, lz, sx, sy, sz, rgb);
+    }
+    box(-0.08, 0, -0.02, 0.05, 0.12, 0.05, orange);
+    box(0.03, 0, -0.02, 0.05, 0.12, 0.05, orange);
+    box(-0.12, 0.12, -0.14, 0.24, 0.18, 0.28, white);
+    box(-0.14, 0.16, -0.06, 0.04, 0.1, 0.14, [0.9, 0.9, 0.86]);
+    box(0.1, 0.16, -0.06, 0.04, 0.1, 0.14, [0.9, 0.9, 0.86]);
+    box(-0.07, 0.26, -0.26, 0.14, 0.14, 0.14, white);
+    box(-0.03, 0.28, -0.34, 0.06, 0.05, 0.08, yellow);
+    box(-0.025, 0.38, -0.24, 0.05, 0.08, 0.06, red);
+    box(-0.03, 0.32, -0.28, 0.03, 0.03, 0.03, [0.08, 0.08, 0.08]);
+    box(-0.04, 0.22, 0.12, 0.08, 0.1, 0.1, white);
   }
   function pushVillager(data, e) {
-    var robe = [[0.2, 0.45, 0.78], [0.72, 0.55, 0.16], [0.35, 0.62, 0.32]][e.hue || 0];
-    pushCube(data, e.x - 0.16, e.y, e.z - 0.1, 0.32, 0.55, 0.22, robe);
-    pushCube(data, e.x - 0.14, e.y + 0.55, e.z - 0.14, 0.28, 0.28, 0.28, [0.93, 0.78, 0.62]);
-    pushCube(data, e.x - 0.14, e.y + 0.78, e.z - 0.14, 0.28, 0.08, 0.28, [0.35, 0.22, 0.12]);
+    var robe = [0.56, 0.36, 0.18], skin = [0.9, 0.74, 0.56], shoe = [0.3, 0.18, 0.1];
+    function box(lx, ly, lz, sx, sy, sz, rgb) {
+      pushLocal(data, e.x, e.y, e.z, e.yaw || 0, lx, ly, lz, sx, sy, sz, rgb);
+    }
+    box(-0.12, 0, -0.08, 0.1, 0.1, 0.16, shoe);
+    box(0.02, 0, -0.08, 0.1, 0.1, 0.16, shoe);
+    box(-0.16, 0.1, -0.12, 0.32, 0.46, 0.24, robe);
+    box(-0.24, 0.28, -0.08, 0.08, 0.24, 0.12, robe);
+    box(0.16, 0.28, -0.08, 0.08, 0.24, 0.12, skin);
+    box(-0.14, 0.56, -0.14, 0.28, 0.26, 0.28, skin);
+    box(-0.15, 0.78, -0.15, 0.3, 0.06, 0.3, [0.4, 0.24, 0.12]);
+    box(-0.05, 0.64, -0.26, 0.1, 0.1, 0.12, [0.78, 0.52, 0.36]);
+    box(-0.1, 0.74, -0.18, 0.2, 0.04, 0.04, [0.32, 0.18, 0.1]);
+    box(-0.08, 0.68, -0.18, 0.05, 0.04, 0.03, [0.1, 0.08, 0.08]);
+    box(0.03, 0.68, -0.18, 0.05, 0.04, 0.03, [0.1, 0.08, 0.08]);
   }
   function drawDyn(data, uMin, uFog, uAmb) {
     if (!data.length || !gl) return;
@@ -2214,7 +2509,13 @@
       p = remotes[id];
       s = project(p.x, p.y + 1.7, p.z, mvp, w, h);
       if (!s) continue;
-      html += '<span style="left:' + s.x.toFixed(1) + 'px;top:' + s.y.toFixed(1) + 'px">' + esc(p.name) + '</span>';
+      var face = (p.emote && p.emoteUntil > Date.now()) ? emoteFace(p.emote) : '';
+      html += '<span style="left:' + s.x.toFixed(1) + 'px;top:' + s.y.toFixed(1) + 'px">' + (face ? face + ' ' : '') + esc(p.name) + '</span>';
+    }
+    var mine = $('myEmote');
+    if (mine) {
+      var mineFace = (state.emote && state.emoteUntil > Date.now()) ? emoteFace(state.emote) : '';
+      if (mine.textContent !== mineFace) mine.textContent = mineFace;
     }
     if (box._html !== html) { box.innerHTML = html; box._html = html; }
   }
@@ -2294,7 +2595,14 @@
     for (id = 0; id < pigs.length; id++) if (pigs[id].alive) pushPig(actors, pigs[id]);
     for (id = 0; id < sheep.length; id++) if (sheep[id].alive) pushSheep(actors, sheep[id]);
     for (id = 0; id < cows.length; id++) if (cows[id].alive) pushCow(actors, cows[id]);
+    for (id = 0; id < chickens.length; id++) if (chickens[id].alive) pushChicken(actors, chickens[id]);
     for (id = 0; id < villagers.length; id++) pushVillager(actors, villagers[id]);
+    if (state.started && state.ride < 0) {
+      pushPerson(actors, {
+        x: state.px, y: state.py, z: state.pz, yaw: state.yaw, name: state.name,
+        hd: holdCode(), w: weaponCode()
+      }, false);
+    }
     if (armorDrop && !armorDrop.taken) {
       pushCube(actors, armorDrop.x - 0.18, armorDrop.y, armorDrop.z - 0.12, 0.36, 0.42, 0.24, [0.25, 0.75, 0.4]);
     }
@@ -2348,6 +2656,10 @@
     for (i = 0; i < sheep.length; i++) {
       e = sheep[i];
       if (e.alive) dots.push({ kind: 'sheep', x: e.x, z: e.z, color: '#f4f4f8' });
+    }
+    for (i = 0; i < chickens.length; i++) {
+      e = chickens[i];
+      if (e.alive) dots.push({ kind: 'chicken', x: e.x, z: e.z, color: '#ffe14a' });
     }
     dots.push({ kind: 'spawn', x: spawn.x, z: spawn.z, color: '#fff4b0' });
     return { n: MAP_N, cell: MAP_CELL, dots: dots };
@@ -2405,6 +2717,7 @@
     for (ix = 0; ix < pigs.length; ix++) if (pigs[ix].alive) dot(pigs[ix].x, pigs[ix].z, '#ff4f93', 2, false);
     for (ix = 0; ix < cows.length; ix++) if (cows[ix].alive) dot(cows[ix].x, cows[ix].z, '#e08a28', 2.2, false);
     for (ix = 0; ix < sheep.length; ix++) if (sheep[ix].alive) dot(sheep[ix].x, sheep[ix].z, '#f4f4f8', 1.8, false);
+    for (ix = 0; ix < chickens.length; ix++) if (chickens[ix].alive) dot(chickens[ix].x, chickens[ix].z, '#ffe14a', 1.6, false);
     dot(spawn.x, spawn.z, '#fff4b0', 1.8, false);
     for (id in remotes) dot(remotes[id].x, remotes[id].z, '#e23b3b', 2.4, true);
     sx = (px - x0) * cell;
@@ -2648,6 +2961,26 @@
       e.x = +row[0]; e.y = +row[1]; e.z = +row[2]; e.hp = row[3] | 0; e.alive = !!row[4];
       if ((e.hp | 0) < SHEEP_HP) e.flee = state.clock + 3;
     }
+    var chicks = msg.chickens || [];
+    for (i = 0; i < chicks.length && i < chickens.length; i++) {
+      row = chicks[i]; e = chickens[i];
+      e.x = +row[0]; e.y = +row[1]; e.z = +row[2]; e.hp = row[3] | 0; e.alive = !!row[4];
+      if ((e.hp | 0) < CHICKEN_HP) e.flee = state.clock + 3;
+    }
+  }
+  function emoteFace(id) {
+    var i;
+    for (i = 0; i < EMOTES.length; i++) if (EMOTES[i].id === id) return EMOTES[i].face;
+    return '';
+  }
+  function sendEmote(id) {
+    if (!emoteFace(id)) return false;
+    state.emote = id;
+    state.emoteUntil = Date.now() + 2800;
+    emit({ t: 'emote', e: id });
+    var mine = $('myEmote');
+    if (mine) mine.textContent = emoteFace(id);
+    return true;
   }
   function worldPacket() {
     return {
@@ -2796,7 +3129,7 @@
     }
     if (msg.t === 'boat') addBoat(+msg.x, +msg.z, true, fromConn);
     if (msg.t === 'mob') {
-      var list = msg.k === 'cow' ? cows : msg.k === 'sheep' ? sheep : pigs;
+      var list = msg.k === 'cow' ? cows : msg.k === 'sheep' ? sheep : msg.k === 'chicken' ? chickens : pigs;
       if (list[msg.i | 0]) {
         list[msg.i | 0].hp = msg.hp | 0;
         list[msg.i | 0].alive = (msg.hp | 0) > 0;
@@ -2806,6 +3139,14 @@
     }
     if (msg.t === 'mobs' && netRole === 'guest') applyMobPack(msg);
     if (msg.t === 'hit' && msg.to === selfId) hurt(2, (msg.name || '朋友') + '砍了你');
+    if (msg.t === 'emote') {
+      var eid = String(msg.from || '');
+      if (eid && remotes[eid]) {
+        remotes[eid].emote = String(msg.e || '');
+        remotes[eid].emoteUntil = Date.now() + 2800;
+      }
+      if (netRole === 'host') relay({ t: 'emote', e: msg.e, from: msg.from || selfId }, fromConn);
+    }
   }
   function stopBcPulse() {
     if (bcPulse) { clearInterval(bcPulse); bcPulse = null; }
@@ -2860,7 +3201,7 @@
   }
   function claimHost() {
     if (!roomPin) roomPin = String(1000 + ((Math.random() * 9000) | 0));
-    var id = 'xygo-mw11-' + roomPin;
+    var id = 'xygo-mw12-' + roomPin;
     netCode = roomPin;
     showRoom(roomPin);
     netClaim(id, function (peer, claimed) {
@@ -3043,7 +3384,7 @@
     if (netWatch) { clearInterval(netWatch); netWatch = null; }
   }
   function connectGuestCode(pin) {
-    var id = 'xygo-mw11-' + pin;
+    var id = 'xygo-mw12-' + pin;
     lastHostId = id;
     var peer;
     try { peer = netNewPeer(); } catch (e) { setWait('连不上房间'); return; }
@@ -3096,7 +3437,7 @@
     var pin = String(code || '').replace(/\D/g, '').slice(0, 4);
     if (pin.length === 4) {
       roomPin = pin;
-      lastHostId = 'xygo-mw11-' + pin;
+      lastHostId = 'xygo-mw12-' + pin;
       setWait('正在连房间 ' + pin);
     } else {
       setWait('同一台电脑可以直接加入。跨网络请输入房主的 4 位房间码。');
@@ -3280,6 +3621,23 @@
     if (sitBtn) sitBtn.addEventListener('click', function (e) { e.preventDefault(); toggleSit(); });
     var sleepBtn = $('sleepBtn');
     if (sleepBtn) sleepBtn.addEventListener('click', function (e) { e.preventDefault(); sleepNow(); });
+    var emoteBtn = $('emote');
+    var emoteBar = $('emotes');
+    if (emoteBtn && emoteBar) {
+      emoteBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        emoteBar.hidden = !emoteBar.hidden;
+      });
+    }
+    var emoteBtns = typeof document !== 'undefined' ? document.querySelectorAll('#emotes button') : [];
+    var ei;
+    for (ei = 0; ei < emoteBtns.length; ei++) {
+      emoteBtns[ei].addEventListener('click', function (e) {
+        e.preventDefault();
+        sendEmote(e.currentTarget.getAttribute('data-emote'));
+        if (emoteBar) emoteBar.hidden = true;
+      });
+    }
     var mapBtn = $('mapBtn');
     if (mapBtn) mapBtn.addEventListener('click', function () {
       mapOpen = !mapOpen;
@@ -3338,7 +3696,7 @@
   var api = {
     TIP: TIP, STORE: STORE, W: W, H: H, D: D, SEA: SEA, DAY: DAY,
     AIR: AIR, GRASS: GRASS, DIRT: DIRT, LOG: LOG, LEAF: LEAF, STONE: STONE,
-    WATER: WATER, SAND: SAND, FLOWER: FLOWER, GOLD: GOLD, TORCH: TORCH, CHEST: CHEST, BED: BED,
+    WATER: WATER, SAND: SAND, FLOWER: FLOWER, GOLD: GOLD, TORCH: TORCH, CHEST: CHEST, BED: BED, IRON_ORE: IRON_ORE, SNOW: SNOW,
     NET_PEER_OPTS: NET_PEER_OPTS, KID_NAMES: KID_NAMES,
     state: state, boats: boats, remotes: remotes,
     at: at, put: put, grow: grow, loadRaw: loadRaw, save: save, scan: scan,
@@ -3348,14 +3706,17 @@
     setClock: function (s) { state.clock = s; },
     weaponCode: weaponCode, handKind: handKind, inWaterAt: inWaterAt, sim: sim, overlaps: overlaps, tryPlace: tryPlace,
     feetClear: feetClear, pickSurface: pickSurface, putOnGround: putOnGround,
-    solid: solid, pigs: pigs, cows: cows, villagers: villagers,
+    solid: solid, pigs: pigs, cows: cows, sheep: sheep, chickens: chickens, villagers: villagers,
     cowBump: cowBump, tryShoot: tryShoot, mapDots: mapDots, wearingArmor: wearingArmor,
     columnSurface: columnSurface, tryShore: tryShore, toggleRide: toggleRide, toggleSit: toggleSit,
     sleepNow: sleepNow, lightPoints: lightPoints, load: load, dayPhase: dayPhase,
-    sheep: sheep, eatFood: eatFood, startCook: startCook, tryTrade: tryTrade, GUN_DMG: GUN_DMG,
+    eatFood: eatFood, startCook: startCook, tryTrade: tryTrade, GUN_DMG: GUN_DMG,
     peerUp: function () { return !!netLinked; },
     roomPin: function () { return roomPin; },
-    PIG_HP: PIG_HP, COW_HP: COW_HP, SHEEP_HP: SHEEP_HP, toolLeft: toolLeft,
+    PIG_HP: PIG_HP, COW_HP: COW_HP, SHEEP_HP: SHEEP_HP, CHICKEN_HP: CHICKEN_HP, toolLeft: toolLeft,
+    BOAR_AGGRO: BOAR_AGGRO, BOAR_HIT: BOAR_HIT, BOAR_SPEED: BOAR_SPEED,
+    COW_SPEED: COW_SPEED, SHEEP_FLEE: SHEEP_FLEE, CHICKEN_FLEE: CHICKEN_FLEE,
+    treeStats: treeStats, meleeDmg: meleeDmg, sendEmote: sendEmote, inSnowTerritory: inSnowTerritory,
     clockText: clockText, selectPack: selectPack, villageAt: function () { return village; },
     press: function (code, on) { keys[code] = !!on; },
     selfId: function () { return selfId; },

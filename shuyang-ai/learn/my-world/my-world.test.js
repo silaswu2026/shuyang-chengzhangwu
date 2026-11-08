@@ -21,7 +21,7 @@ global.localStorage = {
   removeItem: function (k) { delete mem[k]; }
 };
 
-eq(MW.TIP, 'mw11', 'tip');
+eq(MW.TIP, 'mw12', 'tip');
 eq(MW.STORE, 'xygo-my-world', 'store');
 if (MW.KID_NAMES.length < 8) fail('kid names');
 MW.KID_NAMES.forEach(function (n) {
@@ -167,7 +167,7 @@ if (!(MW.dayFactor() > 0.85)) fail('still bright at 36s ' + MW.dayFactor());
 var dusk = 0.62 * MW.DAY;
 MW.setClock(dusk);
 var duskA = MW.dayFactor();
-MW.setClock(dusk + 20);
+MW.setClock(dusk + MW.DAY / 36);
 var duskB = MW.dayFactor();
 if (!(duskA > duskB + 0.08)) fail('sunset not moving ' + duskA + ' -> ' + duskB);
 if (duskA - duskB > 0.5) fail('sunset too fast ' + (duskA - duskB));
@@ -212,7 +212,7 @@ MW.state.inv.gold = 9;
 MW.save();
 var saved = JSON.parse(localStorage.getItem('xygo-my-world'));
 eq(saved.v, 3, 'save v');
-eq(saved.tip, 'mw11', 'save tip');
+eq(saved.tip, 'mw12', 'save tip');
 eq(saved.seed, 11, 'guest keeps own map');
 eq(saved.inv.gold, 9, 'guest keeps coins');
 eq(saved.inv.wood, 2, 'guest keeps wood');
@@ -225,19 +225,20 @@ var peace = '这游戏没有怪物。';
 var made = '自研小游戏，不是正版《我的世界》。';
 if (html.split(peace).length < 3) fail('peace twice in page');
 if (html.split(made).length < 3) fail('disclaimer twice in page');
-if (html.indexOf('xy-tip" content="mw11"') < 0) fail('meta tip');
-if (html.indexOf('my-world.css?v=mw11') < 0 || html.indexOf('my-world.js?v=mw11') < 0) fail('cache bust');
+if (html.indexOf('xy-tip" content="mw12"') < 0) fail('meta tip');
+if (html.indexOf('my-world.css?v=mw12') < 0 || html.indexOf('my-world.js?v=mw12') < 0) fail('cache bust');
 if (html.indexOf('vendor/peerjs/peerjs.min.js') < 0) fail('vendor peerjs');
-if (html.indexOf('>mw11<') < 0) fail('hud tip');
+if (html.indexOf('>mw12<') < 0) fail('hud tip');
 if (learn.indexOf(peace) < 0 || learn.indexOf('不是正版《我的世界》') < 0) fail('learn disclaimers');
-if (learn.indexOf('?v=mw11') < 0) fail('learn url');
+if (learn.indexOf('?v=mw12') < 0) fail('learn url');
 if (learn.indexOf('出生') < 0) fail('learn spawn');
 if (learn.indexOf('台阶') < 0) fail('learn step');
 if (learn.indexOf('看不见自己的手') < 0) fail('learn hand');
 if (learn.indexOf('xygo-my-world') < 0) fail('learn key');
-if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw11') < 0) fail('hub tip');
-if (hub.indexOf('my-world/?v=mw10') >= 0) fail('old hub tip');
-if (learn.indexOf('小猪') < 0 || learn.indexOf('护甲') < 0) fail('learn mobs');
+if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw12') < 0) fail('hub tip');
+if (hub.indexOf('my-world/?v=mw11') >= 0 || hub.indexOf('my-world/?v=mw10') >= 0) fail('old hub tip');
+if (learn.indexOf('野猪') < 0 || learn.indexOf('护甲') < 0) fail('learn mobs');
+if (learn.indexOf('鸡') < 0 || learn.indexOf('雪') < 0 || learn.indexOf('铁剑') < 0 || learn.indexOf('表情') < 0) fail('learn mw12');
 
 function standAt(spot) {
   MW.state.px = spot.x;
@@ -604,8 +605,169 @@ if (MW.scan().seed === 11) fail('resumed old seed');
 if (!MW.feetClear(MW.state.px, MW.state.py, MW.state.pz)) fail('fresh spawn');
 if (localStorage.getItem('xygo-my-world')) fail('old save kept');
 
+if (!(MW.DAY <= 400 && MW.DAY < 720)) fail('day still 12 min ' + MW.DAY);
+if (!(MW.W > 56 && MW.D > 56)) fail('world not bigger');
+if (!(MW.CHICKEN_FLEE > MW.SHEEP_FLEE)) fail('chicken not faster than sheep');
+if (!(MW.COW_HP >= 24)) fail('cow hp ' + MW.COW_HP);
+if (!(MW.COW_SPEED < MW.BOAR_SPEED * 0.5)) fail('cow not slow');
+if (!(MW.BOAR_AGGRO >= 5 && MW.BOAR_AGGRO <= 9)) fail('boar aggro ' + MW.BOAR_AGGRO);
+for (seedN = 1; seedN <= 24; seedN++) {
+  MW.grow(seedN);
+  var ts = MW.treeStats();
+  if (ts.n < 8) fail('seed ' + seedN + ' trees ' + ts.n);
+  if (!(ts.nearest <= 18)) fail('seed ' + seedN + ' nearest tree ' + ts.nearest);
+  var beds = 0, houseChests = 0, snowN = 0, ironN = 0;
+  var vx = MW.villageAt();
+  if (!vx || !vx.houses || vx.houses.length !== 3) fail('one village three houses seed ' + seedN);
+  for (z = 0; z < MW.D; z++) {
+    for (y = 0; y < MW.H; y++) {
+      for (x = 0; x < MW.W; x++) {
+        var id = MW.at(x, y, z);
+        if (id === MW.BED) beds++;
+        if (id === MW.SNOW) snowN++;
+        if (id === MW.IRON_ORE) ironN++;
+        if (id === MW.CHEST && vx && Math.hypot(x - vx.x, z - vx.z) < 12) houseChests++;
+      }
+    }
+  }
+  if (beds < 3) fail('beds ' + beds + ' seed ' + seedN);
+  if (houseChests < 3) fail('house chests ' + houseChests + ' seed ' + seedN);
+  if (snowN < 30) fail('snow ' + snowN + ' seed ' + seedN);
+  if (ironN < 8) fail('iron ore ' + ironN + ' seed ' + seedN);
+}
+MW.grow(4);
+var treesBefore = MW.treeStats().n;
+var logsBefore = MW.scan().counts[MW.LOG];
+MW.save();
+eq(MW.treeStats().n, treesBefore, 'save keeps trees');
+eq(MW.scan().counts[MW.LOG], logsBefore, 'save keeps logs');
+var trunk = MW.treeStats();
+var cutX = -1, cutY = -1, cutZ = -1;
+for (z = 0; z < MW.D && cutX < 0; z++) {
+  for (x = 0; x < MW.W; x++) {
+    var stack = 0, topLog = -1;
+    for (y = 0; y < MW.H; y++) if (MW.at(x, y, z) === MW.LOG) { stack++; topLog = y; }
+    if (stack >= 3) { cutX = x; cutY = topLog; cutZ = z; break; }
+  }
+}
+if (cutX < 0) fail('no trunk to dig');
+MW.breakBlock({ x: cutX, y: cutY, z: cutZ });
+eq(MW.at(cutX, cutY, cutZ), MW.AIR, 'one log dug');
+if (MW.at(cutX, cutY - 1, cutZ) !== MW.LOG) fail('dig cleared the trunk');
+
+MW.state.inv.iron = 2;
+MW.state.inv.wood = 1;
+MW.state.equip.weapon = '';
+if (!MW.craft('swordIron')) fail('iron sword');
+eq(MW.state.equip.weapon, 'swordIron', 'iron sword equipped');
+eq(MW.meleeDmg(), 4, 'iron sword damage');
+MW.state.equip.weapon = 'swordWood';
+eq(MW.meleeDmg(), 2, 'wood sword damage');
+MW.state.equip.weapon = '';
+eq(MW.meleeDmg(), 1, 'fist');
+
+function flatPad(cx, cz) {
+  var yy, dx, dz;
+  for (dx = -16; dx <= 16; dx++) {
+    for (dz = -16; dz <= 16; dz++) {
+      for (yy = 0; yy < MW.H; yy++) MW.put(cx + dx, yy, cz + dz, MW.AIR);
+      MW.put(cx + dx, 4, cz + dz, MW.GRASS);
+      if (4 > 0) MW.put(cx + dx, 3, cz + dz, MW.DIRT);
+    }
+  }
+}
+flatPad(30, 30);
+MW.state.started = true;
+MW.state.ride = -1;
+MW.state.sitting = null;
+MW.state.px = 30.5;
+MW.state.py = 5;
+MW.state.pz = 30.5;
+MW.state.yaw = 0;
+MW.state.pitch = 0;
+var boar = MW.pigs[0];
+boar.alive = true;
+boar.hp = MW.PIG_HP;
+boar.cool = 99;
+boar.x = 30.5;
+boar.y = 5;
+boar.z = 30.5 - 4;
+var farBoar = MW.pigs[1];
+farBoar.alive = true;
+farBoar.hp = MW.PIG_HP;
+farBoar.cool = 99;
+farBoar.x = 30.5;
+farBoar.y = 5;
+farBoar.z = 30.5 - 20;
+var boarZ = boar.z;
+var farZ = farBoar.z;
+for (hop = 0; hop < 20; hop++) MW.sim(0.05);
+if (!(boar.z > boarZ + 0.4)) fail('boar did not close ' + boarZ + ' -> ' + boar.z);
+if (Math.abs(farBoar.z - farZ) > 1.2) fail('boar charged from outside aggro ' + farZ + ' -> ' + farBoar.z);
+
+var shp2 = MW.sheep[0];
+var chk = MW.chickens[0];
+shp2.alive = true;
+shp2.hp = MW.SHEEP_HP;
+shp2.flee = 0;
+shp2.x = 30.5;
+shp2.y = 5;
+shp2.z = 30.5 + 3;
+chk.alive = true;
+chk.hp = MW.CHICKEN_HP;
+chk.flee = 0;
+chk.x = 30.5;
+chk.y = 5;
+chk.z = 30.5 + 3;
+for (mi2 = 0; mi2 < MW.pigs.length; mi2++) MW.pigs[mi2].alive = false;
+for (mi2 = 0; mi2 < MW.cows.length; mi2++) MW.cows[mi2].alive = false;
+var sheepTravel = 0, chickTravel = 0, sx0 = shp2.x, sz0 = shp2.z, cx0 = chk.x, cz0 = chk.z;
+for (hop = 0; hop < 10; hop++) {
+  MW.sim(0.05);
+  sheepTravel = Math.hypot(shp2.x - sx0, shp2.z - sz0);
+  chickTravel = Math.hypot(chk.x - cx0, chk.z - cz0);
+}
+if (!(chickTravel > sheepTravel + 0.12)) fail('chicken not faster ' + chickTravel + ' vs ' + sheepTravel);
+
+var cowSlow = MW.cows[0];
+cowSlow.alive = true;
+cowSlow.hp = MW.COW_HP;
+cowSlow.mad = true;
+cowSlow.cool = 99;
+cowSlow.x = 30.5;
+cowSlow.y = 5;
+cowSlow.z = 30.5 - 3;
+MW.state.hold = 'hand';
+MW.state.inv.wheat = 0;
+var cow0 = cowSlow.z;
+for (hop = 0; hop < 20; hop++) MW.sim(0.05);
+if (Math.abs(cowSlow.z - cow0) > 1.25) fail('cow moved too fast ' + cow0 + ' -> ' + cowSlow.z);
+
+MW.state.hp = 10;
+MW.state.cold = 0;
+MW.state.px = 8.5;
+MW.state.py = 5;
+MW.state.pz = 8.5;
+MW.put(8, 4, 8, MW.GRASS);
+for (hop = 0; hop < 40; hop++) MW.sim(0.05);
+eq(MW.state.hp, 10, 'grass is not cold');
+MW.put(8, 4, 8, MW.SNOW);
+MW.state.py = 5;
+MW.state.cold = 0;
+MW.state.hp = 10;
+for (hop = 0; hop < 80; hop++) MW.sim(0.05);
+if (!(MW.state.hp < 10)) fail('snow did not drain hp ' + MW.state.hp);
+if (MW.inSnowTerritory() !== true) fail('not in snow');
+
+MW.setRole('host');
+MW.remotes.pal2 = { name: '豆豆', x: 1, y: 1, z: 1, seen: Date.now() };
+if (!MW.sendEmote('happy')) fail('send emote');
+MW.applyNet({ mw: 3, t: 'emote', from: 'pal2', e: 'hi' });
+if (MW.remotes.pal2.emote !== 'hi') fail('peer emote');
+delete MW.remotes.pal2;
+
 if (failed) {
   console.error(failed + ' failed');
   process.exit(1);
 }
-console.log('my-world mw11 ok');
+console.log('my-world mw12 ok');
