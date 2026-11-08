@@ -1,16 +1,20 @@
-/* 方块小世界 mw10 · 上台阶要跳、背包格子、更艳的颜色。世界格子仍可整片挖空。 */
+/* 方块小世界 mw11 · 动物数值、食物护甲、12分钟昼夜、房间码联机。 */
 (function () {
   'use strict';
 
-  var TIP = 'mw10';
+  var TIP = 'mw11';
   var STORE = 'xygo-my-world';
-  var W = 56, H = 22, D = 56, SEA = 8, DAY = 320;
-  var HP_MAX = 6;
+  var W = 56, H = 22, D = 56, SEA = 8, DAY = 720;
+  var HP_MAX = 10;
   var WALK = 3.0;
+  var GUN_DMG = 4;
+  var PIG_HP = 4, PIG_DMG = 1, PIG_SPEED = WALK * 0.9;
+  var COW_HP = 12, COW_DMG = 2, COW_SPEED = WALK * 0.8;
+  var SHEEP_HP = 6;
   var MAP_N = 41;
   var MAP_CELL = 2;
   var AIR = 0, GRASS = 1, DIRT = 2, LOG = 3, LEAF = 4, STONE = 5;
-  var WATER = 6, SAND = 7, FLOWER = 8, GOLD = 9, TORCH = 10, CHEST = 11, BED = 12;
+  var WATER = 6, SAND = 7, FLOWER = 8, GOLD = 9, TORCH = 10, CHEST = 11, BED = 12, IRON_ORE = 13;
   var COL = {
     1: [0.28, 0.82, 0.22],
     2: [0.72, 0.40, 0.16],
@@ -23,7 +27,8 @@
     9: [1, 0.82, 0.12],
     10: [1, 0.62, 0.12],
     11: [0.86, 0.42, 0.12],
-    12: [0.95, 0.22, 0.38]
+    12: [0.95, 0.22, 0.38],
+    13: [0.72, 0.74, 0.78]
   };
   var SHADE = [1, 0.55, 0.82, 0.68, 0.9, 0.64];
   var FACES = [
@@ -35,9 +40,12 @@
     [1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0]
   ];
   var KID_NAMES = ['乐乐', '豆豆', '果果', '星星', '月月', '安安', '米米', '桃桃', '橙橙', '森森', '洋洋', '贝贝', '糖糖', '泡泡', '朵朵', '球球', '木木', '小河', '小船', '小金', '小山', '小树', '阳光', '棉花', '南瓜', '葡萄', '荔枝', '樱桃', '云朵', '海星', '贝壳', '松果'];
-  var INV_KEYS = ['wood', 'leaf', 'dirt', 'stone', 'sand', 'torch', 'boat', 'bed', 'swordWood', 'swordStone', 'armor', 'pick', 'gun', 'gold'];
+  var INV_KEYS = ['wood', 'leaf', 'dirt', 'stone', 'sand', 'torch', 'boat', 'bed', 'swordWood', 'swordStone', 'armor', 'armorWood', 'armorIron', 'pick', 'pickIron', 'axe', 'shears', 'gun', 'gold', 'iron', 'wool', 'wheat', 'raw', 'cooked'];
   var BAG_SHOW = [['wood', '木头'], ['leaf', '树叶'], ['dirt', '泥土'], ['stone', '石头'], ['sand', '沙子'], ['torch', '火把'], ['boat', '小船'], ['bed', '床'], ['swordWood', '木剑'], ['swordStone', '石剑'], ['armor', '叶衣'], ['pick', '石稿'], ['gun', '枪']];
-  var NAMES = { wood: '木头', leaf: '树叶', dirt: '泥土', stone: '石头', sand: '沙子', torch: '火把', boat: '小船', bed: '床', swordWood: '木剑', swordStone: '石剑', armor: '叶衣', pick: '石稿', gun: '枪', gold: '金币' };
+  var NAMES = { wood: '木头', leaf: '树叶', dirt: '泥土', stone: '石头', sand: '沙子', torch: '火把', boat: '小船', bed: '床', swordWood: '木剑', swordStone: '石剑', armor: '叶衣', armorWood: '木甲', armorIron: '铁甲', pick: '石镐', pickIron: '铁镐', axe: '木斧', shears: '剪刀', gun: '枪', gold: '金币', iron: '铁', wool: '羊毛', wheat: '小麦', raw: '生肉', cooked: '熟肉' };
+  var ARMOR_CUT = { armor: 0.2, armorWood: 0.35, armorIron: 0.55 };
+  var ARMOR_MAX = { armor: 20, armorWood: 40, armorIron: 80 };
+  var TOOL_MAX = { axe: 40, pick: 80, pickIron: 160 };
   var RECIPES = {
     torch: { cost: { wood: 3 }, give: 'torch', n: 1, say: '火把', woodGate: 1 },
     boat: { cost: { wood: 10 }, give: 'boat', n: 1, say: '小船', woodGate: 1 },
@@ -46,7 +54,13 @@
     armor: { cost: { leaf: 8 }, give: 'armor', n: 1, say: '叶衣', slot: 'armor' },
     pick: { cost: { stone: 3, wood: 1 }, give: 'pick', n: 1, say: '石稿', slot: 'tool' },
     gun: { cost: { stone: 2, wood: 1 }, give: 'gun', n: 1, say: '枪', slot: 'weapon' },
-    bed: { cost: { wood: 3, leaf: 2 }, give: 'bed', n: 1, say: '床' },
+    bed: { cost: { wood: 3, wool: 2 }, give: 'bed', n: 1, say: '床' },
+    axe: { cost: { wood: 3 }, give: 'axe', n: 1, say: '木斧', slot: 'tool' },
+    pickIron: { cost: { iron: 3, wood: 1 }, give: 'pickIron', n: 1, say: '铁镐', slot: 'tool' },
+    armorWood: { cost: { wood: 6 }, give: 'armorWood', n: 1, say: '木甲', slot: 'armor' },
+    armorIron: { cost: { iron: 6 }, give: 'armorIron', n: 1, say: '铁甲', slot: 'armor' },
+    shears: { cost: { iron: 2 }, give: 'shears', n: 1, say: '剪刀' },
+    wheat: { cost: { leaf: 2 }, give: 'wheat', n: 1, say: '小麦' },
     sell: { cost: { wood: 1 }, give: 'gold', n: 1, say: '金币' }
   };
   var SLOT_WORD = {
@@ -65,9 +79,8 @@
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun.cloudflare.com:3478' },
-        { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-        { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-        { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+        { urls: 'turn:staticauth.openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+        { urls: 'turns:staticauth.openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
       ]
     }
   };
@@ -79,6 +92,7 @@
   var torchCells = [];
   var pigs = [];
   var cows = [];
+  var sheep = [];
   var villagers = [];
   var village = null;
   var armorDrop = null;
@@ -124,13 +138,13 @@
   function openBC() {
     if (netBC || typeof document === 'undefined' || typeof BroadcastChannel === 'undefined') return;
     try {
-      netBC = new BroadcastChannel('xygo-my-world-mw10');
+      netBC = new BroadcastChannel('xygo-my-world-mw11');
       netBC.onmessage = function (ev) { onNet(ev && ev.data, 'bc', null); };
     } catch (eBc) { netBC = null; }
   }
 
   function blankInv() {
-    return { wood: 0, leaf: 0, dirt: 0, stone: 0, sand: 0, torch: 0, boat: 0, bed: 0, swordWood: 0, swordStone: 0, armor: 0, pick: 0, gun: 0, gold: 0 };
+    return { wood: 0, leaf: 0, dirt: 0, stone: 0, sand: 0, torch: 0, boat: 0, bed: 0, swordWood: 0, swordStone: 0, armor: 0, armorWood: 0, armorIron: 0, pick: 0, pickIron: 0, axe: 0, shears: 0, gun: 0, gold: 0, iron: 0, wool: 0, wheat: 0, raw: 0, cooked: 0 };
   }
   function $(id) {
     return (typeof document !== 'undefined') ? document.getElementById(id) : null;
@@ -340,7 +354,29 @@
     state.yaw = openYaw(spot.x, spot.y + 1.5, spot.z);
   }
   function wearingArmor() {
-    return state.equip.armor === 'armor' && (state.inv.armor | 0) > 0;
+    var id = state.equip.armor;
+    return !!(id && ARMOR_CUT[id] && (state.inv[id] | 0) > 0);
+  }
+  function mitigate(n) {
+    var id = state.equip.armor;
+    var cut = (id && (state.inv[id] | 0) > 0) ? (ARMOR_CUT[id] || 0) : 0;
+    var dealt = cut ? Math.max(0, Math.round(n * (1 - cut))) : n;
+    if (cut) {
+      if (!state.armorLeft) state.armorLeft = ARMOR_MAX[id] || 20;
+      state.armorSoak = (state.armorSoak || 0) + n;
+      while (state.armorSoak >= 4) {
+        state.armorSoak -= 4;
+        state.armorLeft -= 1;
+        if (state.armorLeft <= 0) {
+          state.inv[id] = Math.max(0, (state.inv[id] | 0) - 1);
+          state.equip.armor = '';
+          state.armorLeft = 0;
+          toast('护甲坏了');
+          break;
+        }
+      }
+    }
+    return dealt;
   }
   function renderHp() {
     var text = $('hpText'), fill = $('hpFill');
@@ -348,6 +384,7 @@
     if (fill) fill.style.width = Math.max(0, Math.round(state.hp / HP_MAX * 100)) + '%';
   }
   function hurt(n, why) {
+    n = mitigate(n);
     state.hp -= n;
     if (state.hp < 0) state.hp = 0;
     var flash = $('hurt');
@@ -443,6 +480,18 @@
     village = { x: cx + 2.5, z: cz + 6.5, y: gy + 1 };
     armorDrop = { x: cx + 2.5, y: gy + 1, z: cz - 2.5, taken: false };
   }
+  function canopy(x, z) {
+    var n = 0, dx, dz, y, id;
+    for (dx = -2; dx <= 2; dx++) {
+      for (dz = -2; dz <= 2; dz++) {
+        for (y = SEA; y < H; y++) {
+          id = at(x + dx, y, z + dz);
+          if (id === LOG || id === LEAF) n++;
+        }
+      }
+    }
+    return n;
+  }
   function openPads(n) {
     var out = [], pass, x, z, spot, i, ok;
     for (pass = 0; pass < 2 && out.length < n; pass++) {
@@ -451,6 +500,7 @@
           spot = standColumn(x, z);
           if (!spot || spot.ground !== GRASS) continue;
           if (pass === 0 && (spot.top < SEA || spot.top > SEA + 3)) continue;
+          if (pass === 0 && canopy(x, z) > 2) continue;
           if (Math.abs(z - riverZ(x)) < 5) continue;
           if (village && Math.hypot(spot.x - village.x, spot.z - village.z) < 9) continue;
           if (Math.hypot(spot.x - spawn.x, spot.z - spawn.z) < 7) continue;
@@ -468,9 +518,10 @@
   function spawnMobs() {
     pigs.splice(0, pigs.length);
     cows.splice(0, cows.length);
+    sheep.splice(0, sheep.length);
     villagers.splice(0, villagers.length);
     if (!village) return;
-    var i, feet, pads = openPads(7);
+    var i, feet, pads = openPads(13);
     for (i = 0; i < 4; i++) {
       villagers.push({
         x: village.x + (i - 1.5) * 1.4,
@@ -481,29 +532,28 @@
         hue: i % 3
       });
     }
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < 5; i++) {
       feet = groundFeet(pads[i].x, pads[i].z);
       pigs.push({
-        x: pads[i].x,
-        z: pads[i].z,
+        x: pads[i].x, z: pads[i].z,
         y: feet == null ? pads[i].top + 1 : feet,
-        yaw: i,
-        alive: true,
-        hp: 1,
-        cool: 0
+        yaw: i, alive: true, hp: PIG_HP, cool: 0
       });
     }
-    for (i = 0; i < 3; i++) {
-      feet = groundFeet(pads[4 + i].x, pads[4 + i].z);
+    for (i = 0; i < 4; i++) {
+      feet = groundFeet(pads[5 + i].x, pads[5 + i].z);
       cows.push({
-        x: pads[4 + i].x,
-        z: pads[4 + i].z,
-        y: feet == null ? pads[4 + i].top + 1 : feet,
-        yaw: 1.2,
-        alive: true,
-        hp: 3,
-        mad: false,
-        cool: 0
+        x: pads[5 + i].x, z: pads[5 + i].z,
+        y: feet == null ? pads[5 + i].top + 1 : feet,
+        yaw: 1.2, alive: true, hp: COW_HP, mad: false, cool: 0, tame: 0
+      });
+    }
+    for (i = 0; i < 4; i++) {
+      feet = groundFeet(pads[9 + i].x, pads[9 + i].z);
+      sheep.push({
+        x: pads[9 + i].x, z: pads[9 + i].z,
+        y: feet == null ? pads[9 + i].top + 1 : feet,
+        yaw: 0.4, alive: true, hp: SHEEP_HP, cool: 0, flee: 0, wool: 1
       });
     }
   }
@@ -528,6 +578,7 @@
             if (y >= h - 1) id = SAND;
           }
           if (id === STONE && y > 0 && y <= 5 && y < h && hash2(x + y * 17, z + y * 3, 4) < 0.04) id = GOLD;
+          else if (id === STONE && y > 1 && y <= 6 && y < h && hash2(x + y * 9, z + 4, 6) < 0.035) id = IRON_ORE;
           put(x, y, z, id);
         }
         if (h < SEA) {
@@ -566,7 +617,7 @@
       var p = String(row).split(',');
       if (p.length < 4) return;
       var id = +p[3];
-      if (id < 0 || id > BED) return;
+      if (id < 0 || id > IRON_ORE) return;
       put(+p[0], +p[1], +p[2], id);
     });
     dirty = true;
@@ -651,6 +702,10 @@
     state.knockX = 0;
     state.knockZ = 0;
     state.gotHost = false;
+    state.armorSoak = 0;
+    state.armorLeft = 0;
+    state.dur = { axe: 40, pick: 80, pickIron: 160 };
+    state.ach = {};
     fallPeak = null;
     grow(newSeed(), false);
     try { localStorage.removeItem(STORE); } catch (e) {}
@@ -794,13 +849,31 @@
     }
     return null;
   }
+  function toolLeft(id) {
+    if (!state.dur) state.dur = { axe: 40, pick: 80, pickIron: 160 };
+    return state.dur[id] | 0;
+  }
+  function wearTool(id) {
+    if (!id || !TOOL_MAX[id]) return;
+    state.dur[id] = toolLeft(id) - 1;
+    if (state.dur[id] <= 0) {
+      state.inv[id] = Math.max(0, (state.inv[id] | 0) - 1);
+      if (state.equip.tool === id) state.equip.tool = '';
+      toast((NAMES[id] || '工具') + '用坏了');
+    }
+  }
   function breakTime(id) {
-    var t = 0.35;
-    if (id === LEAF || id === FLOWER || id === TORCH) t = 0.16;
-    else if (id === STONE || id === GOLD) t = 0.62;
-    else if (id === CHEST) t = 0.4;
-    if ((id === STONE || id === GOLD) && state.equip.tool === 'pick') t = 0.28;
-    return t;
+    var base = 0.4;
+    if (id === LEAF || id === FLOWER || id === TORCH) base = 0.16;
+    else if (id === LOG) base = 0.55;
+    else if (id === STONE || id === GOLD || id === IRON_ORE) base = 0.75;
+    else if (id === CHEST) base = 0.4;
+    var eff = 0.55;
+    var tool = state.equip.tool;
+    if (id === LOG && tool === 'axe' && toolLeft('axe') > 0) eff = 1.0;
+    if ((id === STONE || id === GOLD || id === IRON_ORE) && tool === 'pick' && toolLeft('pick') > 0) eff = 1.5;
+    if ((id === STONE || id === GOLD || id === IRON_ORE) && tool === 'pickIron' && toolLeft('pickIron') > 0) eff = 2.0;
+    return base / eff;
   }
   function dropOf(id) {
     if (id === LOG) return 'wood';
@@ -810,11 +883,55 @@
     if (id === SAND) return 'sand';
     if (id === TORCH) return 'torch';
     if (id === BED) return 'bed';
+    if (id === IRON_ORE) return 'iron';
     return null;
   }
   function cleanName(s) {
     s = String(s || '').replace(/\s+/g, '').slice(0, 8);
     return s || '朋友';
+  }
+  function markAch(key, label) {
+    if (!state.ach) state.ach = {};
+    if (state.ach[key]) return;
+    state.ach[key] = 1;
+    toast('贴纸：' + label);
+    var box = $('stickers');
+    if (box) {
+      var s = document.createElement('i');
+      s.textContent = label;
+      box.appendChild(s);
+    }
+  }
+  function startCook() {
+    if ((state.inv.raw | 0) < 1) { toast('没有生肉'); return false; }
+    state.cooking = 4;
+    toast('开始烤，大约 4 秒');
+    return true;
+  }
+  function eatFood(id) {
+    if ((state.inv[id] | 0) < 1) return false;
+    state.inv[id]--;
+    var add = id === 'cooked' ? 5 : 2;
+    state.hp = Math.min(HP_MAX, state.hp + add);
+    toast((id === 'cooked' ? '熟肉 +5' : '生肉 +2') + '，血 ' + state.hp);
+    renderHp();
+    save();
+    renderHud();
+    return true;
+  }
+  function tryTrade() {
+    var near = false, i;
+    for (i = 0; i < villagers.length; i++) {
+      if (Math.hypot(villagers[i].x - state.px, villagers[i].z - state.pz) < 2.4) near = true;
+    }
+    if (!near) { toast('走近村民再换'); return false; }
+    if ((state.inv.raw | 0) < 1) { toast('要用一块生肉'); return false; }
+    state.inv.raw--;
+    state.inv.torch = (state.inv.torch | 0) + 1;
+    toast('用肉换到 1 个火把');
+    save();
+    renderHud();
+    return true;
   }
   function toast(text) {
     var el = $('toast');
@@ -853,12 +970,22 @@
     { id: 'dirt', name: '泥土', bg: '#a15a28' },
     { id: 'stone', name: '石头', bg: '#7f8cae' },
     { id: 'sand', name: '沙子', bg: '#e6c04a' },
-    { id: 'gold', name: '金币', bg: '#f0c020' }
+    { id: 'gold', name: '金币', bg: '#f0c020' },
+    { id: 'axe', name: '木斧', bg: '#c47a28' },
+    { id: 'pickIron', name: '铁镐', bg: '#9aa4b8' },
+    { id: 'armorWood', name: '木甲', bg: '#b56a2a' },
+    { id: 'armorIron', name: '铁甲', bg: '#8e96a8' },
+    { id: 'shears', name: '剪刀', bg: '#d0d4de' },
+    { id: 'wheat', name: '小麦', bg: '#e6c04a' },
+    { id: 'wool', name: '羊毛', bg: '#f4f4f4' },
+    { id: 'raw', name: '生肉', bg: '#e07070' },
+    { id: 'cooked', name: '熟肉', bg: '#c45a28' },
+    { id: 'iron', name: '铁', bg: '#b0b6c4' }
   ];
   function packOn(cell) {
     if (cell.id === 'torch' || cell.id === 'boat' || cell.id === 'bed') return state.hold === cell.id;
-    if (cell.id === 'armor') return state.equip.armor === 'armor';
-    if (cell.id === 'pick') return state.equip.tool === 'pick' && !state.equip.weapon && state.hold === 'hand';
+    if (ARMOR_CUT[cell.id]) return state.equip.armor === cell.id;
+    if (cell.id === 'pick' || cell.id === 'axe' || cell.id === 'pickIron') return state.equip.tool === cell.id && state.hold === 'hand';
     if (cell.id === 'swordWood' || cell.id === 'swordStone' || cell.id === 'gun') return state.equip.weapon === cell.id && state.hold === 'hand';
     return false;
   }
@@ -868,15 +995,17 @@
     if (id === 'swordWood' || id === 'swordStone' || id === 'gun') {
       state.equip.weapon = state.equip.weapon === id ? '' : id;
       state.hold = 'hand';
-    } else if (id === 'armor') {
+    } else if (id === 'armor' || id === 'armorWood' || id === 'armorIron') {
       if (n < 1) return false;
-      state.equip.armor = state.equip.armor === 'armor' ? '' : 'armor';
+      state.equip.armor = state.equip.armor === id ? '' : id;
+      state.armorLeft = ARMOR_MAX[id] || 20;
       state.hold = 'hand';
-    } else if (id === 'pick') {
-      state.equip.tool = state.equip.tool === 'pick' ? '' : 'pick';
-      if (state.equip.tool === 'pick') state.equip.weapon = '';
+    } else if (id === 'pick' || id === 'axe' || id === 'pickIron') {
+      state.equip.tool = state.equip.tool === id ? '' : id;
+      if (state.equip.tool) state.equip.weapon = '';
       state.hold = 'hand';
-    } else if (id === 'torch' || id === 'boat' || id === 'bed') {
+    } else if (id === 'torch' || id === 'boat' || id === 'bed' || id === 'wheat' || id === 'shears' || id === 'raw' || id === 'cooked') {
+      if ((id === 'raw' || id === 'cooked') && state.hold === id) { eatFood(id); return true; }
       state.hold = state.hold === id ? 'hand' : id;
     } else {
       state.hold = 'hand';
@@ -889,10 +1018,12 @@
   function renderPack() {
     var box = $('pack');
     if (!box) return;
-    var html = '', i, cell, n, on;
+    var html = '', i, cell, n, on, shown = 0;
     for (i = 0; i < PACK.length; i++) {
       cell = PACK[i];
       n = state.inv[cell.id] | 0;
+      if (i >= 14 && n < 1 && !packOn(cell)) continue;
+      shown++;
       on = packOn(cell);
       html += '<button type="button" data-pack="' + cell.id + '" class="' + (on ? 'on' : '') + (n ? '' : ' empty') + '" style="background:' + cell.bg + '"><b>' + cell.name + '</b><i>' + n + '</i></button>';
     }
@@ -910,6 +1041,13 @@
     for (k in r.cost) state.inv[k] -= r.cost[k];
     state.inv[r.give] = (state.inv[r.give] | 0) + r.n;
     if (r.slot && !state.equip[r.slot]) state.equip[r.slot] = r.give;
+    if (r.give === 'axe' || r.give === 'pick' || r.give === 'pickIron') {
+      if (!state.dur) state.dur = {};
+      state.dur[r.give] = TOOL_MAX[r.give];
+    }
+    if (r.give === 'armor' || r.give === 'armorWood' || r.give === 'armorIron') state.armorLeft = ARMOR_MAX[r.give];
+    if (r.give === 'boat') markAch('boat', '第一艘船');
+    if (r.give === 'gun') markAch('gun', '第一把枪');
     save();
     renderHud();
     toast(name === 'sell' ? '卖掉了，得到金币' : ('做成了' + r.say));
@@ -945,6 +1083,10 @@
     if (!hit) return;
     var id = at(hit.x, hit.y, hit.z);
     if (!id || id === WATER) return;
+    var tool = state.equip.tool;
+    if (tool === 'axe' && id === LOG) wearTool('axe');
+    if (tool === 'pick' && (id === STONE || id === GOLD || id === IRON_ORE)) wearTool('pick');
+    if (tool === 'pickIron' && (id === STONE || id === GOLD || id === IRON_ORE)) wearTool('pickIron');
     localSet(hit.x, hit.y, hit.z, AIR);
     if (id === GOLD) { state.inv.gold = (state.inv.gold | 0) + 2; toast('得到 2 枚金币'); }
     else if (id === CHEST) { state.inv.gold = (state.inv.gold | 0) + 5; toast('箱子里有 5 枚金币'); }
@@ -1037,6 +1179,8 @@
     return true;
   }
   function tryPlace() {
+    if (state.hold === 'raw') return startCook();
+    if (state.hold === 'cooked') return eatFood('cooked');
     if (state.hold === 'torch') return placeTorch();
     if (state.hold === 'boat') return placeBoatAimed();
     if (state.hold === 'bed') return placeBed();
@@ -1091,7 +1235,13 @@
   function sleepNow() {
     if (!state.sitting) { toast('小宇：先坐到床上'); return false; }
     var p = dayPhase();
-    if (p > 0.04) state.clock += (1 - p) * DAY;
+    var id, pal, together = false;
+    for (id in remotes) {
+      pal = remotes[id];
+      if (pal && pal.sl) together = true;
+    }
+    if (together && p > 0.04) state.clock += (1 - p) * DAY;
+    else if (!together) toast('两个人一起躺下，才能跳到白天');
     var veil = $('sleep');
     if (veil) {
       veil.hidden = false;
@@ -1099,7 +1249,7 @@
       void veil.offsetWidth;
       veil.classList.add('on');
     }
-    toast('早上好');
+    if (together) toast('早上好');
     emit({ t: 'clock', clock: state.clock });
     return true;
   }
@@ -1211,27 +1361,76 @@
         if (dot > 0.82) { best = { e: e, kind: kind, i: i }; bestD = dist; }
       }
     }
+    scan(sheep, 'sheep');
     scan(pigs, 'pig');
     scan(cows, 'cow');
     return best;
+  }
+  function grantMeat(kind) {
+    var n = kind === 'cow' ? 2 : 1;
+    state.inv.raw = (state.inv.raw | 0) + n;
+    toast('得到 ' + n + ' 块生肉');
+    renderHud();
+  }
+  function strikeAnimal(hit, dmg) {
+    var e = hit.e;
+    e.hp = (e.hp | 0) - dmg;
+    if (hit.kind === 'cow') e.mad = true;
+    if (hit.kind === 'sheep') e.flee = state.clock + 3;
+    var resist = hit.kind === 'cow' ? 0.3 : 0;
+    var dx = e.x - state.px, dz = e.z - state.pz;
+    var len = Math.hypot(dx, dz) || 1;
+    e.x += dx / len * 0.7 * (1 - resist);
+    e.z += dz / len * 0.7 * (1 - resist);
+    if (e.hp <= 0) {
+      e.alive = false;
+      grantMeat(hit.kind);
+    } else toast((hit.kind === 'pig' ? '小猪' : hit.kind === 'cow' ? '牛' : '羊') + '还剩 ' + e.hp);
+    emit({ t: 'mob', k: hit.kind, i: hit.i, hp: e.hp });
   }
   function tryShoot() {
     if (state.equip.weapon !== 'gun' || (state.inv.gun | 0) < 1) return false;
     var hit = animalInSight();
     if (!hit) return false;
-    hit.e.hp = (hit.e.hp | 0) - 1;
-    if (hit.kind === 'cow') hit.e.mad = true;
-    if (hit.e.hp <= 0) {
-      hit.e.alive = false;
-      toast(hit.kind === 'pig' ? '小猪倒下了' : '牛倒下了');
-    } else toast('牛还剩 ' + hit.e.hp + ' 下');
-    emit({ t: 'mob', k: hit.kind, i: hit.i, hp: hit.e.hp });
+    strikeAnimal(hit, GUN_DMG);
     return true;
   }
+  function pokeFriend() {
+    var dir = look(), id, r, dx, dy, dz, dist, dot;
+    for (id in remotes) {
+      r = remotes[id];
+      dx = r.x - state.px; dy = (r.y + 1) - (state.py + 1.5); dz = r.z - state.pz;
+      dist = Math.hypot(dx, dy, dz);
+      if (dist > 2.6) continue;
+      dot = (dx * dir[0] + dy * dir[1] + dz * dir[2]) / (dist || 1);
+      if (dot > 0.45) {
+        emit({ t: 'hit', to: id, n: 2 });
+        toast('砍到 ' + (r.name || '朋友'));
+        return;
+      }
+    }
+  }
   function doPunch(dt) {
+    if (punching && !shotLock && state.hold === 'shears') {
+      shotLock = true;
+      var woolHit = animalInSight();
+      if (woolHit && woolHit.kind === 'sheep' && woolHit.e.wool) {
+        woolHit.e.wool = 0;
+        state.inv.wool = (state.inv.wool | 0) + 2;
+        toast('剪到羊毛，可以做床');
+        renderHud();
+        return;
+      }
+    }
     if (punching && !shotLock && state.equip.weapon === 'gun') {
       shotLock = true;
       if (tryShoot()) { breakAcc = 0; setBar(false, 0); return; }
+    }
+    if (punching && !shotLock && state.equip.weapon !== 'gun') {
+      shotLock = true;
+      var bite = animalInSight();
+      if (bite && Math.hypot(bite.e.x - state.px, bite.e.z - state.pz) < 2.4) strikeAnimal(bite, 1);
+      else pokeFriend();
     }
     if (!punching) shotLock = false;
     var hit = punching ? ray(4.5, true) : null;
@@ -1274,6 +1473,28 @@
       return;
     }
     state.clock += dt;
+    if (state.cooking > 0) {
+      state.cooking -= dt;
+      setBar(true, (1 - state.cooking / 4) * 100);
+      if (state.cooking <= 0) {
+        state.cooking = 0;
+        setBar(false, 0);
+        if ((state.inv.raw | 0) > 0) {
+          state.inv.raw--;
+          state.inv.cooked = (state.inv.cooked | 0) + 1;
+          toast('熟肉好了');
+          renderHud();
+        }
+      }
+    }
+    var rainBucket = Math.floor(state.clock / 45);
+    if (rainBucket !== state._rainBucket) {
+      state._rainBucket = rainBucket;
+      if (hash2(rainBucket, 1, 8) < 0.34) state.rainUntil = state.clock + 16;
+    }
+    state.raining = state.clock < (state.rainUntil || 0);
+    var rainEl = $('rain');
+    if (rainEl) rainEl.classList.toggle('on', !!state.raining);
     var stick = stickInput();
     var mx = Math.sin(state.yaw), mz = -Math.cos(state.yaw);
     var rx = Math.cos(state.yaw), rz = Math.sin(state.yaw);
@@ -1416,19 +1637,17 @@
     e.cool = 1.5;
     state.sitting = null;
     if (wearingArmor()) {
-      if (state.hp > 2) state.hp -= 1;
-      renderHp();
-      toast('护甲挡住了，牛没把你顶下去');
+      hurt(COW_DMG, '护甲挡住了，牛没把你顶下去');
       return;
     }
     var dx = state.px - e.x, dz = state.pz - e.z;
     var len = Math.hypot(dx, dz) || 1;
-    state.knockX = dx / len * 10;
-    state.knockZ = dz / len * 10;
-    state.vy = 7.2;
+    state.knockX = dx / len * 1.9;
+    state.knockZ = dz / len * 1.9;
+    state.vy = 3.4;
     state.onGround = false;
     fallPeak = Math.max(state.py, fallPeak || 0);
-    hurt(2, '牛把你顶下去了');
+    hurt(COW_DMG, '牛把你顶下去了');
   }
   function simMobs(dt) {
     var i, e, dx, dz, dist, feet, nx, nz, len, ang;
@@ -1459,13 +1678,14 @@
         continue;
       }
       var who = nearestBody(e.x, e.z);
-      var chase = state.started && (netRole === 'host' ? who.d < 8 : dist < 8);
+      var chaseR = dayFactor() < 0.2 ? 13 : 8;
+      var chase = state.started && (netRole === 'host' ? who.d < chaseR : dist < chaseR);
       var aim = chase ? (netRole === 'host' ? who : { x: state.px, z: state.pz }) : null;
       if (aim) {
         dx = aim.x - e.x; dz = aim.z - e.z;
         len = Math.hypot(dx, dz) || 1;
         if (len > 0.2) {
-          nx = e.x + dx / len * dt * 2.1;
+          nx = e.x + dx / len * dt * PIG_SPEED * (dayFactor() < 0.2 ? 1.15 : 1);
           nz = e.z + dz / len * dt * 2.1;
           feet = groundFeet(nx, nz);
           if (feet != null && Math.abs(feet - e.y) <= 1.15) {
@@ -1493,14 +1713,17 @@
       }
       var nearCow = nearestBody(e.x, e.z);
       var cowAim = null;
-      if (state.started && (e.mad || (netRole === 'host' ? nearCow.d < 9 : dist < 9))) {
+      var cowR = dayFactor() < 0.2 ? 14 : 9;
+      var holdWheat = state.hold === 'wheat' && (state.inv.wheat | 0) > 0;
+      if (holdWheat && dist < 6) e.tame = state.clock + 8;
+      if (state.started && !holdWheat && (e.tame || 0) < state.clock && (e.mad || (netRole === 'host' ? nearCow.d < cowR : dist < cowR))) {
         cowAim = netRole === 'host' ? nearCow : { x: state.px, z: state.pz, d: dist };
       }
       if (cowAim && cowAim.d > 0.15) {
         dx = cowAim.x - e.x; dz = cowAim.z - e.z;
         dist = Math.hypot(dx, dz);
         len = dist || 1;
-        nx = e.x + dx / len * dt * 2.4;
+        nx = e.x + dx / len * dt * COW_SPEED * (dayFactor() < 0.2 ? 1.1 : 1);
         nz = e.z + dz / len * dt * 2.4;
         feet = groundFeet(nx, nz);
         if (feet != null && Math.abs(feet - e.y) <= 1.2) {
@@ -1511,6 +1734,29 @@
         ang = state.clock * 0.3 + i;
         nx = e.x + Math.sin(ang) * dt * 0.55;
         nz = e.z + Math.cos(ang) * dt * 0.55;
+        feet = groundFeet(nx, nz);
+        if (feet != null && Math.abs(feet - e.y) <= 1.05) { e.x = nx; e.z = nz; e.y = feet; }
+      }
+    }
+    for (i = 0; i < sheep.length; i++) {
+      e = sheep[i];
+      if (!e.alive) continue;
+      if (guestView) continue;
+      var away = e.flee && state.clock < e.flee;
+      var target = nearestBody(e.x, e.z);
+      if (away) {
+        dx = e.x - target.x; dz = e.z - target.z;
+        len = Math.hypot(dx, dz) || 1;
+        nx = e.x + dx / len * dt * (WALK * 0.95);
+        nz = e.z + dz / len * dt * (WALK * 0.95);
+        feet = groundFeet(nx, nz);
+        if (feet != null && Math.abs(feet - e.y) <= 1.2) {
+          e.x = nx; e.z = nz; e.y = feet; e.yaw = Math.atan2(dx, -dz);
+        }
+      } else {
+        ang = state.clock * 0.25 + i;
+        nx = e.x + Math.sin(ang) * dt * 0.35;
+        nz = e.z + Math.cos(ang) * dt * 0.35;
         feet = groundFeet(nx, nz);
         if (feet != null && Math.abs(feet - e.y) <= 1.05) { e.x = nx; e.z = nz; e.y = feet; }
       }
@@ -1532,6 +1778,14 @@
       sitBtn.textContent = state.sitting ? '起来' : '坐下';
     }
     if (sleepBtn) sleepBtn.hidden = !state.sitting;
+    var tradeBtn = $('trade');
+    if (tradeBtn) {
+      var nearV = false, vi;
+      for (vi = 0; vi < villagers.length; vi++) {
+        if (Math.hypot(villagers[vi].x - state.px, villagers[vi].z - state.pz) < 2.4) nearV = true;
+      }
+      tradeBtn.hidden = !nearV;
+    }
     if (toastUntil && Date.now() > toastUntil) {
       var t = $('toast');
       if (t) t.textContent = '';
@@ -1559,7 +1813,7 @@
           yaw: Math.round(state.yaw * 1000) / 1000,
           pitch: Math.round(state.pitch * 1000) / 1000,
           w: weaponCode(), hd: holdCode(), host: netRole === 'host' ? 1 : 0,
-          clock: state.clock, vy: Math.round(state.vy * 10) / 10
+          clock: state.clock, vy: Math.round(state.vy * 10) / 10, sl: state.sitting ? 1 : 0
         });
       }
       if (netRole === 'host' && netHot()) {
@@ -1567,7 +1821,7 @@
         mobAcc += dt;
         if (mobAcc >= 0.4) {
           state._mobAcc = 0;
-          emit({ t: 'mobs', pigs: packMobs(pigs), cows: packMobs(cows, true) });
+          emit({ t: 'mobs', pigs: packMobs(pigs), cows: packMobs(cows, true), sheep: packMobs(sheep) });
         } else state._mobAcc = mobAcc;
       }
     }
@@ -1600,22 +1854,20 @@
   }
   function sunElev() {
     var p = dayPhase();
-    if (p < 0.46) return 0.28 + 0.72 * Math.sin((p / 0.46) * Math.PI);
-    if (p < 0.70) {
-      var u = smooth01((p - 0.46) / 0.24);
-      return 0.28 * (1 - u) - 0.62 * u;
+    if (p < 7 / 12) return 0.35 + 0.6 * Math.sin((p / (7 / 12)) * Math.PI);
+    if (p < 8 / 12) {
+      var u = smooth01((p - 7 / 12) / (1 / 12));
+      return 0.25 * (1 - u) - 0.6 * u;
     }
-    if (p < 0.82) return -0.62;
-    return -0.62 + 0.9 * smooth01((p - 0.82) / 0.18);
+    if (p < 11.5 / 12) return -0.6;
+    return -0.6 + 0.95 * smooth01((p - 11.5 / 12) / (0.5 / 12));
   }
   function dayFactor() {
     var p = dayPhase();
-    var d;
-    if (p < 0.46) d = 1;
-    else if (p < 0.70) d = 1 - smooth01((p - 0.46) / 0.24);
-    else if (p < 0.82) d = 0;
-    else d = smooth01((p - 0.82) / 0.18);
-    return d;
+    if (p < 7 / 12) return 1;
+    if (p < 8 / 12) return 1 - smooth01((p - 7 / 12) / (1 / 12));
+    if (p < 11.5 / 12) return 0;
+    return smooth01((p - 11.5 / 12) / (0.5 / 12));
   }
   function clockText() {
     var p = dayPhase();
@@ -1624,9 +1876,9 @@
     var mm = mins % 60;
     var two = function (n) { return (n < 10 ? '0' : '') + n; };
     var sun = '白天';
-    if (p < 0.08 || p >= 0.82) sun = '太阳升起';
-    else if (p >= 0.46 && p < 0.70) sun = '太阳落下';
-    else if (p >= 0.70 && p < 0.82) sun = '夜里';
+    if (p < 0.04 || p >= 11.5 / 12) sun = '太阳升起';
+    else if (p >= 7 / 12 && p < 8 / 12) sun = '太阳落下';
+    else if (p >= 8 / 12 && p < 11.5 / 12) sun = '夜里';
     return sun + ' · ' + two(hh) + ':' + two(mm);
   }
   function paintClock() {
@@ -1897,6 +2149,11 @@
     pushCube(data, e.x - 0.22, y + 0.16, e.z - 0.26, 0.44, 0.28, 0.5, pink);
     pushCube(data, e.x - 0.1, y + 0.2, e.z - 0.38, 0.2, 0.14, 0.14, dark);
   }
+  function pushSheep(data, e) {
+    var y = e.y, wool = e.wool ? [0.96, 0.96, 0.98] : [0.9, 0.84, 0.8];
+    pushCube(data, e.x - 0.18, y, e.z - 0.2, 0.36, 0.28, 0.4, wool);
+    pushCube(data, e.x - 0.1, y + 0.2, e.z - 0.28, 0.2, 0.16, 0.16, [0.2, 0.16, 0.14]);
+  }
   function pushCow(data, e) {
     var y = e.y;
     var fx = Math.sin(e.yaw || 0), fz = -Math.cos(e.yaw || 0);
@@ -2015,6 +2272,7 @@
     gl.uniform1f(loc.amb, 0.18 + 0.82 * day);
     gl.uniform1f(loc.min, 0);
     gl.uniform1f(loc.fog, 1 - day);
+    if (loc.dim) gl.uniform1f(loc.dim, state.raining ? 1 : 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.vertexAttribPointer(loc.pos, 3, gl.FLOAT, false, 24, 0);
     gl.vertexAttribPointer(loc.col, 3, gl.FLOAT, false, 24, 12);
@@ -2034,6 +2292,7 @@
       pushCube(actors, b.x - 0.02, by + 0.52, b.z - 0.28, 0.05, 0.4, 0.5, [0.94, 0.9, 0.78]);
     }
     for (id = 0; id < pigs.length; id++) if (pigs[id].alive) pushPig(actors, pigs[id]);
+    for (id = 0; id < sheep.length; id++) if (sheep[id].alive) pushSheep(actors, sheep[id]);
     for (id = 0; id < cows.length; id++) if (cows[id].alive) pushCow(actors, cows[id]);
     for (id = 0; id < villagers.length; id++) pushVillager(actors, villagers[id]);
     if (armorDrop && !armorDrop.taken) {
@@ -2085,6 +2344,10 @@
     for (i = 0; i < cows.length; i++) {
       e = cows[i];
       if (e.alive) dots.push({ kind: 'cow', x: e.x, z: e.z, color: '#e08a28' });
+    }
+    for (i = 0; i < sheep.length; i++) {
+      e = sheep[i];
+      if (e.alive) dots.push({ kind: 'sheep', x: e.x, z: e.z, color: '#f4f4f8' });
     }
     dots.push({ kind: 'spawn', x: spawn.x, z: spawn.z, color: '#fff4b0' });
     return { n: MAP_N, cell: MAP_CELL, dots: dots };
@@ -2141,6 +2404,7 @@
     for (ix = 0; ix < villagers.length; ix++) dot(villagers[ix].x, villagers[ix].z, '#7dff6a', 1.6, false);
     for (ix = 0; ix < pigs.length; ix++) if (pigs[ix].alive) dot(pigs[ix].x, pigs[ix].z, '#ff4f93', 2, false);
     for (ix = 0; ix < cows.length; ix++) if (cows[ix].alive) dot(cows[ix].x, cows[ix].z, '#e08a28', 2.2, false);
+    for (ix = 0; ix < sheep.length; ix++) if (sheep[ix].alive) dot(sheep[ix].x, sheep[ix].z, '#f4f4f8', 1.8, false);
     dot(spawn.x, spawn.z, '#fff4b0', 1.8, false);
     for (id in remotes) dot(remotes[id].x, remotes[id].z, '#e23b3b', 2.4, true);
     sx = (px - x0) * cell;
@@ -2167,7 +2431,7 @@
       return false;
     }
     var vs = 'attribute vec3 aPos;attribute vec3 aCol;uniform mat4 uMvp;varying vec3 vCol;varying vec3 vWorld;void main(){vCol=aCol;vWorld=aPos;gl_Position=uMvp*vec4(aPos,1.0);}';
-    var fsLit = 'precision mediump float;varying vec3 vCol;varying vec3 vWorld;uniform float uAmb;uniform float uMin;uniform vec3 uEye;uniform vec3 uSky;uniform float uFog;uniform vec3 uTorch[8];void main(){float light=uAmb;for(int i=0;i<8;i++){vec3 d=vWorld-uTorch[i];float dist=sqrt(d.x*d.x+d.y*d.y+d.z*d.z);light+=clamp(1.0-dist/6.5,0.0,1.0)*0.85;}light=min(max(light,uMin),1.35);vec3 col=vCol*light;float distC=distance(vWorld,uEye);float fogStart=mix(24.0,7.0,uFog);float fogEnd=mix(62.0,20.0,uFog);float f=clamp((distC-fogStart)/(fogEnd-fogStart),0.0,1.0);gl_FragColor=vec4(mix(col,uSky,f),1.0);}';
+    var fsLit = 'precision mediump float;varying vec3 vCol;varying vec3 vWorld;uniform float uAmb;uniform float uMin;uniform vec3 uEye;uniform vec3 uSky;uniform float uFog;uniform float uDim;uniform vec3 uTorch[8];void main(){float light=uAmb;float torchK=0.85*(1.0-0.62*uDim);for(int i=0;i<8;i++){vec3 d=vWorld-uTorch[i];float dist=sqrt(d.x*d.x+d.y*d.y+d.z*d.z);light+=clamp(1.0-dist/6.0,0.0,1.0)*torchK;}light=min(max(light,uMin),1.35);vec3 col=vCol*light;float distC=distance(vWorld,uEye);float fogStart=mix(24.0,7.0,uFog);float fogEnd=mix(62.0,20.0,uFog);float f=clamp((distC-fogStart)/(fogEnd-fogStart),0.0,1.0);gl_FragColor=vec4(mix(col,uSky,f),1.0);}';
     var fsSimple = 'precision mediump float;varying vec3 vCol;varying vec3 vWorld;uniform float uAmb;uniform float uMin;uniform vec3 uEye;uniform vec3 uSky;uniform float uFog;void main(){float light=min(max(uAmb,uMin),1.35);vec3 col=vCol*light;float distC=distance(vWorld,uEye);float fogStart=mix(24.0,7.0,uFog);float fogEnd=mix(62.0,20.0,uFog);float f=clamp((distC-fogStart)/(fogEnd-fogStart),0.0,1.0);gl_FragColor=vec4(mix(col,uSky,f),1.0);}';
     function sh(type, src) {
       var s = gl.createShader(type);
@@ -2200,6 +2464,7 @@
       eye: gl.getUniformLocation(prog, 'uEye'),
       sky: gl.getUniformLocation(prog, 'uSky'),
       fog: gl.getUniformLocation(prog, 'uFog'),
+      dim: gl.getUniformLocation(prog, 'uDim'),
       torch: null
     };
     if (litTorch) {
@@ -2289,8 +2554,27 @@
     }
     return ids;
   }
+  var roomPin = '';
+  var forceRelay = typeof location !== 'undefined' && /(?:\?|&)relay=1/.test(location.search || '');
+  function peerConfig() {
+    var ice = NET_PEER_OPTS.config.iceServers.slice();
+    try {
+      var extra = JSON.parse(localStorage.getItem('xygo-turn') || 'null');
+      if (extra && extra.urls) ice.unshift(extra);
+    } catch (eIce) {}
+    var cfg = { iceServers: ice };
+    if (forceRelay) cfg.iceTransportPolicy = 'relay';
+    return { debug: 0, config: cfg };
+  }
   function netNewPeer(id) {
-    return id ? new Peer(id, NET_PEER_OPTS) : new Peer(NET_PEER_OPTS);
+    var opt = peerConfig();
+    return id ? new Peer(id, opt) : new Peer(opt);
+  }
+  function showRoom(pin) {
+    var el = $('roomCode');
+    if (!el) return;
+    el.hidden = false;
+    el.textContent = '房间码 ' + pin;
   }
   function ensurePeer(cb) {
     if (typeof Peer !== 'undefined') { cb(true); return; }
@@ -2358,6 +2642,12 @@
       e.x = +row[0]; e.y = +row[1]; e.z = +row[2]; e.hp = row[3] | 0; e.alive = !!row[4];
       if (row.length > 5) e.mad = !!row[5];
     }
+    var sheepIn = msg.sheep || [];
+    for (i = 0; i < sheepIn.length && i < sheep.length; i++) {
+      row = sheepIn[i]; e = sheep[i];
+      e.x = +row[0]; e.y = +row[1]; e.z = +row[2]; e.hp = row[3] | 0; e.alive = !!row[4];
+      if ((e.hp | 0) < SHEEP_HP) e.flee = state.clock + 3;
+    }
   }
   function worldPacket() {
     return {
@@ -2399,7 +2689,9 @@
     r.hd = msg.hd | 0;
     r.vy = isFinite(+msg.vy) ? +msg.vy : 0;
     r.hop = r.vy > 2 ? 1 : 0;
+    r.sl = msg.sl ? 1 : 0;
     r.seen = Date.now();
+    if (netRole) markAch('meet', '碰到朋友');
     if (msg.host && netRole === 'guest' && isFinite(+msg.clock) && +msg.clock + 0.4 >= state.clock) state.clock = +msg.clock;
     markHeard();
     setNetStatus();
@@ -2504,7 +2796,7 @@
     }
     if (msg.t === 'boat') addBoat(+msg.x, +msg.z, true, fromConn);
     if (msg.t === 'mob') {
-      var list = msg.k === 'cow' ? cows : pigs;
+      var list = msg.k === 'cow' ? cows : msg.k === 'sheep' ? sheep : pigs;
       if (list[msg.i | 0]) {
         list[msg.i | 0].hp = msg.hp | 0;
         list[msg.i | 0].alive = (msg.hp | 0) > 0;
@@ -2513,6 +2805,7 @@
       if (netRole === 'host') relay({ t: 'mob', k: msg.k, i: msg.i | 0, hp: msg.hp | 0, from: msg.from || selfId }, fromConn);
     }
     if (msg.t === 'mobs' && netRole === 'guest') applyMobPack(msg);
+    if (msg.t === 'hit' && msg.to === selfId) hurt(2, (msg.name || '朋友') + '砍了你');
   }
   function stopBcPulse() {
     if (bcPulse) { clearInterval(bcPulse); bcPulse = null; }
@@ -2566,20 +2859,14 @@
     setTimeout(function () { if (!settled) fail(); }, 5000);
   }
   function claimHost() {
-    var ids = netPairIds().slice(0, NET_SLOTS);
-    var startAt = (Math.random() * ids.length) | 0;
-    var order = ids.slice(startAt).concat(ids.slice(0, startAt));
-    var i = 0;
-    function tryNext() {
-      if (netAbort || netRole !== 'host') return;
-      if (i >= order.length) {
-        toast('小宇：座位忙。同一台电脑的另一个窗口仍可以加入。');
-        return;
-      }
-      netClaim(order[i++], function (peer, claimed) {
+    if (!roomPin) roomPin = String(1000 + ((Math.random() * 9000) | 0));
+    var id = 'xygo-mw11-' + roomPin;
+    netCode = roomPin;
+    showRoom(roomPin);
+    netClaim(id, function (peer, claimed) {
         if (netAbort || netRole !== 'host') { try { peer.destroy(); } catch (e) {} return; }
         netPeer = peer;
-        netCode = claimed;
+        netCode = roomPin;
         peer.on('connection', onHostConn);
         peer.on('disconnected', function () {
           setTimeout(function () {
@@ -2594,9 +2881,15 @@
           claimHost();
         });
         peer.on('error', function (err) { if (err && err.type === 'peer-unavailable') return; });
-      }, tryNext);
-    }
-    tryNext();
+      }, function () {
+        if (state._pinRetry) {
+          toast('房间码暂时占用。同一台电脑的窗口仍可以加入。');
+          return;
+        }
+        state._pinRetry = 1;
+        roomPin = String(1000 + ((Math.random() * 9000) | 0));
+        claimHost();
+      });
   }
   function netProbeId(peer, id) {
     return new Promise(function (resolve) {
@@ -2749,10 +3042,33 @@
   function stopNetWatch() {
     if (netWatch) { clearInterval(netWatch); netWatch = null; }
   }
+  function connectGuestCode(pin) {
+    var id = 'xygo-mw11-' + pin;
+    lastHostId = id;
+    var peer;
+    try { peer = netNewPeer(); } catch (e) { setWait('连不上房间'); return; }
+    netPeer = peer;
+    peer.on('open', function () {
+      var conn, timer;
+      try { conn = peer.connect(id, { reliable: true }); }
+      catch (e2) { setWait('房间码连不上'); return; }
+      timer = setTimeout(function () {
+        if (!netLinked) setWait('房间 ' + pin + ' 还没通。对一下 4 位数字。跨网若强制走中继，要等更久。');
+      }, 12000);
+      conn.on('open', function () { clearTimeout(timer); wireGuest(conn); setWait(''); });
+      conn.on('error', function () {});
+    });
+    peer.on('error', function () {
+      if (!state.gotHost && !bcLinked) setWait('信令不通。同一台电脑的两个窗口仍可以直接加入。');
+    });
+  }
   function beginHost() {
     openBC();
     netAbort = false;
     netRole = 'host';
+    if (!roomPin) roomPin = String(1000 + ((Math.random() * 9000) | 0));
+    netCode = roomPin;
+    showRoom(roomPin);
     netSession = 'mw' + ((Date.now() / 1000) | 0).toString(36) + Math.random().toString(36).slice(2, 6);
     enterGame(false);
     startBcPulse();
@@ -2768,7 +3084,7 @@
       });
     }, 50);
   }
-  function beginJoin() {
+  function beginJoin(code) {
     openBC();
     if (state.started && netRole === 'host') return;
     if (!state.gotHost) snapshotHome();
@@ -2777,17 +3093,25 @@
     state.gotHost = false;
     linkedSession = '';
     netSession = '';
-    setWait('小宇：正在找房主。请让另一台先点「当房主」。');
+    var pin = String(code || '').replace(/\D/g, '').slice(0, 4);
+    if (pin.length === 4) {
+      roomPin = pin;
+      lastHostId = 'xygo-mw11-' + pin;
+      setWait('正在连房间 ' + pin);
+    } else {
+      setWait('同一台电脑可以直接加入。跨网络请输入房主的 4 位房间码。');
+    }
     startNetWatch();
     var cancel = $('netCancel');
     if (cancel) cancel.hidden = false;
     ensurePeer(function (ok) {
       if (netAbort || netRole !== 'guest') return;
-      if (!ok) {
-        setWait('联网组件没载入。同一台电脑请再开一个窗口点加入。');
+      if (pin.length === 4) {
+        if (!ok) { setWait('联网组件没载入'); return; }
+        connectGuestCode(pin);
         return;
       }
-      probeGuest();
+      if (!ok) setWait('联网组件没载入。同一台电脑请再开一个窗口点加入。');
     });
   }
   function netShutdown() {
@@ -2836,7 +3160,12 @@
     var host = $('host');
     if (host) host.addEventListener('click', beginHost);
     var join = $('join');
-    if (join) join.addEventListener('click', beginJoin);
+    if (join) join.addEventListener('click', function () {
+      var input = $('roomIn');
+      beginJoin(input ? input.value : '');
+    });
+    var tradeBtn = $('trade');
+    if (tradeBtn) tradeBtn.addEventListener('click', function (e) { e.preventDefault(); tryTrade(); });
     var cancel = $('netCancel');
     if (cancel) cancel.addEventListener('click', netShutdown);
     var leave = $('leave');
@@ -3023,6 +3352,10 @@
     cowBump: cowBump, tryShoot: tryShoot, mapDots: mapDots, wearingArmor: wearingArmor,
     columnSurface: columnSurface, tryShore: tryShore, toggleRide: toggleRide, toggleSit: toggleSit,
     sleepNow: sleepNow, lightPoints: lightPoints, load: load, dayPhase: dayPhase,
+    sheep: sheep, eatFood: eatFood, startCook: startCook, tryTrade: tryTrade, GUN_DMG: GUN_DMG,
+    peerUp: function () { return !!netLinked; },
+    roomPin: function () { return roomPin; },
+    PIG_HP: PIG_HP, COW_HP: COW_HP, SHEEP_HP: SHEEP_HP, toolLeft: toolLeft,
     clockText: clockText, selectPack: selectPack, villageAt: function () { return village; },
     press: function (code, on) { keys[code] = !!on; },
     selfId: function () { return selfId; },
