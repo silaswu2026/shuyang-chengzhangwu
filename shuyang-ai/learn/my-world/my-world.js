@@ -1,10 +1,14 @@
-/* 方块小世界 mw13 · 树干露在叶子下面，敲下去才进木头。 */
+/* 方块小世界 mw14 · 更大的地图、煤炭盲盒 12 种武器、火山和 5 分钟夺宝。 */
 (function () {
   'use strict';
 
-  var TIP = 'mw13';
+  var TIP = 'mw14';
   var STORE = 'xygo-my-world';
-  var W = 72, H = 22, D = 72, SEA = 8, DAY = 360;
+  var HOST_NAME = '杨杨';
+  var W = 96, H = 24, D = 96, SEA = 8, DAY = 360;
+  var MATCH_SEC = 300;
+  var VOLCANO_FIRST = 120, VOLCANO_DUR = 60, VOLCANO_PERIOD = 150;
+  var ROCK_GAP = 1.8, ROCK_LIFE = 1.35;
   var HP_MAX = 10;
   var WALK = 3.0;
   var GUN_DMG = 4;
@@ -18,6 +22,7 @@
   var MAP_CELL = 2;
   var AIR = 0, GRASS = 1, DIRT = 2, LOG = 3, LEAF = 4, STONE = 5;
   var WATER = 6, SAND = 7, FLOWER = 8, GOLD = 9, TORCH = 10, CHEST = 11, BED = 12, IRON_ORE = 13, SNOW = 14;
+  var LAVA = 15, MAGMA = 16, COAL_ORE = 17;
   var COL = {
     1: [0.28, 0.82, 0.22],
     2: [0.72, 0.40, 0.16],
@@ -32,7 +37,10 @@
     11: [0.86, 0.42, 0.12],
     12: [0.95, 0.22, 0.38],
     13: [0.58, 0.62, 0.70],
-    14: [0.93, 0.96, 1]
+    14: [0.93, 0.96, 1],
+    15: [0.95, 0.28, 0.06],
+    16: [0.42, 0.12, 0.08],
+    17: [0.16, 0.16, 0.18]
   };
   var SHADE = [1, 0.55, 0.82, 0.68, 0.9, 0.64];
   var FACES = [
@@ -44,34 +52,53 @@
     [1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0]
   ];
   var KID_NAMES = ['乐乐', '豆豆', '果果', '星星', '月月', '安安', '米米', '桃桃', '橙橙', '森森', '洋洋', '贝贝', '糖糖', '泡泡', '朵朵', '球球', '木木', '小河', '小船', '小金', '小山', '小树', '阳光', '棉花', '南瓜', '葡萄', '荔枝', '樱桃', '云朵', '海星', '贝壳', '松果'];
-  var INV_KEYS = ['wood', 'leaf', 'dirt', 'stone', 'sand', 'torch', 'boat', 'bed', 'swordWood', 'swordStone', 'swordIron', 'armor', 'armorWood', 'armorIron', 'pick', 'pickIron', 'axe', 'shears', 'gun', 'gold', 'iron', 'wool', 'wheat', 'raw', 'cooked'];
-  var BAG_SHOW = [['wood', '木头'], ['leaf', '树叶'], ['dirt', '泥土'], ['stone', '石头'], ['sand', '沙子'], ['torch', '火把'], ['boat', '小船'], ['bed', '床'], ['swordWood', '木剑'], ['swordStone', '石剑'], ['armor', '叶衣'], ['pick', '石稿'], ['gun', '枪']];
-  var NAMES = { wood: '木头', leaf: '树叶', dirt: '泥土', stone: '石头', sand: '沙子', torch: '火把', boat: '小船', bed: '床', swordWood: '木剑', swordStone: '石剑', swordIron: '铁剑', armor: '叶衣', armorWood: '木甲', armorIron: '铁甲', pick: '石镐', pickIron: '铁镐', axe: '木斧', shears: '剪刀', gun: '枪', gold: '金币', iron: '铁', wool: '羊毛', wheat: '小麦', raw: '生肉', cooked: '熟肉' };
+  var INV_KEYS = ['wood', 'leaf', 'dirt', 'stone', 'sand', 'torch', 'boat', 'bed', 'swordWood', 'swordStone', 'swordIron', 'armor', 'armorWood', 'armorIron', 'pick', 'pickIron', 'axe', 'shears', 'gun', 'gold', 'iron', 'wool', 'wheat', 'raw', 'cooked', 'coal', 'stick', 'axeStone', 'hammer', 'nightSword', 'axeVolcano', 'hammerBlast', 'spear', 'rod', 'pickStar', 'swordSun'];
+  var BAG_SHOW = [['wood', '木头'], ['leaf', '树叶'], ['dirt', '泥土'], ['stone', '石头'], ['sand', '沙子'], ['coal', '煤炭'], ['torch', '火把'], ['boat', '小船'], ['bed', '床'], ['swordIron', '铁剑'], ['armor', '叶衣'], ['stick', '木棍'], ['spear', '石矛']];
+  var NAMES = { wood: '木头', leaf: '树叶', dirt: '泥土', stone: '石头', sand: '沙子', torch: '火把', boat: '小船', bed: '床', swordWood: '木剑', swordStone: '石剑', swordIron: '铁剑', armor: '叶衣', armorWood: '木甲', armorIron: '铁甲', pick: '石镐', pickIron: '铁镐', axe: '木斧', shears: '剪刀', gun: '枪', gold: '金币', iron: '铁矿', wool: '羊毛', wheat: '小麦', raw: '生肉', cooked: '熟肉', coal: '煤炭', stick: '木棍', axeStone: '石斧', hammer: '铁锤', nightSword: '暗夜剑', axeVolcano: '火山斧', hammerBlast: '爆裂锤', spear: '石矛', rod: '铁棒', pickStar: '星火镐', swordSun: '暖阳剑' };
   var ARMOR_CUT = { armor: 0.2, armorWood: 0.35, armorIron: 0.55 };
   var ARMOR_MAX = { armor: 20, armorWood: 40, armorIron: 80 };
   var TOOL_MAX = { axe: 40, pick: 80, pickIron: 160 };
   var RECIPES = {
-    torch: { cost: { wood: 3 }, give: 'torch', n: 1, say: '火把', woodGate: 1 },
     boat: { cost: { wood: 10 }, give: 'boat', n: 1, say: '小船', woodGate: 1 },
-    swordWood: { cost: { wood: 3 }, give: 'swordWood', n: 1, say: '木剑', slot: 'weapon' },
-    swordStone: { cost: { stone: 2, wood: 1 }, give: 'swordStone', n: 1, say: '石剑', slot: 'weapon' },
-    swordIron: { cost: { iron: 2, wood: 1 }, give: 'swordIron', n: 1, say: '铁剑', slot: 'weapon' },
     armor: { cost: { leaf: 8 }, give: 'armor', n: 1, say: '叶衣', slot: 'armor' },
-    pick: { cost: { stone: 3, wood: 1 }, give: 'pick', n: 1, say: '石稿', slot: 'tool' },
-    gun: { cost: { stone: 2, wood: 1 }, give: 'gun', n: 1, say: '枪', slot: 'weapon' },
     bed: { cost: { wood: 3, wool: 2 }, give: 'bed', n: 1, say: '床' },
-    axe: { cost: { wood: 3 }, give: 'axe', n: 1, say: '木斧', slot: 'tool' },
-    pickIron: { cost: { iron: 3, wood: 1 }, give: 'pickIron', n: 1, say: '铁镐', slot: 'tool' },
     armorWood: { cost: { wood: 6 }, give: 'armorWood', n: 1, say: '木甲', slot: 'armor' },
     armorIron: { cost: { iron: 6 }, give: 'armorIron', n: 1, say: '铁甲', slot: 'armor' },
     shears: { cost: { iron: 2 }, give: 'shears', n: 1, say: '剪刀' },
     wheat: { cost: { leaf: 2 }, give: 'wheat', n: 1, say: '小麦' },
     sell: { cost: { wood: 1 }, give: 'gold', n: 1, say: '金币' }
   };
+  var GEAR = {
+    axeStone: { name: '石斧', slot: 'weapon', dmg: 3, chop: 1.25, dur: 48, code: 5 },
+    swordIron: { name: '铁剑', slot: 'weapon', dmg: 4, code: 4 },
+    hammer: { name: '铁锤', slot: 'weapon', dmg: 5, code: 6 },
+    nightSword: { name: '暗夜剑', slot: 'weapon', dmg: 4, night: 6, code: 7 },
+    axeVolcano: { name: '火山斧', slot: 'weapon', dmg: 4, chop: 1.5, dur: 64, code: 8 },
+    hammerBlast: { name: '爆裂锤', slot: 'weapon', dmg: 6, knock: 1, code: 9 },
+    stick: { name: '木棍', slot: 'weapon', dmg: 2, code: 1 },
+    spear: { name: '石矛', slot: 'weapon', dmg: 3, reach: 3.3, code: 2 },
+    rod: { name: '铁棒', slot: 'weapon', dmg: 3, code: 10 },
+    pickStar: { name: '星火镐', slot: 'tool', dmg: 2, mine: 1.85, dur: 120, code: 12 },
+    swordSun: { name: '暖阳剑', slot: 'weapon', dmg: 3, warm: 1, code: 11 }
+  };
+  var MIX = [
+    { mats: ['stone', 'wood'], give: 'axeStone', say: '石斧', slot: 'weapon' },
+    { mats: ['iron', 'wood'], give: 'swordIron', say: '铁剑', slot: 'weapon' },
+    { mats: ['stone', 'iron'], give: 'hammer', say: '铁锤', slot: 'weapon' },
+    { mats: ['iron', 'stone', 'wood'], give: 'nightSword', say: '暗夜剑', slot: 'weapon' },
+    { mats: ['coal', 'wood'], give: 'torch', say: '火把', n: 1 },
+    { mats: ['coal', 'stone'], give: 'axeVolcano', say: '火山斧', slot: 'weapon' },
+    { mats: ['coal', 'iron'], give: 'hammerBlast', say: '爆裂锤', slot: 'weapon' },
+    { mats: ['wood', 'wood'], give: 'stick', say: '木棍', slot: 'weapon' },
+    { mats: ['stone', 'stone'], give: 'spear', say: '石矛', slot: 'weapon' },
+    { mats: ['iron', 'iron'], give: 'rod', say: '铁棒', slot: 'weapon' },
+    { mats: ['coal', 'wood', 'stone'], give: 'pickStar', say: '星火镐', slot: 'tool' },
+    { mats: ['coal', 'wood', 'iron'], give: 'swordSun', say: '暖阳剑', slot: 'weapon' }
+  ];
   var SLOT_WORD = {
-    weapon: { '': '武器 空', swordWood: '武器 木剑', swordStone: '武器 石剑', swordIron: '武器 铁剑', gun: '武器 枪' },
-    armor: { '': '护甲 空', armor: '护甲 叶衣' },
-    tool: { '': '工具 空', pick: '工具 石稿' }
+    weapon: { '': '武器 空', swordWood: '武器 木剑', swordStone: '武器 石剑', swordIron: '武器 铁剑', gun: '武器 枪', stick: '武器 木棍', spear: '武器 石矛', axeStone: '武器 石斧', hammer: '武器 铁锤', nightSword: '武器 暗夜剑', axeVolcano: '武器 火山斧', hammerBlast: '武器 爆裂锤', rod: '武器 铁棒', swordSun: '武器 暖阳剑', pickStar: '武器 星火镐' },
+    armor: { '': '护甲 空', armor: '护甲 叶衣', armorWood: '护甲 木甲', armorIron: '护甲 铁甲' },
+    tool: { '': '工具 空', pick: '工具 石稿', axe: '工具 木斧', pickIron: '工具 铁镐', axeStone: '工具 石斧', axeVolcano: '工具 火山斧', pickStar: '工具 星火镐' }
   };
   var EMOTES = [
     { id: 'hi', face: '👋' },
@@ -102,6 +129,8 @@
   var spawn = { x: 20.5, y: 10, z: 20.5 };
   var boats = [];
   var torchCells = [];
+  var volcano = null;
+  var treasures = [];
   var pigs = [];
   var cows = [];
   var sheep = [];
@@ -118,6 +147,8 @@
     onGround: false, started: false, ride: -1, sitting: null, hold: 'hand', clock: 0,
     hp: HP_MAX, knockX: 0, knockZ: 0, gotHost: false,
     name: KID_NAMES[(Math.random() * KID_NAMES.length) | 0],
+    nameTouched: false,
+    score: 0, match: 0, matchOver: false, mix: [],
     inv: blankInv(),
     equip: { weapon: '', armor: '', tool: '' }
   };
@@ -151,13 +182,13 @@
   function openBC() {
     if (netBC || typeof document === 'undefined' || typeof BroadcastChannel === 'undefined') return;
     try {
-      netBC = new BroadcastChannel('xygo-my-world-mw13');
+      netBC = new BroadcastChannel('xygo-my-world-' + TIP);
       netBC.onmessage = function (ev) { onNet(ev && ev.data, 'bc', null); };
     } catch (eBc) { netBC = null; }
   }
 
   function blankInv() {
-    return { wood: 0, leaf: 0, dirt: 0, stone: 0, sand: 0, torch: 0, boat: 0, bed: 0, swordWood: 0, swordStone: 0, swordIron: 0, armor: 0, armorWood: 0, armorIron: 0, pick: 0, pickIron: 0, axe: 0, shears: 0, gun: 0, gold: 0, iron: 0, wool: 0, wheat: 0, raw: 0, cooked: 0 };
+    return { wood: 0, leaf: 0, dirt: 0, stone: 0, sand: 0, torch: 0, boat: 0, bed: 0, swordWood: 0, swordStone: 0, swordIron: 0, armor: 0, armorWood: 0, armorIron: 0, pick: 0, pickIron: 0, axe: 0, shears: 0, gun: 0, gold: 0, iron: 0, wool: 0, wheat: 0, raw: 0, cooked: 0, coal: 0, stick: 0, axeStone: 0, hammer: 0, nightSword: 0, axeVolcano: 0, hammerBlast: 0, spear: 0, rod: 0, pickStar: 0, swordSun: 0 };
   }
   function $(id) {
     return (typeof document !== 'undefined') ? document.getElementById(id) : null;
@@ -250,7 +281,8 @@
   function forestCenters() {
     return [
       { x: 11 + (worldSeed % 8), z: 28 + ((worldSeed >> 3) % 12), r: 11 },
-      { x: 36 + ((worldSeed >> 5) % 16), z: 16 + ((worldSeed >> 8) % 10), r: 8.5 }
+      { x: 36 + ((worldSeed >> 5) % 16), z: 16 + ((worldSeed >> 8) % 10), r: 8.5 },
+      { x: 48 + ((worldSeed >> 2) % 10), z: 62 + ((worldSeed >> 4) % 14), r: 9 }
     ];
   }
   function inForest(x, z, centers) {
@@ -656,6 +688,245 @@
       });
     }
   }
+  function buildVolcano() {
+    var cx = 80, cz = 52;
+    if (cx > W - 8) cx = W - 8;
+    if (cz > D - 8) cz = D - 8;
+    var base = SEA + 2;
+    var x, z, y, dx, dz, dist, top, h;
+    for (dx = -7; dx <= 7; dx++) {
+      for (dz = -7; dz <= 7; dz++) {
+        x = cx + dx; z = cz + dz;
+        if (x < 1 || z < 1 || x >= W - 1 || z >= D - 1) continue;
+        dist = Math.hypot(dx, dz);
+        if (dist > 6.4) continue;
+        h = Math.round((1 - dist / 6.4) * 6);
+        top = base + h;
+        for (y = 0; y < H; y++) {
+          if (y < base - 1) {
+            if (at(x, y, z) === AIR || at(x, y, z) === WATER) put(x, y, z, STONE);
+          } else if (y < top) put(x, y, z, STONE);
+          else put(x, y, z, AIR);
+        }
+        if (h >= 4 && dist > 4.1 && hash2(x, z, 44) < 0.55) put(x, top - 1, z, COAL_ORE);
+      }
+    }
+    var pool = [];
+    var floor = base + 3;
+    for (dx = -2; dx <= 2; dx++) {
+      for (dz = -2; dz <= 2; dz++) {
+        if (dx * dx + dz * dz > 4) continue;
+        x = cx + dx; z = cz + dz;
+        for (y = floor; y < H; y++) put(x, y, z, AIR);
+        put(x, floor - 1, z, STONE);
+        if (dx * dx + dz * dz <= 2) pool.push({ x: x, y: floor, z: z });
+      }
+    }
+    put(cx - 3, floor, cz, AIR);
+    put(cx - 3, floor + 1, cz, AIR);
+    put(cx - 4, floor, cz, AIR);
+    put(cx - 4, floor + 1, cz, AIR);
+    volcano = { cx: cx, cz: cz, base: base, floor: floor, lip: floor + 4, pool: pool, r: 6 };
+  }
+  function seedCoalNear() {
+    var n = 0, g = 0, x, z, y;
+    while (n < 5 && g < 70) {
+      g++;
+      x = 20 + ((g * 5 + (worldSeed % 5)) % 16);
+      z = 14 + ((g * 7) % 14);
+      for (y = 2; y <= 5; y++) {
+        if (at(x, y, z) === STONE) { put(x, y, z, COAL_ORE); n++; break; }
+      }
+    }
+  }
+  function volcanoPhase(clock) {
+    var c = clock == null ? (state.match || 0) : clock;
+    if (c < VOLCANO_FIRST) return { on: false, t: 0, index: -1 };
+    var since = c - VOLCANO_FIRST;
+    var index = Math.floor(since / VOLCANO_PERIOD);
+    var t = since - index * VOLCANO_PERIOD;
+    return { on: t >= 0 && t < VOLCANO_DUR, t: t, index: index };
+  }
+  function syncVolcano() {
+    if (!volcano || !volcano.pool) return;
+    var phase = volcanoPhase();
+    var mode = phase.on ? 'lava' : (phase.index >= 0 ? 'magma' : 'air');
+    var id = mode === 'lava' ? LAVA : (mode === 'magma' ? MAGMA : AIR);
+    var i, c, changed = false;
+    for (i = 0; i < volcano.pool.length; i++) {
+      c = volcano.pool[i];
+      if (at(c.x, c.y, c.z) !== id) { put(c.x, c.y, c.z, id); changed = true; }
+    }
+    var tok = mode + ':' + phase.index;
+    var prev = state._volcanoTok || '';
+    if (changed && tok !== prev) {
+      if (mode === 'lava' && prev.indexOf('lava:') !== 0) toast('火山喷发了，两边在掉石头');
+      if (mode === 'magma' && prev.indexOf('magma:') !== 0) toast('岩浆退了，地上留下烫烫的残渣');
+    }
+    state._volcanoTok = tok;
+  }
+  function rockAt(index, slot, side, age) {
+    if (!volcano) return null;
+    var dir = side ? 1 : -1;
+    return {
+      x: volcano.cx + 0.5 + dir * (2.5 + age * 3.6),
+      y: volcano.floor + 7 - age * age * 5.4,
+      z: volcano.cz + 0.5 + dir * 0.2,
+      side: side,
+      id: index + ':' + slot + ':' + side
+    };
+  }
+  function activeRocks() {
+    if (!volcano) return [];
+    var phase = volcanoPhase();
+    if (!phase.on) return [];
+    var out = [], slot, side, age, maxSlot = Math.floor(phase.t / ROCK_GAP);
+    if (maxSlot > 40) maxSlot = 40;
+    for (slot = 0; slot <= maxSlot; slot++) {
+      age = phase.t - slot * ROCK_GAP;
+      if (age < 0 || age > ROCK_LIFE) continue;
+      for (side = 0; side < 2; side++) out.push(rockAt(phase.index, slot, side, age));
+    }
+    return out;
+  }
+  function tickRocks() {
+    var rocks = activeRocks(), i, r, dx, dy, dz;
+    if (!state.rockHit) state.rockHit = {};
+    for (i = 0; i < rocks.length; i++) {
+      r = rocks[i];
+      if (!r || state.rockHit[r.id]) continue;
+      dx = r.x - state.px;
+      dy = r.y - (state.py + 0.8);
+      dz = r.z - state.pz;
+      if (dx * dx + dy * dy + dz * dz < 0.75) {
+        state.rockHit[r.id] = 1;
+        hurt(2, '石头砸到了');
+      }
+    }
+  }
+  function coverClear(t) {
+    if (!t || !t.buried) return true;
+    if (!t.cover) return true;
+    return at(t.cover.x, t.cover.y, t.cover.z) === AIR;
+  }
+  function treasureById(id) {
+    var i;
+    for (i = 0; i < treasures.length; i++) if (treasures[i].id === id) return treasures[i];
+    return null;
+  }
+  function placeTreasures() {
+    var kept = {}, i;
+    for (i = 0; i < treasures.length; i++) {
+      if (treasures[i].taken) kept[treasures[i].id] = { taken: treasures[i].taken, taker: treasures[i].taker };
+    }
+    treasures = [];
+    var used = [];
+    var sp = spawn || { x: 18.5, z: 12.5 };
+    function far(x, z) {
+      var k;
+      for (k = 0; k < used.length; k++) if (Math.hypot(used[k].x - x, used[k].z - z) < 7) return false;
+      if (Math.hypot(x + 0.5 - sp.x, z + 0.5 - sp.z) < 6) return false;
+      return true;
+    }
+    function takeSpot(pred) {
+      var guard, x, z, top, id;
+      for (guard = 0; guard < 500; guard++) {
+        x = 2 + ((guard * 17 + (worldSeed % 97)) % (W - 4));
+        z = 2 + ((guard * 29 + ((worldSeed * 3) % 89)) % (D - 4));
+        top = highestSolid(x, z);
+        if (top < 1) continue;
+        id = at(x, top, z);
+        if (houseAt(x, z)) continue;
+        if (!far(x, z)) continue;
+        if (!pred(x, z, top, id)) continue;
+        used.push({ x: x, z: z });
+        return { x: x, z: z, top: top, id: id };
+      }
+      return null;
+    }
+    function add(def, spot, buried) {
+      if (!spot) spot = { x: 8 + treasures.length * 3, z: 8, top: SEA, id: GRASS };
+      var prev = kept[def.id];
+      treasures.push({
+        id: def.id, name: def.name, score: def.score, shape: def.shape,
+        x: spot.x + 0.5, y: buried ? spot.top : spot.top + 1, z: spot.z + 0.5,
+        buried: buried ? 1 : 0,
+        cover: buried ? { x: spot.x, y: spot.top, z: spot.z } : null,
+        taken: prev ? prev.taken : '',
+        taker: prev ? prev.taker : ''
+      });
+    }
+    add({ id: 'star', name: '小星星', score: 12, shape: 'star' }, takeSpot(function (x, z, top, id) {
+      var d = Math.hypot(x + 0.5 - sp.x, z + 0.5 - sp.z);
+      return id === GRASS && d >= 8 && d <= 20;
+    }), false);
+    add({ id: 'shell', name: '海贝', score: 18, shape: 'shell' }, takeSpot(function (x, z, top, id) {
+      return id === SAND && x < 24;
+    }), false);
+    add({ id: 'gem', name: '绿宝石', score: 22, shape: 'gem' }, takeSpot(function (x, z, top, id) {
+      return id === GRASS && Math.hypot(x - sp.x, z - sp.z) > 24;
+    }), false);
+    add({ id: 'crystal', name: '蓝水晶', score: 35, shape: 'crystal' }, takeSpot(function (x, z, top, id) {
+      return id === GRASS && inForest(x, z, forestCenters());
+    }), false);
+    add({ id: 'idol', name: '雪人宝', score: 55, shape: 'idol' }, takeSpot(function (x, z, top, id) {
+      return id === SNOW;
+    }), true);
+    var emberSpot = null;
+    if (volcano && volcano.pool && volcano.pool.length) {
+      var p0 = volcano.pool[0];
+      emberSpot = { x: p0.x, z: p0.z, top: p0.y, id: AIR };
+      used.push({ x: p0.x, z: p0.z });
+    }
+    add({ id: 'ember', name: '火晶', score: 45, shape: 'ember' }, emberSpot, false);
+    if (emberSpot) {
+      var em = treasures[treasures.length - 1];
+      em.x = emberSpot.x + 0.5;
+      em.y = emberSpot.top;
+      em.z = emberSpot.z + 0.5;
+      em.buried = 0;
+      em.cover = null;
+    }
+    add({ id: 'crown', name: '小王冠', score: 70, shape: 'crown' }, takeSpot(function (x, z, top, id) {
+      return x > W * 0.7 && z > D * 0.5 && (id === GRASS || id === DIRT || id === SNOW || id === STONE || id === COAL_ORE);
+    }), true);
+  }
+  function grantScore(tr) {
+    if (!tr) return;
+    if (!state.scored) state.scored = {};
+    if (state.scored[tr.id]) return;
+    state.scored[tr.id] = 1;
+    state.score = (state.score | 0) + tr.score;
+    toast(tr.name + ' +' + tr.score);
+    renderHud();
+    if (state.matchOver) showMatchEnd();
+  }
+  function announceLoot(tr) {
+    emit({ t: 'loot', id: tr.id, who: tr.taken, name: tr.taker, score: tr.score });
+  }
+  function tryTake() {
+    var best = null, bestD = 1.35, i, t, d;
+    for (i = 0; i < treasures.length; i++) {
+      t = treasures[i];
+      if (!t || t.taken) continue;
+      if (t.buried && !coverClear(t)) continue;
+      d = Math.hypot(t.x - state.px, t.z - state.pz);
+      if (Math.abs((t.y || 0) - state.py) > 2.2) continue;
+      if (d < bestD) { bestD = d; best = t; }
+    }
+    if (!best) return false;
+    if (netRole === 'guest') {
+      if (best.askAt && state.match - best.askAt < 0.8) return false;
+      best.askAt = state.match || 0;
+      emit({ t: 'lootAsk', id: best.id, name: state.name });
+      return true;
+    }
+    best.taken = selfId;
+    best.taker = state.name;
+    grantScore(best);
+    announceLoot(best);
+    return true;
+  }
   function grow(seed, keepPos) {
     worldSeed = (seed >>> 0) || 1;
     blocks = new Uint8Array(W * H * D);
@@ -685,6 +956,7 @@
           }
           if (id === STONE && y > 0 && y <= 5 && y < h && hash2(x + y * 17, z + y * 3, 4) < 0.04) id = GOLD;
           else if (id === STONE && y > 1 && y <= 8 && y < h && hash2(x + y * 9, z + 4, 6) < 0.05) id = IRON_ORE;
+          else if (id === STONE && y > 1 && y <= 7 && y < h && hash2(x + y * 13, z + 9, 31) < 0.055) id = COAL_ORE;
           put(x, y, z, id);
         }
         if (h < SEA) {
@@ -701,14 +973,29 @@
         woods = inForest(x, z, centers);
         if (woods && hash2(x, z, 9) < 0.55) placeTree(x, z, h);
         else if (!woods && hash2(x, z, 9) < 0.02) placeTree(x, z, h);
+        else if (hash2(x, z, 31) < 0.02 && h >= SEA && h <= SEA + 3 && Math.hypot(x - 18, z - 12) > 10) put(x, h, z, COAL_ORE);
         else if (hash2(x, z, 10) < 0.08 && at(x, h + 1, z) === AIR) put(x, h + 1, z, FLOWER);
         else if (hash2(x, z, 11) < 0.01 && at(x, h + 1, z) === AIR) put(x, h + 1, z, CHEST);
       }
     }
     buildVillage();
     ensureGrove();
+    buildVolcano();
+    seedCoalNear();
     findSpawn();
     ensureChests();
+    if (!keepPos) {
+      treasures = [];
+      state.score = 0;
+      state.scored = {};
+      state.match = 0;
+      state.matchOver = false;
+      state.rockHit = {};
+      state.burn = 0;
+      var endEl = $('matchEnd');
+      if (endEl) { endEl.hidden = true; endEl.innerHTML = ''; }
+    }
+    placeTreasures();
     if (!feetClear(spawn.x, spawn.y, spawn.z)) findSpawn();
     if (!keepPos) {
       boats.splice(0, boats.length);
@@ -719,6 +1006,7 @@
       fallPeak = null;
     }
     if (!suppressMobs) spawnMobs();
+    syncVolcano();
     dirty = true;
   }
   function newSeed() {
@@ -729,7 +1017,7 @@
       var p = String(row).split(',');
       if (p.length < 4) return;
       var id = +p[3];
-      if (id < 0 || id > SNOW) return;
+      if (id < 0 || id > COAL_ORE) return;
       put(+p[0], +p[1], +p[2], id);
     });
     dirty = true;
@@ -783,14 +1071,16 @@
     state.inv = blankInv();
     INV_KEYS.forEach(function (k) { if (carried[k] > 0) state.inv[k] = carried[k]; });
     state.equip.weapon = raw.equip && SLOT_WORD.weapon[raw.equip.weapon] ? raw.equip.weapon : '';
-    state.equip.armor = raw.equip && raw.equip.armor === 'armor' ? 'armor' : '';
-    state.equip.tool = raw.equip && raw.equip.tool === 'pick' ? 'pick' : '';
+    state.equip.armor = raw.equip && SLOT_WORD.armor[raw.equip.armor] ? raw.equip.armor : '';
+    state.equip.tool = raw.equip && SLOT_WORD.tool[raw.equip.tool] ? raw.equip.tool : '';
     if (state.equip.weapon && !state.inv[state.equip.weapon]) state.equip.weapon = '';
-    if (state.equip.armor && !state.inv.armor) state.equip.armor = '';
-    if (state.equip.tool && !state.inv.pick) state.equip.tool = '';
+    if (state.equip.armor && !(state.inv[state.equip.armor] > 0)) state.equip.armor = '';
+    if (state.equip.tool && !(state.inv[state.equip.tool] > 0)) state.equip.tool = '';
     if (raw.hold === 'torch' || raw.hold === 'boat' || raw.hold === 'hand') state.hold = raw.hold;
     if (raw.name) state.name = cleanName(raw.name);
     if (isFinite(raw.clock) && raw.clock >= 0) state.clock = raw.clock % (DAY * 20);
+    if (isFinite(raw.match) && raw.match >= 0) state.match = raw.match;
+    syncVolcano();
     if (isFinite(raw.yaw)) state.yaw = raw.yaw;
     if (isFinite(raw.pitch)) state.pitch = Math.max(-1.2, Math.min(1.2, raw.pitch));
     if (isFinite(raw.px) && feetClear(raw.px, raw.py, raw.pz)) {
@@ -820,6 +1110,15 @@
     state.ach = {};
     state.cold = 0;
     state.coldTold = 0;
+    state.burn = 0;
+    state.burnTold = 0;
+    state.score = 0;
+    state.scored = {};
+    state.match = 0;
+    state.matchOver = false;
+    state.mix = [];
+    state.rockHit = {};
+    state._volcanoTok = '';
     state.emote = '';
     state.emoteUntil = 0;
     fallPeak = null;
@@ -967,6 +1266,7 @@
   }
   function toolLeft(id) {
     if (!state.dur) state.dur = { axe: 40, pick: 80, pickIron: 160 };
+    if (state.dur[id] == null && GEAR[id] && GEAR[id].dur) state.dur[id] = GEAR[id].dur;
     return state.dur[id] | 0;
   }
   function wearTool(id) {
@@ -987,9 +1287,12 @@
     else if (id === CHEST) base = 0.4;
     var eff = 0.55;
     var tool = state.equip.tool;
+    var gear = GEAR[tool];
     if (id === LOG && tool === 'axe' && toolLeft('axe') > 0) eff = 1.0;
-    if ((id === STONE || id === GOLD || id === IRON_ORE) && tool === 'pick' && toolLeft('pick') > 0) eff = 1.5;
-    if ((id === STONE || id === GOLD || id === IRON_ORE) && tool === 'pickIron' && toolLeft('pickIron') > 0) eff = 2.0;
+    if (id === LOG && gear && gear.chop && toolLeft(tool) > 0 && gear.chop > eff) eff = gear.chop;
+    if ((id === STONE || id === GOLD || id === IRON_ORE || id === COAL_ORE) && tool === 'pick' && toolLeft('pick') > 0) eff = 1.5;
+    if ((id === STONE || id === GOLD || id === IRON_ORE || id === COAL_ORE) && tool === 'pickIron' && toolLeft('pickIron') > 0) eff = 2.0;
+    if ((id === STONE || id === GOLD || id === IRON_ORE || id === COAL_ORE) && gear && gear.mine && toolLeft(tool) > 0 && gear.mine > eff) eff = gear.mine;
     return base / eff;
   }
   function dropOf(id) {
@@ -1001,13 +1304,23 @@
     if (id === TORCH) return 'torch';
     if (id === BED) return 'bed';
     if (id === IRON_ORE) return 'iron';
+    if (id === COAL_ORE) return 'coal';
     return null;
   }
   function meleeDmg() {
+    var g = GEAR[state.equip.weapon];
+    if (g) {
+      if (g.night && dayFactor() < 0.2) return g.night;
+      return g.dmg;
+    }
     if (state.equip.weapon === 'swordIron') return 4;
     if (state.equip.weapon === 'swordStone') return 3;
     if (state.equip.weapon === 'swordWood') return 2;
     return 1;
+  }
+  function meleeReach() {
+    var g = GEAR[state.equip.weapon];
+    return (g && g.reach) || 2.4;
   }
   function inSnowTerritory() {
     var x = state.px | 0, z = state.pz | 0, top = highestSolid(x, z), feet;
@@ -1016,6 +1329,11 @@
     return at(x, feet, z) === SNOW || at(x, feet - 1, z) === SNOW;
   }
   function tickCold(dt) {
+    if (state.equip.weapon === 'swordSun' && (state.inv.swordSun | 0) > 0) {
+      state.cold = 0;
+      state.coldTold = 0;
+      return;
+    }
     if (!inSnowTerritory()) { state.cold = 0; state.coldTold = 0; return; }
     state.cold = (state.cold || 0) + dt;
     if (!state.coldTold) { state.coldTold = 1; toast('小宇：山上冷，待久了会掉血'); }
@@ -1038,6 +1356,28 @@
       renderHp();
       toast('冻着了，回到地面');
     }
+  }
+  function hotUnder() {
+    var x = state.px | 0, z = state.pz | 0;
+    var feet = (state.py + 0.2) | 0;
+    var here = at(x, feet, z);
+    var under = at(x, feet - 1, z);
+    if (here === LAVA || under === LAVA) return 'lava';
+    if (here === MAGMA || under === MAGMA) return 'magma';
+    return '';
+  }
+  function tickBurn(dt) {
+    var kind = hotUnder();
+    if (!kind) { state.burn = 0; return; }
+    state.burn = (state.burn || 0) + dt;
+    if (!state.burnTold) {
+      state.burnTold = 1;
+      toast(kind === 'lava' ? '岩浆好烫' : '残渣烫脚');
+    }
+    var every = kind === 'lava' ? 0.55 : 1;
+    if (state.burn < every) return;
+    state.burn = 0;
+    hurt(kind === 'lava' ? 2 : 1, kind === 'lava' ? '被岩浆灼伤' : '被残渣灼伤');
   }
   function cleanName(s) {
     s = String(s || '').replace(/\s+/g, '').slice(0, 8);
@@ -1095,12 +1435,16 @@
   function renderHud() {
     var coins = $('coins');
     if (coins) coins.textContent = '金币 ' + (state.inv.gold | 0);
+    var scoreLine = $('scoreLine');
+    if (scoreLine) scoreLine.textContent = '宝物 ' + (state.score | 0);
     renderPack();
+    renderMix();
+    renderRecipeBook();
     var i;
     var nameLabel = $('nameLabel');
     if (nameLabel && !state.started) nameLabel.textContent = state.name;
     var gate = $('woodGate');
-    if (gate) gate.textContent = (state.inv.wood | 0) >= 1 ? '火把 3 木头 · 小船 10 木头' : '先敲到 1 个木头，才能做火把和小船';
+    if (gate) gate.textContent = '木头、石头、铁矿、煤炭放进格子，合成 12 种。小船仍要 10 个木头。';
     if (typeof document !== 'undefined') {
       var gates = document.querySelectorAll('#craft button[data-wood-gate]');
       for (i = 0; i < gates.length; i++) gates[i].disabled = (state.inv.wood | 0) < 1;
@@ -1110,21 +1454,33 @@
     setNetStatus();
   }
   var PACK = [
+    { id: 'wood', name: '木头', bg: '#b56a2a', core: 1 },
+    { id: 'stone', name: '石头', bg: '#7f8cae', core: 1 },
+    { id: 'iron', name: '铁矿', bg: '#b0b6c4', core: 1 },
+    { id: 'coal', name: '煤炭', bg: '#2a2a2e', core: 1 },
+    { id: 'torch', name: '火把', bg: '#f08a12', core: 1 },
+    { id: 'boat', name: '船', bg: '#c47a28', core: 1 },
+    { id: 'bed', name: '床', bg: '#e23b55', core: 1 },
+    { id: 'stick', name: '木棍', bg: '#c47a28' },
+    { id: 'axeStone', name: '石斧', bg: '#8d97ad' },
+    { id: 'spear', name: '石矛', bg: '#8ea0c8' },
+    { id: 'swordIron', name: '铁剑', bg: '#d5dbe6' },
+    { id: 'hammer', name: '铁锤', bg: '#9aa3b5' },
+    { id: 'rod', name: '铁棒', bg: '#c5ccd8' },
+    { id: 'nightSword', name: '暗夜剑', bg: '#3c3f6b' },
+    { id: 'axeVolcano', name: '火山斧', bg: '#e25822' },
+    { id: 'hammerBlast', name: '爆裂锤', bg: '#c43a22' },
+    { id: 'pickStar', name: '星火镐', bg: '#f0c040' },
+    { id: 'swordSun', name: '暖阳剑', bg: '#f6a23a' },
+    { id: 'armor', name: '叶衣', bg: '#1fa84a' },
+    { id: 'leaf', name: '树叶', bg: '#2fbf4a', core: 1 },
+    { id: 'dirt', name: '泥土', bg: '#a15a28', core: 1 },
+    { id: 'sand', name: '沙子', bg: '#e6c04a', core: 1 },
+    { id: 'gold', name: '金币', bg: '#f0c020' },
     { id: 'swordWood', name: '木剑', bg: '#d06a22' },
     { id: 'swordStone', name: '石剑', bg: '#8ea0c8' },
-    { id: 'swordIron', name: '铁剑', bg: '#c5ccd8' },
     { id: 'gun', name: '枪', bg: '#3a4258' },
-    { id: 'armor', name: '叶衣', bg: '#1fa84a' },
     { id: 'pick', name: '石稿', bg: '#6d7488' },
-    { id: 'torch', name: '火把', bg: '#f08a12' },
-    { id: 'boat', name: '船', bg: '#c47a28' },
-    { id: 'bed', name: '床', bg: '#e23b55' },
-    { id: 'wood', name: '木头', bg: '#b56a2a' },
-    { id: 'leaf', name: '树叶', bg: '#2fbf4a' },
-    { id: 'dirt', name: '泥土', bg: '#a15a28' },
-    { id: 'stone', name: '石头', bg: '#7f8cae' },
-    { id: 'sand', name: '沙子', bg: '#e6c04a' },
-    { id: 'gold', name: '金币', bg: '#f0c020' },
     { id: 'axe', name: '木斧', bg: '#c47a28' },
     { id: 'pickIron', name: '铁镐', bg: '#9aa4b8' },
     { id: 'armorWood', name: '木甲', bg: '#b56a2a' },
@@ -1133,12 +1489,14 @@
     { id: 'wheat', name: '小麦', bg: '#e6c04a' },
     { id: 'wool', name: '羊毛', bg: '#f4f4f4' },
     { id: 'raw', name: '生肉', bg: '#e07070' },
-    { id: 'cooked', name: '熟肉', bg: '#c45a28' },
-    { id: 'iron', name: '铁', bg: '#b0b6c4' }
+    { id: 'cooked', name: '熟肉', bg: '#c45a28' }
   ];
   function packOn(cell) {
     if (cell.id === 'torch' || cell.id === 'boat' || cell.id === 'bed') return state.hold === cell.id;
     if (ARMOR_CUT[cell.id]) return state.equip.armor === cell.id;
+    var g = GEAR[cell.id];
+    if (g && g.slot === 'tool') return (state.equip.tool === cell.id || state.equip.weapon === cell.id) && state.hold === 'hand';
+    if (g) return state.equip.weapon === cell.id && state.hold === 'hand';
     if (cell.id === 'pick' || cell.id === 'axe' || cell.id === 'pickIron') return state.equip.tool === cell.id && state.hold === 'hand';
     if (cell.id === 'swordWood' || cell.id === 'swordStone' || cell.id === 'swordIron' || cell.id === 'gun') return state.equip.weapon === cell.id && state.hold === 'hand';
     return false;
@@ -1146,7 +1504,21 @@
   function selectPack(id) {
     var n = state.inv[id] | 0;
     if (n < 1 && id !== 'gold') { toast('小宇：背包里还没有'); return false; }
-    if (id === 'swordWood' || id === 'swordStone' || id === 'swordIron' || id === 'gun') {
+    var g = GEAR[id];
+    if (g) {
+      if (g.slot === 'tool') {
+        var onTool = state.equip.tool === id;
+        state.equip.tool = onTool ? '' : id;
+        state.equip.weapon = onTool ? '' : id;
+      } else {
+        var onW = state.equip.weapon === id;
+        state.equip.weapon = onW ? '' : id;
+        if (!onW && (g.chop || g.mine)) state.equip.tool = id;
+        else if (state.equip.tool === id) state.equip.tool = '';
+      }
+      state.hold = 'hand';
+      if (g.dur && (state.equip.tool === id || state.equip.weapon === id) && state.dur && state.dur[id] == null) state.dur[id] = g.dur;
+    } else if (id === 'swordWood' || id === 'swordStone' || id === 'swordIron' || id === 'gun') {
       state.equip.weapon = state.equip.weapon === id ? '' : id;
       state.hold = 'hand';
     } else if (id === 'armor' || id === 'armorWood' || id === 'armorIron') {
@@ -1172,16 +1544,90 @@
   function renderPack() {
     var box = $('pack');
     if (!box) return;
-    var html = '', i, cell, n, on, shown = 0;
+    var html = '', i, cell, n, on;
     for (i = 0; i < PACK.length; i++) {
       cell = PACK[i];
       n = state.inv[cell.id] | 0;
-      if (i >= 15 && n < 1 && !packOn(cell)) continue;
-      shown++;
+      if (!cell.core && n < 1 && !packOn(cell)) continue;
       on = packOn(cell);
       html += '<button type="button" data-pack="' + cell.id + '" class="' + (on ? 'on' : '') + (n ? '' : ' empty') + '" style="background:' + cell.bg + '"><b>' + cell.name + '</b><i>' + n + '</i></button>';
     }
     if (box._html !== html) { box.innerHTML = html; box._html = html; }
+  }
+  function mixKey(list) {
+    return list.slice().sort().join('+');
+  }
+  function findMix(list) {
+    var key = mixKey(list), i, row;
+    for (i = 0; i < MIX.length; i++) {
+      row = MIX[i];
+      if (mixKey(row.mats) === key) return row;
+    }
+    return null;
+  }
+  function renderMix() {
+    var el = $('mixSlots');
+    if (!el) return;
+    var slots = state.mix || [];
+    var text = [0, 1, 2].map(function (i) { return slots[i] ? (NAMES[slots[i]] || slots[i]) : '空'; }).join(' + ');
+    if (el.textContent !== text) el.textContent = text;
+  }
+  function renderRecipeBook() {
+    var ul = $('recipeBook');
+    if (!ul || ul._done) return;
+    ul.innerHTML = MIX.map(function (r) {
+      var bits = r.mats.map(function (m) { return NAMES[m] || m; }).join(' + ');
+      return '<li><b>' + r.say + '</b> · ' + bits + '</li>';
+    }).join('');
+    ul._done = 1;
+  }
+  function addMix(mat) {
+    if (!state.mix) state.mix = [];
+    if (state.mix.length >= 3) { toast('格子满了'); return false; }
+    var have = state.inv[mat] | 0;
+    var used = 0, i;
+    for (i = 0; i < state.mix.length; i++) if (state.mix[i] === mat) used++;
+    if (have < used + 1) { toast('材料不够'); return false; }
+    state.mix.push(mat);
+    renderMix();
+    return true;
+  }
+  function clearMix() {
+    state.mix = [];
+    renderMix();
+  }
+  function equipMade(id, slot) {
+    var g = GEAR[id];
+    if (slot === 'tool' || (g && g.slot === 'tool')) {
+      state.equip.tool = id;
+      state.equip.weapon = id;
+    } else if (slot) {
+      state.equip[slot] = id;
+      if (g && (g.chop || g.mine)) state.equip.tool = id;
+    }
+    if (g && g.dur) {
+      if (!state.dur) state.dur = {};
+      state.dur[id] = g.dur;
+    }
+    if (id === 'armor' || id === 'armorWood' || id === 'armorIron') state.armorLeft = ARMOR_MAX[id];
+    if (id !== 'torch') state.hold = 'hand';
+  }
+  function craftMix(mats) {
+    var list = (mats && mats.length) ? mats.slice() : (state.mix || []).slice();
+    if (list.length < 2) { toast('至少放两样'); return false; }
+    var r = findMix(list);
+    if (!r) { toast('这几样合不成东西'); return false; }
+    var need = {}, i, k;
+    for (i = 0; i < list.length; i++) need[list[i]] = (need[list[i]] || 0) + 1;
+    for (k in need) if ((state.inv[k] | 0) < need[k]) { toast('小宇：材料不够'); return false; }
+    for (k in need) state.inv[k] -= need[k];
+    if (!mats) state.mix = [];
+    state.inv[r.give] = (state.inv[r.give] | 0) + (r.n || 1);
+    equipMade(r.give, r.slot);
+    save();
+    renderHud();
+    toast('盲盒开出了' + r.say);
+    return true;
   }
   function craft(name) {
     var r = RECIPES[name];
@@ -1237,11 +1683,14 @@
   function breakBlock(hit) {
     if (!hit) return;
     var id = at(hit.x, hit.y, hit.z);
-    if (!id || id === WATER) return;
+    if (!id || id === WATER || id === LAVA || id === MAGMA) return;
     var tool = state.equip.tool;
+    var gear = GEAR[tool];
     if (tool === 'axe' && id === LOG) wearTool('axe');
-    if (tool === 'pick' && (id === STONE || id === GOLD || id === IRON_ORE)) wearTool('pick');
-    if (tool === 'pickIron' && (id === STONE || id === GOLD || id === IRON_ORE)) wearTool('pickIron');
+    if (tool === 'pick' && (id === STONE || id === GOLD || id === IRON_ORE || id === COAL_ORE)) wearTool('pick');
+    if (tool === 'pickIron' && (id === STONE || id === GOLD || id === IRON_ORE || id === COAL_ORE)) wearTool('pickIron');
+    if (gear && gear.chop && id === LOG) wearTool(tool);
+    if (gear && gear.mine && (id === STONE || id === GOLD || id === IRON_ORE || id === COAL_ORE)) wearTool(tool);
     localSet(hit.x, hit.y, hit.z, AIR);
     if (id === GOLD) { state.inv.gold = (state.inv.gold | 0) + 2; toast('得到 2 枚金币'); }
     else if (id === CHEST) { state.inv.gold = (state.inv.gold | 0) + 5; toast('箱子里有 5 枚金币'); }
@@ -1536,8 +1985,10 @@
     var resist = hit.kind === 'cow' ? 0.3 : 0;
     var dx = e.x - state.px, dz = e.z - state.pz;
     var len = Math.hypot(dx, dz) || 1;
-    e.x += dx / len * 0.7 * (1 - resist);
-    e.z += dz / len * 0.7 * (1 - resist);
+    var gear = GEAR[state.equip.weapon];
+    var shove = 0.7 * (gear && gear.knock ? 1.9 : 1);
+    e.x += dx / len * shove * (1 - resist);
+    e.z += dz / len * shove * (1 - resist);
     if (e.hp <= 0) {
       e.alive = false;
       grantMeat(hit.kind);
@@ -1585,7 +2036,7 @@
     if (punching && !shotLock && state.equip.weapon !== 'gun') {
       shotLock = true;
       var bite = animalInSight();
-      if (bite && Math.hypot(bite.e.x - state.px, bite.e.z - state.pz) < 2.4) strikeAnimal(bite, meleeDmg());
+      if (bite && Math.hypot(bite.e.x - state.px, bite.e.z - state.pz) < meleeReach()) strikeAnimal(bite, meleeDmg());
       else pokeFriend();
     }
     if (!punching) shotLock = false;
@@ -1629,7 +2080,19 @@
       return;
     }
     state.clock += dt;
+    state.match = (state.match || 0) + dt;
+    syncVolcano();
     tickCold(dt);
+    tickBurn(dt);
+    if (state.started) tickRocks();
+    if ((state.match || 0) < MATCH_SEC) tryTake();
+    if ((state.match || 0) >= MATCH_SEC) {
+      if (!state.matchOver) {
+        state.matchOver = true;
+        showMatchEnd();
+      }
+    }
+    var frozen = !!state.matchOver;
     if (state.cooking > 0) {
       state.cooking -= dt;
       setBar(true, (1 - state.cooking / 4) * 100);
@@ -1652,10 +2115,10 @@
     state.raining = state.clock < (state.rainUntil || 0);
     var rainEl = $('rain');
     if (rainEl) rainEl.classList.toggle('on', !!state.raining);
-    var stick = stickInput();
+    var stick = frozen ? { forward: 0, strafe: 0 } : stickInput();
     var mx = Math.sin(state.yaw), mz = -Math.cos(state.yaw);
     var rx = Math.cos(state.yaw), rz = Math.sin(state.yaw);
-    var jump = jumping || !!keys.Space;
+    var jump = !frozen && (jumping || !!keys.Space);
     if (state.sitting) {
       var bed = state.sitting;
       if (at(bed.x, bed.y, bed.z) !== BED) state.sitting = null;
@@ -1994,7 +2457,9 @@
           yaw: Math.round(state.yaw * 1000) / 1000,
           pitch: Math.round(state.pitch * 1000) / 1000,
           w: weaponCode(), hd: holdCode(), host: netRole === 'host' ? 1 : 0,
-          clock: state.clock, vy: Math.round(state.vy * 10) / 10, sl: state.sitting ? 1 : 0
+          clock: state.clock, match: Math.round((state.match || 0) * 100) / 100,
+          sc: state.score | 0,
+          vy: Math.round(state.vy * 10) / 10, sl: state.sitting ? 1 : 0
         });
       }
       if (netRole === 'host' && netHot()) {
@@ -2008,10 +2473,13 @@
     }
   }
   function weaponCode() {
+    var g = GEAR[state.equip.weapon];
+    if (g && g.code) return g.code;
     if (state.equip.weapon === 'swordIron') return 4;
     if (state.equip.weapon === 'gun') return 3;
     if (state.equip.weapon === 'swordStone') return 2;
     if (state.equip.weapon === 'swordWood') return 1;
+    if (state.equip.tool && GEAR[state.equip.tool]) return GEAR[state.equip.tool].code || 0;
     return 0;
   }
   function holdCode() {
@@ -2023,14 +2491,36 @@
     if (state.hold === 'torch') return 'torch';
     if (state.hold === 'boat') return 'boat';
     if (state.hold === 'bed') return 'bed';
-    if (state.equip.weapon === 'swordIron') return 'swordIron';
     if (state.equip.weapon === 'gun') return 'gun';
-    if (state.equip.weapon === 'swordStone') return 'swordStone';
-    if (state.equip.weapon === 'swordWood') return 'swordWood';
-    if (state.equip.tool === 'pickIron') return 'pickIron';
-    if (state.equip.tool === 'axe') return 'axe';
-    if (state.equip.tool === 'pick') return 'pick';
+    if (state.equip.weapon && (GEAR[state.equip.weapon] || state.equip.weapon.indexOf('sword') === 0)) return state.equip.weapon;
+    if (state.equip.tool) return state.equip.tool;
     return 'hand';
+  }
+  function matchLabel() {
+    var left = MATCH_SEC - (state.match || 0);
+    if (left <= 0 || state.matchOver) return '时间到';
+    var s = Math.ceil(left);
+    if (s > MATCH_SEC) s = MATCH_SEC;
+    var m = (s / 60) | 0;
+    var r = s % 60;
+    return '本局 ' + m + ':' + (r < 10 ? '0' : '') + r;
+  }
+  function showMatchEnd() {
+    var el = $('matchEnd');
+    paintClock();
+    if (!el) return;
+    var rows = [{ name: state.name, score: state.score | 0 }];
+    var id, r;
+    for (id in remotes) {
+      r = remotes[id];
+      rows.push({ name: r.name || '朋友', score: r.score | 0 });
+    }
+    rows.sort(function (a, b) { return b.score - a.score; });
+    var html = '<p class="who">时间到</p>';
+    var i;
+    for (i = 0; i < rows.length; i++) html += '<p>' + (i + 1) + '. ' + esc(rows[i].name) + ' · ' + rows[i].score + ' 分</p>';
+    el.innerHTML = html;
+    el.hidden = false;
   }
   function smooth01(u) {
     if (u < 0) return 0;
@@ -2069,6 +2559,11 @@
   function paintClock() {
     var el = $('sunClock');
     if (el) el.textContent = clockText();
+    var matchEl = $('matchClock');
+    if (matchEl) {
+      var label = matchLabel();
+      if (matchEl.textContent !== label) matchEl.textContent = label;
+    }
   }
   function skyRGB() {
     var d = dayFactor();
@@ -2145,6 +2640,7 @@
               else if (nz > 0) pushCube(data, x + 0.28, y + 0.28, z + 0.62, 0.44, 0.44, 0.38, [0.95, 0.52, 0.14]);
               else if (nz < 0) pushCube(data, x + 0.28, y + 0.28, z, 0.44, 0.44, 0.38, [0.95, 0.52, 0.14]);
             }
+            if (id === COAL_ORE && ny > 0) pushCube(data, x + 0.3, y + 0.7, z + 0.3, 0.4, 0.28, 0.4, [0.05, 0.05, 0.06]);
           }
         }
       }
@@ -2304,25 +2800,101 @@
       box(-0.12, 0.98, -0.2, 0.07, 0.06, 0.04, [0.1, 0.08, 0.08]);
       box(0.05, 0.98, -0.2, 0.07, 0.06, 0.04, [0.1, 0.08, 0.08]);
       box(-0.04, 0.9, -0.22, 0.08, 0.07, 0.08, [0.9, 0.62, 0.52]);
+      pushGlasses(box);
     }
-    if (p.hd === 1) {
+    pushHeld(box, p.w | 0, p.hd | 0);
+  }
+  function pushGlasses(box) {
+    var frame = [0.12, 0.12, 0.16];
+    var lens = [0.55, 0.78, 0.95];
+    box(-0.15, 0.955, -0.2, 0.3, 0.028, 0.03, frame);
+    box(-0.15, 0.885, -0.21, 0.11, 0.09, 0.03, lens);
+    box(0.04, 0.885, -0.21, 0.11, 0.09, 0.03, lens);
+    box(-0.04, 0.92, -0.208, 0.08, 0.028, 0.025, frame);
+    box(-0.17, 0.92, -0.14, 0.03, 0.028, 0.1, frame);
+    box(0.14, 0.92, -0.14, 0.03, 0.028, 0.1, frame);
+  }
+  function pushHeld(box, w, hd) {
+    if (hd === 1) {
       box(0.22, 0.42, -0.46, 0.06, 0.42, 0.06, [0.45, 0.28, 0.12]);
       box(0.18, 0.8, -0.5, 0.14, 0.14, 0.14, [1, 0.82, 0.28]);
-    } else if (p.hd === 2) {
+      return;
+    }
+    if (hd === 2) {
       box(0.12, 0.46, -0.55, 0.28, 0.1, 0.16, [0.5, 0.3, 0.12]);
-    } else if (p.w === 4) {
-      box(0.2, 0.36, -0.62, 0.06, 0.5, 0.05, [0.86, 0.9, 0.96]);
-      box(0.14, 0.34, -0.42, 0.18, 0.05, 0.08, [0.3, 0.22, 0.12]);
-    } else if (p.w === 3) {
+      return;
+    }
+    if (w === 3) {
       box(0.2, 0.5, -0.55, 0.06, 0.06, 0.32, [0.16, 0.16, 0.18]);
-    } else if (p.w) {
-      box(0.2, 0.34, -0.62, 0.06, 0.52, 0.06, p.w === 2 ? [0.75, 0.78, 0.84] : [0.62, 0.4, 0.16]);
-      box(0.14, 0.32, -0.4, 0.18, 0.05, 0.08, [0.42, 0.26, 0.12]);
+      return;
+    }
+    if (w === 6 || w === 9) {
+      box(0.2, 0.34, -0.55, 0.06, 0.36, 0.06, [0.42, 0.28, 0.14]);
+      box(0.1, 0.66, -0.62, 0.26, 0.16, 0.16, w === 9 ? [0.85, 0.28, 0.12] : [0.72, 0.76, 0.82]);
+      return;
+    }
+    if (w === 5 || w === 8) {
+      box(0.2, 0.34, -0.55, 0.05, 0.4, 0.05, [0.45, 0.28, 0.12]);
+      box(0.08, 0.68, -0.6, 0.22, 0.14, 0.08, w === 8 ? [0.9, 0.35, 0.1] : [0.68, 0.72, 0.78]);
+      return;
+    }
+    if (w === 12) {
+      box(0.2, 0.34, -0.55, 0.05, 0.4, 0.05, [0.42, 0.28, 0.14]);
+      box(0.06, 0.7, -0.58, 0.26, 0.08, 0.08, [0.95, 0.78, 0.28]);
+      return;
+    }
+    if (w === 2) {
+      box(0.2, 0.28, -0.7, 0.05, 0.62, 0.05, [0.62, 0.66, 0.74]);
+      box(0.14, 0.86, -0.74, 0.16, 0.16, 0.1, [0.78, 0.8, 0.86]);
+      return;
+    }
+    if (w) {
+      var blade = (w === 4 || w === 10) ? [0.82, 0.86, 0.92] : (w === 7 ? [0.25, 0.22, 0.45] : (w === 11 ? [0.95, 0.72, 0.28] : [0.62, 0.4, 0.16]));
+      var tall = (w === 4 || w === 7 || w === 11) ? 0.52 : 0.46;
+      box(0.2, 0.34, -0.62, 0.06, tall, 0.06, blade);
+      if (w !== 1 && w !== 10) box(0.14, 0.32, -0.4, 0.18, 0.05, 0.08, [0.42, 0.26, 0.12]);
     }
   }
   function pushAvatar(data, p) {
     p.cloth = colorOfName(p.name || '朋友');
     pushPerson(data, p, true);
+  }
+  function treasureVisible(t) {
+    if (!t || t.taken) return false;
+    if (t.buried && !coverClear(t)) return false;
+    return true;
+  }
+  function pushTreasure(data, t) {
+    function box(lx, ly, lz, sx, sy, sz, rgb) {
+      pushCube(data, t.x + lx, t.y + ly, t.z + lz, sx, sy, sz, rgb);
+    }
+    var s = t.shape;
+    if (s === 'star') {
+      box(-0.06, 0.15, -0.06, 0.12, 0.28, 0.12, [1, 0.86, 0.2]);
+      box(-0.2, 0.24, -0.05, 0.4, 0.1, 0.1, [1, 0.9, 0.35]);
+      box(-0.05, 0.24, -0.2, 0.1, 0.1, 0.4, [1, 0.9, 0.35]);
+    } else if (s === 'shell') {
+      box(-0.22, 0.02, -0.14, 0.44, 0.12, 0.28, [0.98, 0.62, 0.7]);
+      box(-0.12, 0.12, -0.08, 0.24, 0.1, 0.16, [1, 0.82, 0.86]);
+    } else if (s === 'gem') {
+      box(-0.1, 0.02, -0.1, 0.2, 0.16, 0.2, [0.2, 0.85, 0.45]);
+      box(-0.06, 0.16, -0.06, 0.12, 0.14, 0.12, [0.45, 1, 0.62]);
+    } else if (s === 'crystal') {
+      box(-0.07, 0, -0.07, 0.14, 0.55, 0.14, [0.35, 0.75, 1]);
+      box(-0.04, 0.52, -0.04, 0.08, 0.16, 0.08, [0.7, 0.9, 1]);
+    } else if (s === 'idol') {
+      box(-0.12, 0, -0.12, 0.24, 0.16, 0.24, [0.95, 0.97, 1]);
+      box(-0.09, 0.16, -0.09, 0.18, 0.16, 0.18, [0.95, 0.97, 1]);
+      box(-0.07, 0.32, -0.07, 0.14, 0.14, 0.14, [0.95, 0.97, 1]);
+    } else if (s === 'ember') {
+      box(-0.1, 0.02, -0.1, 0.2, 0.22, 0.2, [0.95, 0.35, 0.08]);
+      box(-0.06, 0.22, -0.06, 0.12, 0.16, 0.12, [1, 0.72, 0.2]);
+    } else {
+      box(-0.16, 0.08, -0.1, 0.32, 0.08, 0.2, [0.95, 0.78, 0.2]);
+      box(-0.16, 0.16, -0.08, 0.08, 0.12, 0.08, [0.95, 0.78, 0.2]);
+      box(-0.04, 0.16, -0.08, 0.08, 0.14, 0.08, [1, 0.88, 0.35]);
+      box(0.08, 0.16, -0.08, 0.08, 0.12, 0.08, [0.95, 0.78, 0.2]);
+    }
   }
   function pushViewBox(data, origin, right, up, fwd, lx, ly, lz, sx, sy, sz, rgb) {
     var f, v, face, s, px, py, pz;
@@ -2357,17 +2929,22 @@
     box(0.1, -0.22, 0.52, 0.04, 0.05, 0.08, skin);
     box(0.16, -0.22, 0.5, 0.04, 0.05, 0.07, skin);
     var kind = handKind();
-    if (kind === 'swordWood' || kind === 'swordStone' || kind === 'swordIron') {
-      var blade = kind === 'swordIron' ? [0.86, 0.9, 0.96] : (kind === 'swordStone' ? [0.78, 0.82, 0.88] : [0.66, 0.42, 0.18]);
-      box(0.09, -0.16, 0.5, 0.05, 0.52, 0.06, blade);
-      box(0.02, -0.18, 0.48, 0.22, 0.05, 0.09, [0.42, 0.26, 0.12]);
-    } else if (kind === 'axe') {
+    if (kind === 'swordWood' || kind === 'swordStone' || kind === 'swordIron' || kind === 'nightSword' || kind === 'swordSun' || kind === 'stick' || kind === 'rod' || kind === 'spear') {
+      var blade = (kind === 'swordIron' || kind === 'rod') ? [0.86, 0.9, 0.96] : (kind === 'swordStone' || kind === 'spear' ? [0.78, 0.82, 0.88] : (kind === 'nightSword' ? [0.28, 0.24, 0.5] : (kind === 'swordSun' ? [0.95, 0.72, 0.28] : [0.66, 0.42, 0.18])));
+      var tall = kind === 'spear' ? 0.7 : (kind === 'stick' || kind === 'rod' ? 0.48 : 0.52);
+      box(0.09, -0.16, 0.5, 0.05, tall, 0.06, blade);
+      if (kind !== 'stick' && kind !== 'rod') box(0.02, -0.18, 0.48, 0.22, 0.05, 0.09, [0.42, 0.26, 0.12]);
+      if (kind === 'spear') box(0.05, 0.42, 0.48, 0.14, 0.14, 0.08, [0.8, 0.82, 0.88]);
+    } else if (kind === 'axe' || kind === 'axeStone' || kind === 'axeVolcano') {
       box(0.1, -0.2, 0.5, 0.05, 0.42, 0.05, [0.42, 0.28, 0.14]);
-      box(0.02, 0.12, 0.46, 0.2, 0.12, 0.06, [0.72, 0.74, 0.78]);
-    } else if (kind === 'pick' || kind === 'pickIron') {
-      var head = kind === 'pickIron' ? [0.82, 0.86, 0.92] : [0.62, 0.64, 0.68];
+      box(0.02, 0.12, 0.46, 0.2, 0.12, 0.06, kind === 'axeVolcano' ? [0.92, 0.36, 0.1] : [0.72, 0.74, 0.78]);
+    } else if (kind === 'pick' || kind === 'pickIron' || kind === 'pickStar') {
+      var head = kind === 'pickIron' ? [0.82, 0.86, 0.92] : (kind === 'pickStar' ? [0.95, 0.78, 0.28] : [0.62, 0.64, 0.68]);
       box(0.1, -0.2, 0.5, 0.05, 0.42, 0.05, [0.42, 0.28, 0.14]);
       box(0.02, 0.16, 0.46, 0.22, 0.08, 0.08, head);
+    } else if (kind === 'hammer' || kind === 'hammerBlast') {
+      box(0.1, -0.2, 0.5, 0.05, 0.36, 0.05, [0.42, 0.28, 0.14]);
+      box(0.0, 0.12, 0.44, 0.24, 0.14, 0.14, kind === 'hammerBlast' ? [0.9, 0.28, 0.12] : [0.75, 0.78, 0.84]);
     } else if (kind === 'torch') {
       box(0.1, -0.18, 0.48, 0.05, 0.4, 0.05, [0.45, 0.28, 0.12]);
       box(0.05, 0.16, 0.44, 0.14, 0.14, 0.14, [1, 0.78, 0.25]);
@@ -2511,7 +3088,7 @@
       s = project(p.x, p.y + 1.7, p.z, mvp, w, h);
       if (!s) continue;
       var face = (p.emote && p.emoteUntil > Date.now()) ? emoteFace(p.emote) : '';
-      html += '<span style="left:' + s.x.toFixed(1) + 'px;top:' + s.y.toFixed(1) + 'px">' + (face ? face + ' ' : '') + esc(p.name) + '</span>';
+      html += '<span style="left:' + s.x.toFixed(1) + 'px;top:' + s.y.toFixed(1) + 'px">' + (face ? face + ' ' : '') + esc(p.name) + ' · ' + (p.score | 0) + '</span>';
     }
     var mine = $('myEmote');
     if (mine) {
@@ -2579,7 +3156,7 @@
     gl.vertexAttribPointer(loc.pos, 3, gl.FLOAT, false, 24, 0);
     gl.vertexAttribPointer(loc.col, 3, gl.FLOAT, false, 24, 12);
     gl.drawArrays(gl.TRIANGLES, 0, vbo);
-    var actors = [], bright = [], id, t;
+    var actors = [], bright = [], id, t, ti;
     for (t = 0; t < torchCells.length; t++) {
       var tc = torchCells[t];
       pushCube(bright, tc.x - 0.07, tc.y - 0.28, tc.z - 0.07, 0.14, 0.4, 0.14, [0.45, 0.28, 0.12]);
@@ -2602,10 +3179,16 @@
       pushPerson(actors, {
         x: state.px, y: state.py, z: state.pz, yaw: state.yaw, name: state.name,
         hd: holdCode(), w: weaponCode()
-      }, false);
+      }, state.pitch < -0.45);
     }
     if (armorDrop && !armorDrop.taken) {
       pushCube(actors, armorDrop.x - 0.18, armorDrop.y, armorDrop.z - 0.12, 0.36, 0.42, 0.24, [0.25, 0.75, 0.4]);
+    }
+    var ti;
+    for (ti = 0; ti < treasures.length; ti++) if (treasureVisible(treasures[ti])) pushTreasure(actors, treasures[ti]);
+    var rocks = activeRocks();
+    for (ti = 0; ti < rocks.length; ti++) {
+      pushCube(actors, rocks[ti].x - 0.16, rocks[ti].y, rocks[ti].z - 0.16, 0.32, 0.32, 0.32, [0.45, 0.42, 0.4]);
     }
     for (id in remotes) pushAvatar(actors, remotes[id]);
     drawDyn(bright, 1.3, 1 - day, 1);
@@ -2642,6 +3225,11 @@
       dots.push({ kind: 'other', x: r.x, z: r.z, color: '#e23b3b' });
     }
     if (village) dots.push({ kind: 'village', x: village.x, z: village.z, color: '#ffe07a' });
+    if (volcano) dots.push({ kind: 'volcano', x: volcano.cx + 0.5, z: volcano.cz + 0.5, color: '#ff5a1f' });
+    for (i = 0; i < treasures.length; i++) {
+      e = treasures[i];
+      if (treasureVisible(e)) dots.push({ kind: 'treasure', x: e.x, z: e.z, color: '#7cf0ff' });
+    }
     for (i = 0; i < villagers.length; i++) {
       e = villagers[i];
       dots.push({ kind: 'villager', x: e.x, z: e.z, color: '#7dff6a' });
@@ -2714,6 +3302,8 @@
       ctx.fill();
     }
     if (village) dot(village.x, village.z, '#ffe07a', 2.2, false);
+    if (volcano) dot(volcano.cx + 0.5, volcano.cz + 0.5, '#ff5a1f', 2.4, false);
+    for (ix = 0; ix < treasures.length; ix++) if (treasureVisible(treasures[ix])) dot(treasures[ix].x, treasures[ix].z, '#7cf0ff', 2, false);
     for (ix = 0; ix < villagers.length; ix++) dot(villagers[ix].x, villagers[ix].z, '#7dff6a', 1.6, false);
     for (ix = 0; ix < pigs.length; ix++) if (pigs[ix].alive) dot(pigs[ix].x, pigs[ix].z, '#ff4f93', 2, false);
     for (ix = 0; ix < cows.length; ix++) if (cows[ix].alive) dot(cows[ix].x, cows[ix].z, '#e08a28', 2.2, false);
@@ -2745,8 +3335,8 @@
       return false;
     }
     var vs = 'attribute vec3 aPos;attribute vec3 aCol;uniform mat4 uMvp;varying vec3 vCol;varying vec3 vWorld;void main(){vCol=aCol;vWorld=aPos;gl_Position=uMvp*vec4(aPos,1.0);}';
-    var fsLit = 'precision mediump float;varying vec3 vCol;varying vec3 vWorld;uniform float uAmb;uniform float uMin;uniform vec3 uEye;uniform vec3 uSky;uniform float uFog;uniform float uDim;uniform vec3 uTorch[8];void main(){float light=uAmb;float torchK=0.85*(1.0-0.62*uDim);for(int i=0;i<8;i++){vec3 d=vWorld-uTorch[i];float dist=sqrt(d.x*d.x+d.y*d.y+d.z*d.z);light+=clamp(1.0-dist/6.0,0.0,1.0)*torchK;}light=min(max(light,uMin),1.35);vec3 col=vCol*light;float distC=distance(vWorld,uEye);float fogStart=mix(24.0,7.0,uFog);float fogEnd=mix(62.0,20.0,uFog);float f=clamp((distC-fogStart)/(fogEnd-fogStart),0.0,1.0);gl_FragColor=vec4(mix(col,uSky,f),1.0);}';
-    var fsSimple = 'precision mediump float;varying vec3 vCol;varying vec3 vWorld;uniform float uAmb;uniform float uMin;uniform vec3 uEye;uniform vec3 uSky;uniform float uFog;void main(){float light=min(max(uAmb,uMin),1.35);vec3 col=vCol*light;float distC=distance(vWorld,uEye);float fogStart=mix(24.0,7.0,uFog);float fogEnd=mix(62.0,20.0,uFog);float f=clamp((distC-fogStart)/(fogEnd-fogStart),0.0,1.0);gl_FragColor=vec4(mix(col,uSky,f),1.0);}';
+    var fsLit = 'precision mediump float;varying vec3 vCol;varying vec3 vWorld;uniform float uAmb;uniform float uMin;uniform vec3 uEye;uniform vec3 uSky;uniform float uFog;uniform float uDim;uniform vec3 uTorch[8];void main(){float light=uAmb;float torchK=0.85*(1.0-0.62*uDim);for(int i=0;i<8;i++){vec3 d=vWorld-uTorch[i];float dist=sqrt(d.x*d.x+d.y*d.y+d.z*d.z);light+=clamp(1.0-dist/6.0,0.0,1.0)*torchK;}light=min(max(light,uMin),1.35);vec3 col=vCol*light;float distC=distance(vWorld,uEye);float fogStart=mix(28.0,8.0,uFog);float fogEnd=mix(84.0,24.0,uFog);float f=clamp((distC-fogStart)/(fogEnd-fogStart),0.0,1.0);gl_FragColor=vec4(mix(col,uSky,f),1.0);}';
+    var fsSimple = 'precision mediump float;varying vec3 vCol;varying vec3 vWorld;uniform float uAmb;uniform float uMin;uniform vec3 uEye;uniform vec3 uSky;uniform float uFog;void main(){float light=min(max(uAmb,uMin),1.35);vec3 col=vCol*light;float distC=distance(vWorld,uEye);float fogStart=mix(28.0,8.0,uFog);float fogEnd=mix(84.0,24.0,uFog);float f=clamp((distC-fogStart)/(fogEnd-fogStart),0.0,1.0);gl_FragColor=vec4(mix(col,uSky,f),1.0);}';
     function sh(type, src) {
       var s = gl.createShader(type);
       gl.shaderSource(s, src);
@@ -2987,9 +3577,32 @@
     return {
       t: 'hi', host: 1, seed: worldSeed, edits: collectEdits(),
       boats: boats.map(function (b) { return [Math.round(b.x * 10) / 10, Math.round(b.z * 10) / 10]; }),
-      clock: state.clock, name: state.name,
+      clock: state.clock, match: Math.round((state.match || 0) * 100) / 100,
+      score: state.score | 0,
+      loot: packLoot(),
+      name: state.name,
       px: state.px, py: state.py, pz: state.pz, yaw: state.yaw, pitch: state.pitch, w: weaponCode()
     };
+  }
+  function packLoot() {
+    var out = [], i, t;
+    for (i = 0; i < treasures.length; i++) {
+      t = treasures[i];
+      if (t.taken) out.push([t.id, t.taken, t.taker || '']);
+    }
+    return out;
+  }
+  function applyLoot(rows, grantSelf) {
+    var i, row, t;
+    for (i = 0; i < (rows || []).length; i++) {
+      row = rows[i];
+      if (!row) continue;
+      t = treasureById(row[0]);
+      if (!t) continue;
+      t.taken = String(row[1] || 'x');
+      t.taker = cleanName(row[2] || '');
+      if (grantSelf && t.taken === selfId) grantScore(t);
+    }
   }
   function sendHiBc() {
     var msg = worldPacket();
@@ -3024,9 +3637,15 @@
     r.vy = isFinite(+msg.vy) ? +msg.vy : 0;
     r.hop = r.vy > 2 ? 1 : 0;
     r.sl = msg.sl ? 1 : 0;
+    if (isFinite(+msg.sc)) r.score = msg.sc | 0;
+    if (state.matchOver) showMatchEnd();
     r.seen = Date.now();
     if (netRole) markAch('meet', '碰到朋友');
     if (msg.host && netRole === 'guest' && isFinite(+msg.clock) && +msg.clock + 0.4 >= state.clock) state.clock = +msg.clock;
+    if (msg.host && netRole === 'guest' && isFinite(+msg.match)) {
+      state.match = +msg.match;
+      syncVolcano();
+    }
     markHeard();
     setNetStatus();
   }
@@ -3043,6 +3662,9 @@
       if (b && b.length >= 2) boats.push({ x: +b[0], z: +b[1] });
     });
     if (isFinite(+msg.clock)) state.clock = +msg.clock;
+    if (isFinite(+msg.match)) state.match = +msg.match;
+    applyLoot(msg.loot, true);
+    syncVolcano();
     if (first) {
       putOnGround(pickSurface(spawn.x, spawn.z, 1.5));
     } else if (!feetClear(px, py, pz)) {
@@ -3057,7 +3679,7 @@
   function applyRemoteSet(msg, fromConn) {
     var x = msg.x | 0, y = msg.y | 0, z = msg.z | 0, id = msg.id | 0;
     if (x < 0 || y < 0 || z < 0 || x >= W || y >= H || z >= D) return;
-    if (id !== AIR && id !== TORCH) return;
+    if (id !== AIR && id !== TORCH && id !== LAVA && id !== MAGMA) return;
     var cur = at(x, y, z);
     if (id === AIR && cur === AIR) return;
     if (id === TORCH && cur !== AIR && cur !== TORCH) return;
@@ -3086,6 +3708,11 @@
     if (msg.t === 'hb') {
       markHeard();
       if (msg.host && netRole === 'guest' && isFinite(+msg.clock) && +msg.clock + 0.4 >= state.clock) state.clock = +msg.clock;
+      if (msg.host && netRole === 'guest' && isFinite(+msg.match)) {
+        state.match = +msg.match;
+        syncVolcano();
+      }
+      if (msg.loot) applyLoot(msg.loot, true);
       if (via === 'peer' && netRole === 'host') relay(msg, fromConn);
       return;
     }
@@ -3148,6 +3775,24 @@
       }
       if (netRole === 'host') relay({ t: 'emote', e: msg.e, from: msg.from || selfId }, fromConn);
     }
+    if (msg.t === 'lootAsk' && netRole === 'host') {
+      var asked = treasureById(msg.id);
+      if (asked && !asked.taken) {
+        if (!(asked.buried && !coverClear(asked))) {
+          asked.taken = String(msg.from || '');
+          asked.taker = cleanName(msg.name || '');
+          emit({ t: 'loot', id: asked.id, who: asked.taken, name: asked.taker, score: asked.score });
+        }
+      }
+    }
+    if (msg.t === 'loot') {
+      var got = treasureById(msg.id);
+      if (got && !got.taken) {
+        got.taken = String(msg.who || '');
+        got.taker = cleanName(msg.name || '');
+        if (got.taken === selfId) grantScore(got);
+      } else if (got && got.taken === selfId) grantScore(got);
+    }
   }
   function stopBcPulse() {
     if (bcPulse) { clearInterval(bcPulse); bcPulse = null; }
@@ -3158,7 +3803,7 @@
     bcPulse = setInterval(function () {
       if (netAbort || netRole !== 'host') { stopBcPulse(); return; }
       bcSend(stamp({ t: 'room', session: netSession, name: state.name, from: selfId, code: netCode || '' }));
-      bcSend(stamp({ t: 'hb', host: 1, clock: state.clock, name: state.name, from: selfId }));
+      bcSend(stamp({ t: 'hb', host: 1, clock: state.clock, match: state.match || 0, score: state.score | 0, loot: packLoot(), name: state.name, from: selfId }));
     }, 1000);
   }
   function onHostConn(conn) {
@@ -3202,7 +3847,7 @@
   }
   function claimHost() {
     if (!roomPin) roomPin = String(1000 + ((Math.random() * 9000) | 0));
-    var id = 'xygo-mw13-' + roomPin;
+    var id = 'xygo-' + TIP + '-' + roomPin;
     netCode = roomPin;
     showRoom(roomPin);
     netClaim(id, function (peer, claimed) {
@@ -3385,7 +4030,7 @@
     if (netWatch) { clearInterval(netWatch); netWatch = null; }
   }
   function connectGuestCode(pin) {
-    var id = 'xygo-mw13-' + pin;
+    var id = 'xygo-' + TIP + '-' + pin;
     lastHostId = id;
     var peer;
     try { peer = netNewPeer(); } catch (e) { setWait('连不上房间'); return; }
@@ -3408,6 +4053,7 @@
     openBC();
     netAbort = false;
     netRole = 'host';
+    applyHostName();
     if (!roomPin) roomPin = String(1000 + ((Math.random() * 9000) | 0));
     netCode = roomPin;
     showRoom(roomPin);
@@ -3438,7 +4084,7 @@
     var pin = String(code || '').replace(/\D/g, '').slice(0, 4);
     if (pin.length === 4) {
       roomPin = pin;
-      lastHostId = 'xygo-mw13-' + pin;
+      lastHostId = 'xygo-' + TIP + '-' + pin;
       setWait('正在连房间 ' + pin);
     } else {
       setWait('同一台电脑可以直接加入。跨网络请输入房主的 4 位房间码。');
@@ -3484,10 +4130,19 @@
     else if (wasHost && playing) toast('小宇：已经单独玩');
     else if (wasGuest) setWait('已取消');
   }
+  function applyHostName() {
+    if (!state.nameTouched) {
+      state.name = HOST_NAME;
+      renderHud();
+      var label = $('nameLabel');
+      if (label) label.textContent = state.name;
+    }
+  }
   function rollName() {
     var n = KID_NAMES[(Math.random() * KID_NAMES.length) | 0];
     if (n === state.name) n = KID_NAMES[(KID_NAMES.indexOf(n) + 1) % KID_NAMES.length];
     state.name = n;
+    state.nameTouched = true;
     renderHud();
     var label = $('nameLabel');
     if (label) label.textContent = state.name;
@@ -3648,6 +4303,17 @@
     });
     var closeCraft = $('craftClose');
     if (closeCraft) closeCraft.addEventListener('click', function () { var c = $('craft'); if (c) c.hidden = true; });
+    var matBtns = typeof document !== 'undefined' ? document.querySelectorAll('#mixMats button[data-mat]') : [];
+    var mi;
+    for (mi = 0; mi < matBtns.length; mi++) {
+      matBtns[mi].addEventListener('click', function (e) {
+        addMix(e.currentTarget.getAttribute('data-mat'));
+      });
+    }
+    var mixGo = $('mixGo');
+    if (mixGo) mixGo.addEventListener('click', function () { craftMix(); });
+    var mixClear = $('mixClear');
+    if (mixClear) mixClear.addEventListener('click', clearMix);
     var craftBtns = typeof document !== 'undefined' ? document.querySelectorAll('#craft button[data-craft]') : [];
     var ci;
     for (ci = 0; ci < craftBtns.length; ci++) {
@@ -3723,7 +4389,19 @@
     setPunch: function (on) { punching = !!on; pointerPunch = !!on; },
     selfId: function () { return selfId; },
     setSelfForTest: function (id) { selfId = id; },
-    setRole: function (role) { netRole = role; }
+    setRole: function (role) { netRole = role; },
+    HOST_NAME: HOST_NAME, MATCH_SEC: MATCH_SEC,
+    VOLCANO_FIRST: VOLCANO_FIRST, VOLCANO_DUR: VOLCANO_DUR, VOLCANO_PERIOD: VOLCANO_PERIOD,
+    LAVA: LAVA, MAGMA: MAGMA, COAL_ORE: COAL_ORE,
+    MIX: MIX, GEAR: GEAR,
+    craftMix: craftMix, addMix: addMix,
+    volcanoPhase: volcanoPhase, syncVolcano: syncVolcano,
+    setMatch: function (s) { state.match = s; if (s < MATCH_SEC) state.matchOver = false; syncVolcano(); },
+    matchLabel: matchLabel, activeRocks: activeRocks, tickRocks: tickRocks,
+    treasures: function () { return treasures; },
+    volcanoInfo: function () { return volcano; },
+    tryTake: tryTake, applyHostName: applyHostName,
+    hotUnder: hotUnder, coverClear: coverClear
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof window !== 'undefined') window.__xy = api;

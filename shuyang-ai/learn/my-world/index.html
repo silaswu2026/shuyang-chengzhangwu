@@ -6,10 +6,10 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
   <meta name="theme-color" content="#0f1230"/>
-  <meta name="xy-tip" content="mw13"/>
+  <meta name="xy-tip" content="mw14"/>
   <title>伍澍暘的方块小世界</title>
   <link rel="stylesheet" href="../../../brand-tokens.css"/>
-  <link rel="stylesheet" href="my-world.css?v=mw13"/>
+  <link rel="stylesheet" href="my-world.css?v=mw14"/>
 </head>
 <body>
   <canvas id="view"></canvas>
@@ -18,14 +18,16 @@
     <p id="disclaimer">自研小游戏，不是正版《我的世界》。</p>
     <p id="peace">这游戏没有怪物。</p>
     <p id="sunClock">太阳升起 · 06:00</p>
-    <p id="hint">小宇：上一级台阶要按跳。背包格子里点一下，就能换手里的东西。</p>
-    <p id="meta"><span class="tip">mw13</span></p>
+    <p id="matchClock">本局 5:00</p>
+    <p id="hint">小宇：上一级台阶要按跳。本局 5 分钟，去抢形状不同的宝物。火山大约 2 分钟后喷发。</p>
+    <p id="meta"><span class="tip">mw14</span></p>
     <p id="roomCode" hidden>房间码</p>
     <div id="stickers"></div>
     <div id="rain" aria-hidden="true"></div>
     <p id="hpLine"><span id="hpText">血 6</span><i id="hpTrack"><i id="hpFill"></i></i></p>
     <p id="net"><span id="netText"></span> <button type="button" id="leave" hidden>断开</button></p>
     <div id="equip">
+      <span id="scoreLine">宝物 0</span>
       <span id="coins">金币 0</span>
     </div>
     <div id="mapWrap">
@@ -62,31 +64,36 @@
     <div id="craft" hidden>
       <div class="card">
         <p class="who">小宇的制作</p>
-        <p id="woodGate">先敲到 1 个木头，才能做火把和小船</p>
-        <button type="button" data-craft="torch" data-wood-gate="1">火把 · 3木头</button>
+        <p id="woodGate">把木头、石头、铁矿、煤炭放进格子，自由组合</p>
+        <div id="mixMats">
+          <button type="button" data-mat="wood">木头</button>
+          <button type="button" data-mat="stone">石头</button>
+          <button type="button" data-mat="iron">铁矿</button>
+          <button type="button" data-mat="coal">煤炭</button>
+        </div>
+        <p id="mixSlots">空 + 空 + 空</p>
+        <button type="button" id="mixGo">合成</button>
+        <button type="button" id="mixClear">倒掉</button>
+        <p class="who">12 种配方</p>
+        <ul id="recipeBook"></ul>
+        <p class="who">别的</p>
         <button type="button" data-craft="boat" data-wood-gate="1">小船 · 10木头</button>
-        <button type="button" data-craft="gun">枪 · 2石头1木头</button>
         <button type="button" data-craft="bed">床 · 3木头2羊毛</button>
-        <button type="button" data-craft="axe">木斧 · 3木头</button>
-        <button type="button" data-craft="pickIron">铁镐 · 3铁1木头</button>
+        <button type="button" data-craft="armor">叶衣 · 8树叶</button>
         <button type="button" data-craft="armorWood">木甲 · 6木头</button>
         <button type="button" data-craft="armorIron">铁甲 · 6铁</button>
         <button type="button" data-craft="shears">剪刀 · 2铁</button>
         <button type="button" data-craft="wheat">小麦 · 2树叶</button>
-        <button type="button" data-craft="swordWood">木剑 · 3木头</button>
-        <button type="button" data-craft="swordStone">石剑 · 2石头1木头</button>
-        <button type="button" data-craft="swordIron">铁剑 · 2铁1木头</button>
-        <button type="button" data-craft="armor">叶衣 · 8树叶</button>
-        <button type="button" data-craft="pick">石稿 · 3石头1木头</button>
         <button type="button" data-craft="sell">卖木头 · 1木头换1金币</button>
         <button type="button" id="craftClose">关掉</button>
       </div>
     </div>
+    <div id="matchEnd" hidden></div>
   </div>
   <div id="start">
     <p class="who">小宇</p>
     <h1>方块小世界</h1>
-    <p class="lead">伍澍暘，每次打开都是新的一局。林子里能砍到木头。野猪会追，羊和鸡会跑，牛又慢又耐打。山上有雪，待久了会冷。</p>
+    <p class="lead">伍澍暘，每次打开都是新的一局。地图比以前大。当房主时，默认叫杨杨，方块人戴着眼镜。挖煤炭，把材料自由组合成 12 种武器。本局 5 分钟，和朋友抢宝物。火山大约 2 分钟后才喷岩浆。</p>
     <p class="nameRow">你叫 <b id="nameLabel">乐乐</b></p>
     <div class="goRow">
       <button type="button" id="rename">换名字</button>
@@ -101,6 +108,6 @@
     <p class="peace">这游戏没有怪物。</p>
   </div>
   <script src="../../../vendor/peerjs/peerjs.min.js"></script>
-  <script src="my-world.js?v=mw13"></script>
+  <script src="my-world.js?v=mw14"></script>
 </body>
 </html>
