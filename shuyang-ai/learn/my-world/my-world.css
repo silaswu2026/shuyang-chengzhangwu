@@ -23,6 +23,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1024;color:var(--in
 #sunClock{position:absolute;left:50%;top:6px;transform:translateX(-50%);margin:0;padding:3px 12px;
   font-size:14px;font-weight:900;color:#1a1204;background:#ffe07a;border-radius:999px;
   border:2px solid #fff;box-shadow:0 2px 0 #c9a227;z-index:5;pointer-events:none;white-space:nowrap}
+#matchClock{position:absolute;left:50%;top:36px;transform:translateX(-50%);margin:0;padding:2px 12px;
+  font-size:14px;font-weight:900;color:#fff;background:#c43a22;border-radius:999px;
+  border:2px solid #fff;z-index:5;pointer-events:none;white-space:nowrap}
+#roomCode{top:64px}
 #hint{margin:28px 12px 0;font-size:15px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000c;
   max-width:46%}
 #meta{margin:4px 12px 0;font-size:14px;font-weight:800;color:var(--gold);text-shadow:0 1px 2px #000a;
@@ -40,8 +44,9 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1024;color:var(--in
   background:#0f1230cc;border:1px solid var(--stroke);border-radius:999px;padding:4px 8px;min-height:32px}
 #equip button:active,#hold button:active{transform:translateY(1px)}
 #hold button.on{color:#062014;background:var(--gold)}
-#coins{background:#0f1230cc;border:1px solid var(--gold2);color:var(--gold);border-radius:999px;
-  padding:4px 10px;font-weight:900;font-size:14px}
+#scoreLine,#coins{border-radius:999px;padding:4px 10px;font-weight:900;font-size:14px}
+#scoreLine{background:#0f1230cc;border:1px solid #7cf0ff;color:#dffaff}
+#coins{background:#0f1230cc;border:1px solid var(--gold2);color:var(--gold)}
 #hpLine{margin:2px 12px 0;font-size:13px;font-weight:900;color:#fff;text-shadow:0 1px 2px #000}
 #hpText{margin-right:6px}
 #hpTrack{display:inline-block;width:88px;height:8px;border-radius:99px;background:#0f1230cc;border:1px solid var(--stroke);vertical-align:middle;overflow:hidden}
@@ -107,6 +112,16 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1024;color:var(--in
 #craft .card{width:min(560px,94vw);max-height:92vh;overflow:auto;background:var(--navy2);
   border:1px solid var(--stroke);border-radius:16px;padding:14px;display:flex;flex-wrap:wrap;gap:8px}
 #craft .who{flex:1 0 100%;margin:0 0 4px;color:var(--gold);font-weight:900}
+#mixMats{flex:1 0 100%;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+#mixSlots{flex:1 0 100%;margin:0;font-weight:900;font-size:16px}
+#mixGo,#mixClear{min-height:48px}
+#recipeBook{flex:1 0 100%;margin:0;padding:0 0 0 18px;max-height:28vh;overflow:auto;font-weight:800;line-height:1.45}
+#recipeBook li{margin:2px 0}
+#matchEnd{position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:8;pointer-events:none;
+  background:#0f1230f2;border:1px solid var(--gold);border-radius:16px;padding:14px 18px;min-width:220px;text-align:center}
+#matchEnd[hidden]{display:none}
+#matchEnd .who{margin:0 0 6px;color:var(--gold);font-weight:900}
+#matchEnd p{margin:2px 0;font-weight:800}
 #craft button{min-height:44px;border-radius:12px;border:1px solid var(--stroke);background:#0f1230;
   color:var(--ink);font:inherit;font-weight:800;padding:8px 12px}
 #craft button[data-craft]{background:var(--green);color:#062014;border:0}
@@ -148,7 +163,9 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1024;color:var(--in
   #actions{right:8px;bottom:8px;gap:4px}
   #actions button{width:52px;height:36px;font-size:14px;border-radius:12px}
   #keys{left:104px;bottom:96px;font-size:11px}
-  #sunClock{font-size:12px;top:2px}
+  #sunClock,#matchClock{font-size:12px;top:2px}
+  #matchClock{top:24px}
+  #roomCode{top:46px}
   #hint{margin-top:22px}
   #emotes{right:68px;bottom:8px}
   #emotes button{width:36px;height:36px;font-size:18px}
@@ -174,6 +191,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1024;color:var(--in
   #knob{left:34px;top:34px}
   #pack{bottom:78px;width:min(250px,64vw);grid-template-columns:repeat(5,1fr)}
   #sunClock{font-size:12px;top:2px;max-width:70vw}
+  #matchClock{font-size:12px;top:26px}
   #disclaimer,#peace{padding-top:26px}
   #actions{right:8px;bottom:16px;gap:6px}
   #emotes{right:78px;bottom:120px}
