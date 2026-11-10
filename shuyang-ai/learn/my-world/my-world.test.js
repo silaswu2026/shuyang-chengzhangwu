@@ -21,7 +21,7 @@ global.localStorage = {
   removeItem: function (k) { delete mem[k]; }
 };
 
-eq(MW.TIP, 'mw14', 'tip');
+eq(MW.TIP, 'mw15', 'tip');
 eq(MW.STORE, 'xygo-my-world', 'store');
 if (MW.KID_NAMES.length < 8) fail('kid names');
 MW.KID_NAMES.forEach(function (n) {
@@ -71,13 +71,12 @@ var hill = MW.scan().spawn;
 MW.loadRaw({ v: 3, tip: 'mw4', seed: 6, px: hill.x, py: hill.y, pz: hill.z, yaw: 1.2, pitch: -0.4, inv: {} });
 if (Math.abs(MW.state.px - hill.x) > 0.01 || Math.abs(MW.state.py - hill.y) > 0.01) fail('clear save should stay');
 MW.grow(1);
-var rz = 18 + Math.sin(20 * 0.23 + (1 % 7)) * 4.5;
-var riverHit = false;
-var zi;
-for (zi = -2; zi <= 2; zi++) {
-  if (MW.at(20, MW.SEA - 1, Math.round(rz) + zi) === MW.WATER) riverHit = true;
+var inletHit = false;
+var iz;
+for (iz = 4; iz <= 14; iz++) {
+  if (MW.at(16, MW.SEA - 1, iz) === MW.WATER) inletHit = true;
 }
-if (!riverHit) fail('river water');
+if (!inletHit) fail('shore inlet');
 if (MW.at(2, MW.SEA - 1, 8) !== MW.WATER) fail('ocean water');
 
 var gx = -1, gy = -1, gz = -1, x, y, z;
@@ -212,7 +211,7 @@ MW.state.inv.gold = 9;
 MW.save();
 var saved = JSON.parse(localStorage.getItem('xygo-my-world'));
 eq(saved.v, 3, 'save v');
-eq(saved.tip, 'mw14', 'save tip');
+eq(saved.tip, 'mw15', 'save tip');
 eq(saved.seed, 11, 'guest keeps own map');
 eq(saved.inv.gold, 9, 'guest keeps coins');
 eq(saved.inv.wood, 2, 'guest keeps wood');
@@ -225,18 +224,18 @@ var peace = '这游戏没有怪物。';
 var made = '自研小游戏，不是正版《我的世界》。';
 if (html.split(peace).length < 3) fail('peace twice in page');
 if (html.split(made).length < 3) fail('disclaimer twice in page');
-if (html.indexOf('xy-tip" content="mw14"') < 0) fail('meta tip');
-if (html.indexOf('my-world.css?v=mw14') < 0 || html.indexOf('my-world.js?v=mw14') < 0) fail('cache bust');
+if (html.indexOf('xy-tip" content="mw15"') < 0) fail('meta tip');
+if (html.indexOf('my-world.css?v=mw15') < 0 || html.indexOf('my-world.js?v=mw15') < 0) fail('cache bust');
 if (html.indexOf('vendor/peerjs/peerjs.min.js') < 0) fail('vendor peerjs');
-if (html.indexOf('>mw14<') < 0) fail('hud tip');
+if (html.indexOf('>mw15<') < 0) fail('hud tip');
 if (learn.indexOf(peace) < 0 || learn.indexOf('不是正版《我的世界》') < 0) fail('learn disclaimers');
-if (learn.indexOf('?v=mw14') < 0) fail('learn url');
+if (learn.indexOf('?v=mw15') < 0) fail('learn url');
 if (learn.indexOf('出生') < 0) fail('learn spawn');
 if (learn.indexOf('台阶') < 0) fail('learn step');
 if (learn.indexOf('看不见自己的手') < 0) fail('learn hand');
 if (learn.indexOf('xygo-my-world') < 0) fail('learn key');
-if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw14') < 0) fail('hub tip');
-if (hub.indexOf('my-world/?v=mw13') >= 0 || hub.indexOf('my-world/?v=mw12') >= 0 || hub.indexOf('my-world/?v=mw11') >= 0) fail('old hub tip');
+if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw15') < 0) fail('hub tip');
+if (hub.indexOf('my-world/?v=mw14') >= 0 || hub.indexOf('my-world/?v=mw13') >= 0 || hub.indexOf('my-world/?v=mw12') >= 0 || hub.indexOf('my-world/?v=mw11') >= 0) fail('old hub tip');
 if (learn.indexOf('野猪') < 0 || learn.indexOf('护甲') < 0) fail('learn mobs');
 if (learn.indexOf('鸡') < 0 || learn.indexOf('雪') < 0 || learn.indexOf('铁剑') < 0 || learn.indexOf('表情') < 0) fail('learn mw12');
 
@@ -612,6 +611,72 @@ if (!(MW.CHICKEN_FLEE > MW.SHEEP_FLEE)) fail('chicken not faster than sheep');
 if (!(MW.COW_HP >= 24)) fail('cow hp ' + MW.COW_HP);
 if (!(MW.COW_SPEED < MW.BOAR_SPEED * 0.5)) fail('cow not slow');
 if (!(MW.BOAR_AGGRO >= 5 && MW.BOAR_AGGRO <= 9)) fail('boar aggro ' + MW.BOAR_AGGRO);
+function terrainSample() {
+  var W = MW.W, D = MW.D, H = MW.H;
+  var topY = new Int16Array(W * D);
+  var topId = new Uint8Array(W * D);
+  var x, z, y, id, solidY, solidId, k, dy;
+  for (z = 0; z < D; z++) {
+    for (x = 0; x < W; x++) {
+      solidY = -1;
+      solidId = 0;
+      for (y = 0; y < H; y++) {
+        id = MW.at(x, y, z);
+        if (id && id !== MW.WATER && id !== MW.LEAF && id !== MW.FLOWER && id !== MW.TORCH && id !== MW.BED && id !== MW.LOG && id !== MW.CHEST) {
+          solidY = y;
+          solidId = id;
+        }
+      }
+      k = z * W + x;
+      topY[k] = solidY;
+      topId[k] = solidId;
+    }
+  }
+  var total = 0, snow = 0, snowOut = 0, snowLow = 0;
+  var plain = 0, plainGrass = 0, plainSnow = 0;
+  var spawnN = 0, spawnGrass = 0, spawnSnow = 0;
+  var steep = 0, edges = 0;
+  for (z = 0; z < D; z++) {
+    for (x = 0; x < W; x++) {
+      k = z * W + x;
+      if (topY[k] < 0) continue;
+      total++;
+      id = topId[k];
+      if (id === MW.SNOW) {
+        snow++;
+        if (x < 64 || z < 64) snowOut++;
+        if (topY[k] < MW.SEA + 4) snowLow++;
+      }
+      if (x >= 22 && x <= 52 && z >= 24 && z <= 48) {
+        plain++;
+        if (id === MW.GRASS) plainGrass++;
+        if (id === MW.SNOW) plainSnow++;
+      }
+      if (x >= 16 && x <= 30 && z >= 12 && z <= 24) {
+        spawnN++;
+        if (id === MW.GRASS) spawnGrass++;
+        if (id === MW.SNOW) spawnSnow++;
+      }
+      if (x >= 18 && x <= 60 && z >= 16 && z <= 70 && x + 1 <= 60) {
+        dy = Math.abs(topY[k] - topY[k + 1]);
+        edges++;
+        if (dy >= 2) steep++;
+      }
+      if (x >= 18 && x <= 60 && z >= 16 && z < 70) {
+        dy = Math.abs(topY[k] - topY[k + W]);
+        edges++;
+        if (dy >= 2) steep++;
+      }
+    }
+  }
+  return {
+    total: total, snow: snow, snowShare: total ? snow / total : 1,
+    snowOut: snowOut, snowLow: snowLow,
+    plain: plain, plainGrass: plainGrass, plainSnow: plainSnow,
+    spawnN: spawnN, spawnGrass: spawnGrass, spawnSnow: spawnSnow,
+    steep: steep, edges: edges
+  };
+}
 for (seedN = 1; seedN <= 24; seedN++) {
   MW.grow(seedN);
   var ts = MW.treeStats();
@@ -633,8 +698,27 @@ for (seedN = 1; seedN <= 24; seedN++) {
   }
   if (beds < 3) fail('beds ' + beds + ' seed ' + seedN);
   if (houseChests < 3) fail('house chests ' + houseChests + ' seed ' + seedN);
-  if (snowN < 30) fail('snow ' + snowN + ' seed ' + seedN);
   if (ironN < 8) fail('iron ore ' + ironN + ' seed ' + seedN);
+  var lay = terrainSample();
+  if (!(lay.snowShare < 0.12)) fail('snow share ' + lay.snowShare.toFixed(3) + ' seed ' + seedN);
+  if (lay.snow < 40) fail('snow cap ' + lay.snow + ' seed ' + seedN);
+  if (lay.snowOut) fail('snow outside northeast mountain ' + lay.snowOut + ' seed ' + seedN);
+  if (lay.snowLow) fail('snow below the high cap ' + lay.snowLow + ' seed ' + seedN);
+  if (lay.plainSnow) fail('central grass has snow ' + lay.plainSnow + ' seed ' + seedN);
+  if (lay.spawnSnow) fail('spawn meadow has snow seed ' + seedN);
+  if (!(lay.plainGrass / lay.plain > 0.8)) fail('central grass ' + lay.plainGrass + '/' + lay.plain + ' seed ' + seedN);
+  if (!(lay.spawnGrass / lay.spawnN > 0.75)) fail('spawn meadow grass ' + lay.spawnGrass + '/' + lay.spawnN + ' seed ' + seedN);
+  if (lay.edges && lay.steep / lay.edges > 0.02) fail('jagged ground ' + lay.steep + '/' + lay.edges + ' seed ' + seedN);
+  var lootN = MW.treasures();
+  if (lootN.length !== 7) fail('treasures ' + lootN.length + ' seed ' + seedN);
+  var idolN = null, li;
+  for (li = 0; li < lootN.length; li++) if (lootN[li].id === 'idol') idolN = lootN[li];
+  if (!idolN || !idolN.buried || !idolN.cover) fail('idol missing seed ' + seedN);
+  if (MW.at(idolN.cover.x, idolN.cover.y, idolN.cover.z) !== MW.SNOW) fail('idol not in snow seed ' + seedN);
+  if (idolN.cover.x < 64 || idolN.cover.z < 64) fail('idol left the mountain seed ' + seedN);
+  if (seedN === 1) {
+    console.log('terrain seed1 snow=' + lay.snow + '/' + lay.total + ' share=' + lay.snowShare.toFixed(4) + ' plainGrass=' + lay.plainGrass + '/' + lay.plain + ' spawnGrass=' + lay.spawnGrass + '/' + lay.spawnN + ' steep=' + lay.steep + '/' + lay.edges);
+  }
 }
 MW.grow(4);
 var treesBefore = MW.treeStats().n;
@@ -978,4 +1062,4 @@ if (failed) {
   console.error(failed + ' failed');
   process.exit(1);
 }
-console.log('my-world mw14 ok');
+console.log('my-world mw15 ok');
