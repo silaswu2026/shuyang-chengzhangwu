@@ -1,8 +1,8 @@
-/* 方块小世界 mw14 · 更大的地图、煤炭盲盒 12 种武器、火山和 5 分钟夺宝。 */
+/* 方块小世界 mw15 · 手摆地形：西岸、平草地、林带、缓坡，雪只在东北高山。 */
 (function () {
   'use strict';
 
-  var TIP = 'mw14';
+  var TIP = 'mw15';
   var STORE = 'xygo-my-world';
   var HOST_NAME = '杨杨';
   var W = 96, H = 24, D = 96, SEA = 8, DAY = 360;
@@ -212,21 +212,57 @@
     var v11 = hash2(x0 + 1, z0 + 1, salt);
     return v00 * (1 - fx) * (1 - fz) + v10 * fx * (1 - fz) + v01 * (1 - fx) * fz + v11 * fx * fz;
   }
-  function riverZ(x) {
-    return 18 + Math.sin(x * 0.23 + (worldSeed % 7)) * 4.5;
+  // Hand-laid regions on the 96×96 map. Snow is a cap, not "anything above the sea".
+  var MOUNT_X = 84, MOUNT_Z = 84, MOUNT_R = 16, MOUNT_PEAK = 16, SNOW_R = 10;
+  var VOLC_X = 80, VOLC_Z = 52;
+  function inletZ(x) {
+    var wobble = (worldSeed % 3) - 1;
+    return 8 + wobble + Math.sin(x * 0.16) * 1.2;
+  }
+  function onInlet(x, z, pad) {
+    if (x < 7 || x > 25) return false;
+    return Math.abs(z - inletZ(x)) < (pad == null ? 3.2 : pad);
+  }
+  function snowCap(x, z) {
+    return Math.hypot(x - MOUNT_X, z - MOUNT_Z) <= SNOW_R;
+  }
+  function mountShoulder(x, z) {
+    var d = Math.hypot(x - MOUNT_X, z - MOUNT_Z);
+    return d > SNOW_R && d <= MOUNT_R;
   }
   function heightAt(x, z) {
-    var n1 = vnoise(x * 0.08, z * 0.08, 1);
-    var n2 = vnoise(x * 0.18 + 3.2, z * 0.18, 2);
-    var n = n1 * 0.72 + n2 * 0.28;
-    var shore = smoothstep((x - 3) / 11);
-    var h = (3 + n1 * 1.5) * (1 - shore) + (7 + n * 12) * shore;
-    if (x >= 30) {
-      var ridge = 11 + (x - 30) * 0.55 + n * 4;
-      if (h < ridge) h = ridge;
+    var shore = smoothstep((x - 2) / 12);
+    var seaBed = 3.2 + vnoise(x * 0.045, z * 0.04, 3) * 1.5;
+    var h = seaBed * (1 - shore) + (SEA + 1) * shore;
+    if (x > 16) {
+      var swell = vnoise(x * 0.02, z * 0.02, 2);
+      h += smoothstep((swell - 0.72) / 0.22);
     }
-    var dist = Math.abs(z - riverZ(x));
-    if (x > 8 && dist < 3.4) h = h * (1 - smoothstep((3.4 - dist) / 3.4)) + 4.1 * smoothstep((3.4 - dist) / 3.4);
+    var hill = smoothstep((x - 56) / 16);
+    var hillN = vnoise(x * 0.032, z * 0.032, 5);
+    h += hill * (1.15 + hillN * 1.35);
+    var md = Math.hypot(x - MOUNT_X, z - MOUNT_Z);
+    if (md < MOUNT_R) {
+      var inner = 7.5;
+      var target;
+      if (md <= inner) target = MOUNT_PEAK;
+      else {
+        var t = (md - inner) / (MOUNT_R - inner);
+        var s = t * t * (3 - 2 * t);
+        target = MOUNT_PEAK + ((SEA + 1) - MOUNT_PEAK) * s;
+      }
+      if (h < target) h = target;
+    }
+    if (x > 6 && x < 26) {
+      var dist = Math.abs(z - inletZ(x));
+      var half = 3.3;
+      if (dist < half) {
+        var reach = 1 - smoothstep((x - 16) / 9);
+        var bank = smoothstep((half - dist) / half);
+        var carve = bank * reach;
+        h = h * (1 - carve) + 4.3 * carve;
+      }
+    }
     h = Math.round(h);
     if (h < 2) h = 2;
     if (h > H - 6) h = H - 6;
@@ -279,10 +315,13 @@
     return true;
   }
   function forestCenters() {
+    var jx = (worldSeed % 5) - 2;
+    var jz = ((worldSeed >> 3) % 5) - 2;
     return [
-      { x: 11 + (worldSeed % 8), z: 28 + ((worldSeed >> 3) % 12), r: 11 },
-      { x: 36 + ((worldSeed >> 5) % 16), z: 16 + ((worldSeed >> 8) % 10), r: 8.5 },
-      { x: 48 + ((worldSeed >> 2) % 10), z: 62 + ((worldSeed >> 4) % 14), r: 9 }
+      { x: 30 + jx, z: 22 + jz, r: 7.2 },
+      { x: 44 + jx, z: 34 + jz, r: 8.2 },
+      { x: 38 + jx, z: 50 + jz, r: 9 },
+      { x: 52 + jx, z: 64 + jz, r: 7.4 }
     ];
   }
   function inForest(x, z, centers) {
@@ -340,7 +379,7 @@
       if (x < 2 || z < 2 || x >= W - 2 || z >= D - 2) continue;
       top = highestSolid(x, z);
       if (top < 2 || at(x, top, z) !== GRASS) continue;
-      if (Math.abs(z - riverZ(x)) < 3.4) continue;
+      if (onInlet(x, z, 3.4)) continue;
       if (Math.hypot(x - 18, z - 12) < 8) continue;
       if (placeTree(x, z, top)) n++;
     }
@@ -410,7 +449,7 @@
           if (spot.ground === SAND) score += 36;
           if (spot.ground !== GRASS && spot.ground !== SAND) score += 90;
           score += cliffCost(x, z, spot.top) * 7;
-          if (Math.abs(z - riverZ(x)) < 3.2) score += 28;
+          if (onInlet(x, z, 3.2)) score += 28;
           if (score < bestScore) { bestScore = score; best = spot; }
         }
       }
@@ -561,7 +600,7 @@
         for (z = 26; z < D - 10; z += 2) {
           spot = standColumn(x, z);
           if (!spot || spot.ground !== GRASS) continue;
-          if (Math.abs(z - riverZ(x)) < 6) continue;
+          if (onInlet(x, z, 6)) continue;
           if (pass === 0 && (spot.top > SEA + 4 || spot.top < SEA - 1)) continue;
           sc = (x - 24) * (x - 24) + (z - 36) * (z - 36) + (spot.top - (SEA + 1)) * (spot.top - (SEA + 1)) * 6;
           if (sc < bestScore) { bestScore = sc; best = spot; }
@@ -624,7 +663,7 @@
           if (!spot || spot.ground !== GRASS) continue;
           if (pass === 0 && (spot.top < SEA || spot.top > SEA + 3)) continue;
           if (pass === 0 && canopy(x, z) > 2) continue;
-          if (Math.abs(z - riverZ(x)) < 5) continue;
+          if (onInlet(x, z, 5)) continue;
           if (village && Math.hypot(spot.x - village.x, spot.z - village.z) < 9) continue;
           if (Math.hypot(spot.x - spawn.x, spot.z - spawn.z) < 7) continue;
           ok = true;
@@ -689,7 +728,7 @@
     }
   }
   function buildVolcano() {
-    var cx = 80, cz = 52;
+    var cx = VOLC_X, cz = VOLC_Z;
     if (cx > W - 8) cx = W - 8;
     if (cz > D - 8) cz = D - 8;
     var base = SEA + 2;
@@ -829,18 +868,37 @@
       return true;
     }
     function takeSpot(pred) {
-      var guard, x, z, top, id;
+      var guard, x, z, found;
+      function consider(x, z) {
+        if (x < 2 || z < 2 || x >= W - 2 || z >= D - 2) return null;
+        var top = highestSolid(x, z);
+        if (top < 1) return null;
+        var id = at(x, top, z);
+        if (houseAt(x, z)) return null;
+        if (!far(x, z)) return null;
+        if (!pred(x, z, top, id)) return null;
+        used.push({ x: x, z: z });
+        return { x: x, z: z, top: top, id: id };
+      }
       for (guard = 0; guard < 500; guard++) {
         x = 2 + ((guard * 17 + (worldSeed % 97)) % (W - 4));
         z = 2 + ((guard * 29 + ((worldSeed * 3) % 89)) % (D - 4));
-        top = highestSolid(x, z);
-        if (top < 1) continue;
-        id = at(x, top, z);
-        if (houseAt(x, z)) continue;
-        if (!far(x, z)) continue;
-        if (!pred(x, z, top, id)) continue;
-        used.push({ x: x, z: z });
-        return { x: x, z: z, top: top, id: id };
+        found = consider(x, z);
+        if (found) return found;
+      }
+      // The 500-step probe only visits 92 columns. If a region misses that
+      // lattice, walk the map so every designed biome can still hold a treasure.
+      for (z = 2; z < D - 2; z += 2) {
+        for (x = 2; x < W - 2; x += 2) {
+          found = consider(x, z);
+          if (found) return found;
+        }
+      }
+      for (z = 2; z < D - 2; z++) {
+        for (x = 2; x < W - 2; x++) {
+          found = consider(x, z);
+          if (found) return found;
+        }
       }
       return null;
     }
@@ -869,9 +927,24 @@
     add({ id: 'crystal', name: '蓝水晶', score: 35, shape: 'crystal' }, takeSpot(function (x, z, top, id) {
       return id === GRASS && inForest(x, z, forestCenters());
     }), false);
-    add({ id: 'idol', name: '雪人宝', score: 55, shape: 'idol' }, takeSpot(function (x, z, top, id) {
+    var idolSpot = takeSpot(function (x, z, top, id) {
       return id === SNOW;
-    }), true);
+    });
+    if (!idolSpot) {
+      var sx, sz, stop, sid;
+      for (sz = 2; sz < D - 2 && !idolSpot; sz++) {
+        for (sx = 2; sx < W - 2; sx++) {
+          if (!snowCap(sx, sz)) continue;
+          stop = highestSolid(sx, sz);
+          sid = at(sx, stop, sz);
+          if (sid !== SNOW || houseAt(sx, sz) || !far(sx, sz)) continue;
+          used.push({ x: sx, z: sz });
+          idolSpot = { x: sx, z: sz, top: stop, id: sid };
+          break;
+        }
+      }
+    }
+    add({ id: 'idol', name: '雪人宝', score: 55, shape: 'idol' }, idolSpot, true);
     var emberSpot = null;
     if (volcano && volcano.pool && volcano.pool.length) {
       var p0 = volcano.pool[0];
@@ -937,9 +1010,11 @@
       for (x = 0; x < W; x++) {
         h = heightAt(x, z);
         topId = GRASS;
-        if (h >= SEA + 5) topId = SNOW;
+        if (snowCap(x, z) && h >= SEA + 3) topId = SNOW;
         else if (h <= SEA) topId = SAND;
+        else if (mountShoulder(x, z) && h >= SEA + 4 && hash2(x, z, 21) < 0.45) topId = STONE;
         if (topId === SNOW && hash2(x, z, 15) < 0.07) topId = IRON_ORE;
+        else if (topId === STONE && mountShoulder(x, z) && hash2(x, z, 16) < 0.12) topId = IRON_ORE;
         for (y = 0; y <= h; y++) {
           id = STONE;
           if (topId === GRASS) {
@@ -968,11 +1043,10 @@
       for (x = 1; x < W - 1; x++) {
         h = highestSolid(x, z);
         if (h < 2 || at(x, h, z) !== GRASS) continue;
-        if (Math.abs(z - riverZ(x)) < 3.6) continue;
+        if (onInlet(x, z, 3.6)) continue;
         if (Math.hypot(x - 18, z - 12) < 7.5) continue;
         woods = inForest(x, z, centers);
-        if (woods && hash2(x, z, 9) < 0.55) placeTree(x, z, h);
-        else if (!woods && hash2(x, z, 9) < 0.02) placeTree(x, z, h);
+        if (woods && hash2(x, z, 9) < 0.42) placeTree(x, z, h);
         else if (hash2(x, z, 31) < 0.02 && h >= SEA && h <= SEA + 3 && Math.hypot(x - 18, z - 12) > 10) put(x, h, z, COAL_ORE);
         else if (hash2(x, z, 10) < 0.08 && at(x, h + 1, z) === AIR) put(x, h + 1, z, FLOWER);
         else if (hash2(x, z, 11) < 0.01 && at(x, h + 1, z) === AIR) put(x, h + 1, z, CHEST);
