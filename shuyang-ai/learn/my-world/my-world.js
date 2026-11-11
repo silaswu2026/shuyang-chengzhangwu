@@ -1,8 +1,8 @@
-/* 方块小世界 mw20 · 煤炭在草地和浅石头里，本局 7 分钟，电脑鼠标没那么飘，箱子是金色盖。 */
+/* 方块小世界 mw21 · 出生旁边的草地上就有金盖煤炭。本局仍是 7 分钟，鼠标和金色箱盖不变。 */
 (function () {
   'use strict';
 
-  var TIP = 'mw20';
+  var TIP = 'mw21';
   var STORE = 'xygo-my-world';
   var HOST_NAME = '杨杨';
   var W = 96, H = 24, D = 96, SEA = 8, DAY = 360;
@@ -10,6 +10,8 @@
   var VOLCANO_FIRST = 120, VOLCANO_DUR = 60, VOLCANO_PERIOD = 180;
   var MOUSE_LOOK = 0.0014;
   var COAL_MARK = [1, 0.86, 0.28];
+  // Sits on the top face (lift > 1) so a walking eye sees a gold cap, not a lip buried in the cube.
+  var COAL_CAP = { lift: 1.012, h: 0.2, w: 0.86, side: 0.44 };
   var CHEST_LID = [0.98, 0.78, 0.16];
   var ROCK_GAP = 1.8, ROCK_LIFE = 1.35;
   var HP_MAX = 10;
@@ -776,8 +778,8 @@
     volcano = { cx: cx, cz: cz, base: base, floor: floor, lip: floor + 4, pool: pool, r: 6 };
   }
   function seedCoalNear() {
-    // A short ring of coal on the grass around the meadow. The old loop
-    // wrote the first stone from y=2 upward, which is the bottom of the world.
+    // Grass ring about 10–13 blocks from the meadow center. The open grass
+    // next to spawn is inside that hole, so seedCoalMeadow fills it later.
     var n = 0, g = 0, x, z, top, y, ang, rad;
     while (n < 7 && g < 96) {
       g++;
@@ -796,6 +798,93 @@
       if (y > 1 && at(x, y, z) === STONE) put(x, y, z, COAL_ORE);
       n++;
     }
+  }
+  function seedCoalMeadow() {
+    // mw20 kept this disk empty: the ring above skips hypot(x-18,z-12) < 8,
+    // and the 2% grass sprinkle starts past 10. Spawn stands on the west
+    // edge of that meadow (inlet to the west), so a short walk around the
+    // open grass never met a coal block. Five blocks, 3.1–6.6 from the feet.
+    var want = 5;
+    var placed = [];
+    function spaced(x, z) {
+      var i, p, dx, dz;
+      for (i = 0; i < placed.length; i++) {
+        p = placed[i];
+        dx = p.x - x; dz = p.z - z;
+        if (dx < 0) dx = -dx;
+        if (dz < 0) dz = -dz;
+        if (dx + dz < 3) return false;
+      }
+      return true;
+    }
+    function column(x, z) {
+      x |= 0; z |= 0;
+      if (x < 2 || z < 2 || x >= W - 2 || z >= D - 2) return -1;
+      var dist = Math.hypot(x + 0.5 - spawn.x, z + 0.5 - spawn.z);
+      if (dist < 3.1 || dist > 6.6) return -1;
+      if (!spaced(x, z)) return -1;
+      if (onInlet(x, z, 2.2)) return -1;
+      if (houseAt(x, z)) return -1;
+      var top = highestSolid(x, z);
+      if (top < 4 || at(x, top, z) !== GRASS) return -1;
+      if (at(x, top + 1, z) !== AIR) return -1;
+      return top;
+    }
+    function commit(x, z, top) {
+      put(x, top, z, COAL_ORE);
+      placed.push({ x: x, z: z });
+    }
+    // Angles are from +X. Spawn looks that way, into the grass, away from the inlet.
+    var aims = [
+      [0, 4.2], [0.7, 5.4], [-0.7, 5.4], [1.2, 6.1], [-1.2, 6.1],
+      [0.3, 6.2], [-0.3, 4.5], [1.55, 4.8], [-1.55, 4.8]
+    ];
+    var i, x, z, top, dx, dz, found;
+    for (i = 0; i < aims.length && placed.length < want; i++) {
+      x = Math.round(spawn.x + Math.cos(aims[i][0]) * aims[i][1]);
+      z = Math.round(spawn.z + Math.sin(aims[i][0]) * aims[i][1]);
+      found = false;
+      for (dz = -2; dz <= 2 && !found; dz++) {
+        for (dx = -2; dx <= 2 && !found; dx++) {
+          top = column(x + dx, z + dz);
+          if (top < 0) continue;
+          commit(x + dx, z + dz, top);
+          found = true;
+        }
+      }
+    }
+    if (placed.length < want) {
+      var sx = spawn.x | 0, sz = spawn.z | 0;
+      for (dx = 1; dx <= 7 && placed.length < want; dx++) {
+        for (dz = -7; dz <= 7 && placed.length < want; dz++) {
+          top = column(sx + dx, sz + dz);
+          if (top < 0) continue;
+          commit(sx + dx, sz + dz, top);
+        }
+      }
+      for (dx = 0; dx >= -7 && placed.length < want; dx--) {
+        for (dz = -7; dz <= 7 && placed.length < want; dz++) {
+          top = column(sx + dx, sz + dz);
+          if (top < 0) continue;
+          commit(sx + dx, sz + dz, top);
+        }
+      }
+    }
+  }
+  function markCoal(data, x, y, z) {
+    var cap = COAL_CAP;
+    var inset, s, sw, sy;
+    if (!blocksFace(COAL_ORE, at(x, y + 1, z))) {
+      inset = (1 - cap.w) * 0.5;
+      pushCube(data, x + inset, y + cap.lift, z + inset, cap.w, cap.h, cap.w, COAL_MARK);
+    }
+    s = cap.side;
+    sw = 0.5;
+    sy = 0.28;
+    if (!blocksFace(COAL_ORE, at(x + 1, y, z))) pushCube(data, x + 1.01, y + sy, z + (1 - sw) * 0.5, 0.12, s, sw, COAL_MARK);
+    if (!blocksFace(COAL_ORE, at(x - 1, y, z))) pushCube(data, x - 0.13, y + sy, z + (1 - sw) * 0.5, 0.12, s, sw, COAL_MARK);
+    if (!blocksFace(COAL_ORE, at(x, y, z + 1))) pushCube(data, x + (1 - sw) * 0.5, y + sy, z + 1.01, sw, s, 0.12, COAL_MARK);
+    if (!blocksFace(COAL_ORE, at(x, y, z - 1))) pushCube(data, x + (1 - sw) * 0.5, y + sy, z - 0.13, sw, s, 0.12, COAL_MARK);
   }
   function volcanoPhase(clock) {
     var c = clock == null ? (state.match || 0) : clock;
@@ -1092,6 +1181,7 @@
     }
     placeTreasures();
     if (!feetClear(spawn.x, spawn.y, spawn.z)) findSpawn();
+    seedCoalMeadow();
     if (!keepPos) {
       boats.splice(0, boats.length);
       putOnGround(spawn);
@@ -2797,14 +2887,8 @@
               else if (nz > 0) pushCube(data, x + 0.28, y + 0.28, z + 0.62, 0.44, 0.44, 0.38, [0.95, 0.52, 0.14]);
               else if (nz < 0) pushCube(data, x + 0.28, y + 0.28, z, 0.44, 0.44, 0.38, [0.95, 0.52, 0.14]);
             }
-            if (id === COAL_ORE) {
-              if (ny > 0) pushCube(data, x + 0.18, y + 0.86, z + 0.18, 0.64, 0.2, 0.64, COAL_MARK);
-              else if (nx > 0) pushCube(data, x + 0.86, y + 0.26, z + 0.22, 0.2, 0.48, 0.52, COAL_MARK);
-              else if (nx < 0) pushCube(data, x - 0.06, y + 0.26, z + 0.22, 0.2, 0.48, 0.52, COAL_MARK);
-              else if (nz > 0) pushCube(data, x + 0.22, y + 0.26, z + 0.86, 0.52, 0.48, 0.2, COAL_MARK);
-              else if (nz < 0) pushCube(data, x + 0.22, y + 0.26, z - 0.06, 0.52, 0.48, 0.2, COAL_MARK);
-            }
           }
+          if (id === COAL_ORE) markCoal(data, x, y, z);
         }
       }
     }
@@ -4560,7 +4644,7 @@
     setSelfForTest: function (id) { selfId = id; },
     setRole: function (role) { netRole = role; },
     HOST_NAME: HOST_NAME, MATCH_SEC: MATCH_SEC, MOUSE_LOOK: MOUSE_LOOK,
-    COAL_MARK: COAL_MARK, CHEST_LID: CHEST_LID,
+    COAL_MARK: COAL_MARK, COAL_CAP: COAL_CAP, CHEST_LID: CHEST_LID,
     VOLCANO_FIRST: VOLCANO_FIRST, VOLCANO_DUR: VOLCANO_DUR, VOLCANO_PERIOD: VOLCANO_PERIOD,
     LAVA: LAVA, MAGMA: MAGMA, COAL_ORE: COAL_ORE,
     MIX: MIX, GEAR: GEAR,
