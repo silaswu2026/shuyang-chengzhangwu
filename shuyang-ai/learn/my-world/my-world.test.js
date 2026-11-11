@@ -21,7 +21,7 @@ global.localStorage = {
   removeItem: function (k) { delete mem[k]; }
 };
 
-eq(MW.TIP, 'mw15', 'tip');
+eq(MW.TIP, 'mw16', 'tip');
 eq(MW.STORE, 'xygo-my-world', 'store');
 if (MW.KID_NAMES.length < 8) fail('kid names');
 MW.KID_NAMES.forEach(function (n) {
@@ -211,7 +211,7 @@ MW.state.inv.gold = 9;
 MW.save();
 var saved = JSON.parse(localStorage.getItem('xygo-my-world'));
 eq(saved.v, 3, 'save v');
-eq(saved.tip, 'mw15', 'save tip');
+eq(saved.tip, 'mw16', 'save tip');
 eq(saved.seed, 11, 'guest keeps own map');
 eq(saved.inv.gold, 9, 'guest keeps coins');
 eq(saved.inv.wood, 2, 'guest keeps wood');
@@ -224,18 +224,18 @@ var peace = '这游戏没有怪物。';
 var made = '自研小游戏，不是正版《我的世界》。';
 if (html.split(peace).length < 3) fail('peace twice in page');
 if (html.split(made).length < 3) fail('disclaimer twice in page');
-if (html.indexOf('xy-tip" content="mw15"') < 0) fail('meta tip');
-if (html.indexOf('my-world.css?v=mw15') < 0 || html.indexOf('my-world.js?v=mw15') < 0) fail('cache bust');
+if (html.indexOf('xy-tip" content="mw16"') < 0) fail('meta tip');
+if (html.indexOf('my-world.css?v=mw16') < 0 || html.indexOf('my-world.js?v=mw16') < 0) fail('cache bust');
 if (html.indexOf('vendor/peerjs/peerjs.min.js') < 0) fail('vendor peerjs');
-if (html.indexOf('>mw15<') < 0) fail('hud tip');
+if (html.indexOf('>mw16<') < 0) fail('hud tip');
 if (learn.indexOf(peace) < 0 || learn.indexOf('不是正版《我的世界》') < 0) fail('learn disclaimers');
-if (learn.indexOf('?v=mw15') < 0) fail('learn url');
+if (learn.indexOf('?v=mw16') < 0) fail('learn url');
 if (learn.indexOf('出生') < 0) fail('learn spawn');
 if (learn.indexOf('台阶') < 0) fail('learn step');
 if (learn.indexOf('看不见自己的手') < 0) fail('learn hand');
 if (learn.indexOf('xygo-my-world') < 0) fail('learn key');
-if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw15') < 0) fail('hub tip');
-if (hub.indexOf('my-world/?v=mw14') >= 0 || hub.indexOf('my-world/?v=mw13') >= 0 || hub.indexOf('my-world/?v=mw12') >= 0 || hub.indexOf('my-world/?v=mw11') >= 0) fail('old hub tip');
+if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw16') < 0) fail('hub tip');
+if (hub.indexOf('my-world/?v=mw15') >= 0 || hub.indexOf('my-world/?v=mw14') >= 0 || hub.indexOf('my-world/?v=mw13') >= 0 || hub.indexOf('my-world/?v=mw12') >= 0 || hub.indexOf('my-world/?v=mw11') >= 0) fail('old hub tip');
 if (learn.indexOf('野猪') < 0 || learn.indexOf('护甲') < 0) fail('learn mobs');
 if (learn.indexOf('鸡') < 0 || learn.indexOf('雪') < 0 || learn.indexOf('铁剑') < 0 || learn.indexOf('表情') < 0) fail('learn mw12');
 
@@ -1058,8 +1058,161 @@ MW.state.started = true;
 MW.state.matchOver = false;
 eq(MW.matchLabel(), '本局 5:00', 'reset label');
 
+function parkMobs() {
+  var mi;
+  for (mi = 0; mi < MW.pigs.length; mi++) MW.pigs[mi].alive = false;
+  for (mi = 0; mi < MW.cows.length; mi++) MW.cows[mi].alive = false;
+  for (mi = 0; mi < MW.sheep.length; mi++) MW.sheep[mi].alive = false;
+  for (mi = 0; mi < MW.chickens.length; mi++) MW.chickens[mi].alive = false;
+}
+function standMelee() {
+  flatPad(30, 30);
+  parkMobs();
+  MW.setRole(null);
+  MW.setMatch(0);
+  MW.state.started = true;
+  MW.state.matchOver = false;
+  MW.state.ride = -1;
+  MW.state.sitting = null;
+  MW.state.hold = 'hand';
+  MW.state.equip.weapon = '';
+  MW.state.equip.tool = '';
+  MW.state.equip.armor = '';
+  MW.state.inv.armor = 0;
+  MW.state.px = 30.5;
+  MW.state.py = 5;
+  MW.state.pz = 30.5;
+  MW.state.yaw = 0;
+  MW.state.pitch = 0;
+  MW.state.vy = 0;
+  MW.state.onGround = true;
+  MW.state.knockX = 0;
+  MW.state.knockZ = 0;
+  MW.state.hp = 10;
+  MW.setPunch(false);
+  MW.sim(0.5);
+}
+function placeBoar(i, x, z, yaw) {
+  var b = MW.pigs[i];
+  b.alive = true;
+  b.hp = MW.PIG_HP;
+  b.cool = 99;
+  b.x = x;
+  b.y = 5;
+  b.z = z;
+  b.yaw = yaw;
+  return b;
+}
+standMelee();
+var held = placeBoar(0, 30.5, 30.5 + 2, 0);
+MW.state.px = 30.5;
+MW.state.py = 5;
+MW.state.pz = 30.5;
+MW.state.yaw = 0;
+MW.state.pitch = 0;
+MW.setPunch(true);
+MW.sim(0.05);
+eq(held.hp, MW.PIG_HP, 'punch behind boar should miss');
+held.x = 30.5;
+held.z = 30.5 - 1;
+held.y = 5;
+held.yaw = Math.PI;
+held.cool = 99;
+MW.state.px = 30.5;
+MW.state.py = 5;
+MW.state.pz = 30.5;
+MW.state.yaw = 0;
+MW.state.pitch = 0;
+if (!(Math.hypot(held.x - MW.state.px, held.z - MW.state.pz) < MW.BOAR_HIT)) fail('boar not in hit range');
+MW.sim(0.05);
+if (held.hp !== MW.PIG_HP - 1) fail('held punch missed close level boar ' + held.hp);
+var cooled = held.hp;
+MW.sim(0.05);
+eq(held.hp, cooled, 'swing damaged twice inside cooldown');
+
+MW.setPunch(false);
+MW.sim(0.5);
+parkMobs();
+var head = placeBoar(0, 30.5, 30.5 - 0.85, Math.PI);
+var snoutZ = head.z + 0.72;
+var aimDy = (head.y + 0.4) - (MW.state.py + 1.5);
+var aimDz = snoutZ - MW.state.pz;
+MW.state.px = 30.5;
+MW.state.py = 5;
+MW.state.pz = 30.5;
+MW.state.yaw = 0;
+MW.state.pitch = Math.atan2(aimDy, Math.abs(aimDz) || 0.001);
+MW.state.equip.weapon = '';
+MW.setPunch(true);
+MW.sim(0.05);
+if (head.hp !== MW.PIG_HP - 1) fail('looking at boar head missed ' + head.hp + ' pitch ' + MW.state.pitch);
+MW.setPunch(false);
+MW.sim(0.5);
+
+parkMobs();
+var fist = placeBoar(0, 30.5, 30.5 - 1, Math.PI);
+MW.state.px = 30.5;
+MW.state.py = 5;
+MW.state.pz = 30.5;
+MW.state.yaw = 0;
+MW.state.pitch = 0;
+MW.state.equip.weapon = '';
+MW.state.inv.raw = 0;
+MW.setPunch(true);
+var fistHits = 0, fistPrev = fist.hp, fistN;
+for (fistN = 0; fistN < 80 && fist.alive; fistN++) {
+  MW.sim(0.05);
+  if (fist.hp < fistPrev) fistHits++;
+  fistPrev = fist.hp;
+}
+if (fist.alive) fail('four fists did not kill boar hp ' + fist.hp);
+eq(fistHits, 4, 'four fist hits');
+if ((MW.state.inv.raw | 0) < 1) fail('boar dropped no raw meat');
+MW.setPunch(false);
+MW.sim(0.5);
+
+parkMobs();
+var ironBoar = placeBoar(1, 30.5, 30.5 - 1, Math.PI);
+MW.state.px = 30.5;
+MW.state.py = 5;
+MW.state.pz = 30.5;
+MW.state.yaw = 0;
+MW.state.pitch = 0;
+MW.state.equip.weapon = 'swordIron';
+MW.state.inv.swordIron = 1;
+eq(MW.meleeDmg(), 4, 'iron sword still 4');
+MW.setPunch(true);
+MW.sim(0.05);
+if (ironBoar.alive || ironBoar.hp > 0) fail('iron sword did not kill boar ' + ironBoar.hp);
+MW.setPunch(false);
+MW.sim(0.5);
+
+parkMobs();
+var gunBoar = placeBoar(2, 30.5, 30.5 - 2, Math.PI);
+gunBoar.hp = 1;
+MW.state.px = 30.5;
+MW.state.py = 5;
+MW.state.pz = 30.5;
+MW.state.yaw = 0;
+MW.state.pitch = 0;
+MW.state.equip.weapon = 'gun';
+MW.state.inv.gun = 1;
+if (!MW.tryShoot() || gunBoar.alive) fail('gun one shot');
+MW.state.equip.weapon = '';
+eq(MW.meleeDmg(), 1, 'fist still 1');
+
+MW.setRole(null);
+MW.setSelfForTest('solo');
+if (gunBoar.alive) fail('gun boar revived before pack');
+MW.applyNet({ mw: 3, t: 'mobs', from: 'host', pigs: [[gunBoar.x, gunBoar.y, gunBoar.z, MW.PIG_HP, 1]] });
+if (gunBoar.alive) fail('solo kill undone by mob pack');
+MW.setRole('host');
+MW.applyNet({ mw: 3, t: 'mob', from: 'solo', k: 'pig', i: 2, hp: MW.PIG_HP });
+if (gunBoar.alive) fail('own mob packet revived the boar');
+MW.setRole(null);
+
 if (failed) {
   console.error(failed + ' failed');
   process.exit(1);
 }
-console.log('my-world mw15 ok');
+console.log('my-world mw16 ok');
