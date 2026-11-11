@@ -21,7 +21,7 @@ global.localStorage = {
   removeItem: function (k) { delete mem[k]; }
 };
 
-eq(MW.TIP, 'mw20', 'tip');
+eq(MW.TIP, 'mw21', 'tip');
 eq(MW.STORE, 'xygo-my-world', 'store');
 if (MW.KID_NAMES.length < 8) fail('kid names');
 MW.KID_NAMES.forEach(function (n) {
@@ -211,7 +211,7 @@ MW.state.inv.gold = 9;
 MW.save();
 var saved = JSON.parse(localStorage.getItem('xygo-my-world'));
 eq(saved.v, 3, 'save v');
-eq(saved.tip, 'mw20', 'save tip');
+eq(saved.tip, 'mw21', 'save tip');
 eq(saved.seed, 11, 'guest keeps own map');
 eq(saved.inv.gold, 9, 'guest keeps coins');
 eq(saved.inv.wood, 2, 'guest keeps wood');
@@ -224,24 +224,24 @@ var peace = '这游戏没有怪物。';
 var made = '自研小游戏，不是正版《我的世界》。';
 if (html.split(peace).length < 3) fail('peace twice in page');
 if (html.split(made).length < 3) fail('disclaimer twice in page');
-if (html.indexOf('xy-tip" content="mw20"') < 0) fail('meta tip');
-if (html.indexOf('my-world.css?v=mw20') < 0 || html.indexOf('my-world.js?v=mw20') < 0) fail('cache bust');
+if (html.indexOf('xy-tip" content="mw21"') < 0) fail('meta tip');
+if (html.indexOf('my-world.css?v=mw21') < 0 || html.indexOf('my-world.js?v=mw21') < 0) fail('cache bust');
 if (html.indexOf('vendor/peerjs/peerjs.min.js') < 0) fail('vendor peerjs');
-if (html.indexOf('>mw20<') < 0) fail('hud tip');
+if (html.indexOf('>mw21<') < 0) fail('hud tip');
 if (html.indexOf('本局 7:00') < 0) fail('match clock');
 if (html.indexOf('黑煤炭带金点') < 0) fail('coal hint');
 if (html.indexOf('金色箱盖') < 0) fail('chest hint');
 if (learn.indexOf(peace) < 0 || learn.indexOf('不是正版《我的世界》') < 0) fail('learn disclaimers');
-if (learn.indexOf('?v=mw20') < 0) fail('learn url');
+if (learn.indexOf('?v=mw21') < 0) fail('learn url');
 if (learn.indexOf('出生') < 0) fail('learn spawn');
 if (learn.indexOf('台阶') < 0) fail('learn step');
 if (learn.indexOf('看不见自己的手') < 0) fail('learn hand');
 if (learn.indexOf('xygo-my-world') < 0) fail('learn key');
-if (learn.indexOf('xygo-my-world-mw20') < 0) fail('learn channel');
+if (learn.indexOf('xygo-my-world-mw21') < 0) fail('learn channel');
 if (learn.indexOf('0.0014') < 0) fail('learn mouse');
 if (learn.indexOf('7:00') < 0) fail('learn duration');
-if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw20') < 0) fail('hub tip');
-if (hub.indexOf('my-world/?v=mw16') >= 0 || hub.indexOf('my-world/?v=mw15') >= 0 || hub.indexOf('my-world/?v=mw14') >= 0 || hub.indexOf('my-world/?v=mw13') >= 0 || hub.indexOf('my-world/?v=mw12') >= 0 || hub.indexOf('my-world/?v=mw11') >= 0) fail('old hub tip');
+if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw21') < 0) fail('hub tip');
+if (hub.indexOf('my-world/?v=mw20') >= 0 || hub.indexOf('my-world/?v=mw16') >= 0 || hub.indexOf('my-world/?v=mw15') >= 0 || hub.indexOf('my-world/?v=mw14') >= 0 || hub.indexOf('my-world/?v=mw13') >= 0 || hub.indexOf('my-world/?v=mw12') >= 0 || hub.indexOf('my-world/?v=mw11') >= 0) fail('old hub tip');
 if (learn.indexOf('野猪') < 0 || learn.indexOf('护甲') < 0) fail('learn mobs');
 if (learn.indexOf('鸡') < 0 || learn.indexOf('雪') < 0 || learn.indexOf('铁剑') < 0 || learn.indexOf('表情') < 0) fail('learn mw12');
 
@@ -982,6 +982,7 @@ eq(MW.VOLCANO_PERIOD, 180, 'volcano period');
 eq(MW.MOUSE_LOOK, 0.0014, 'mouse look');
 if (!(MW.CHEST_LID[0] > 0.9 && MW.CHEST_LID[1] > 0.7 && MW.CHEST_LID[2] < 0.35)) fail('chest lid ' + MW.CHEST_LID);
 if (!(MW.COAL_MARK[0] > 0.9 && MW.COAL_MARK[1] > 0.7)) fail('coal mark ' + MW.COAL_MARK);
+if (!(MW.COAL_CAP.lift >= 1 && MW.COAL_CAP.h >= 0.16 && MW.COAL_CAP.w >= 0.75 && MW.COAL_CAP.side >= 0.35)) fail('coal cap ' + JSON.stringify(MW.COAL_CAP));
 eq(MW.matchLabel(), '本局 7:00', 'match hud');
 MW.setMatch(61);
 if (MW.matchLabel() !== '本局 5:59') fail('match label ' + MW.matchLabel());
@@ -1226,12 +1227,31 @@ MW.applyNet({ mw: 3, t: 'mob', from: 'solo', k: 'pig', i: 2, hp: MW.PIG_HP });
 if (gunBoar.alive) fail('own mob packet revived the boar');
 MW.setRole(null);
 
+function capClear(sp, x, y, z) {
+  var ex = sp.x, ey = sp.y + 1.5, ez = sp.z;
+  var tx = x + 0.5, ty = y + MW.COAL_CAP.lift + MW.COAL_CAP.h * 0.5, tz = z + 0.5;
+  var dx = tx - ex, dy = ty - ey, dz = tz - ez;
+  var len = Math.hypot(dx, dy, dz) || 1;
+  var steps = Math.ceil(len / 0.2), s, px, py, pz, bx, by, bz, id;
+  for (s = 1; s < steps; s++) {
+    px = ex + dx * (s / steps);
+    py = ey + dy * (s / steps);
+    pz = ez + dz * (s / steps);
+    bx = Math.floor(px); by = Math.floor(py); bz = Math.floor(pz);
+    if (bx === x && bz === z && by >= y) return true;
+    id = MW.at(bx, by, bz);
+    if (id && id !== MW.AIR && id !== MW.LEAF && id !== MW.FLOWER && id !== MW.TORCH && id !== MW.BED) return false;
+  }
+  return true;
+}
 function countCoal(seed) {
   MW.grow(seed);
   var sp = MW.scan().spawn;
   var vx = MW.volcanoInfo();
   var surface = 0, dig = 0, total = 0, skirt = 0;
-  var x, y, z, id, top, dist, burial;
+  var meadow = 0, meadowEast = 0, meadowSeen = 0, span = 0;
+  var spots = [];
+  var x, y, z, id, top, dist, burial, i, j, d;
   for (z = 0; z < MW.D; z++) {
     for (x = 0; x < MW.W; x++) {
       top = -1;
@@ -1250,12 +1270,26 @@ function countCoal(seed) {
         if (burial === 0 && dist >= 8 && dist <= 22) surface++;
         if (burial >= 1 && burial <= 4 && dist <= 30) dig++;
         if (vx && Math.hypot(x - vx.cx, z - vx.cz) <= 7 && MW.at(x, y + 1, z) === MW.AIR) skirt++;
+        if (burial === 0 && MW.at(x, y + 1, z) === MW.AIR && dist >= 2.5 && dist <= 7.5) {
+          meadow++;
+          if (x + 0.5 > sp.x) meadowEast++;
+          var drop = (sp.y + 1.5) - (y + MW.COAL_CAP.lift);
+          var lookDown = Math.atan2(drop, Math.max(0.2, dist));
+          if (lookDown > 0 && lookDown < 35 * Math.PI / 180 && capClear(sp, x, y, z)) meadowSeen++;
+          spots.push({ x: x, y: y, z: z, dist: dist });
+        }
       }
     }
   }
-  return { surface: surface, dig: dig, total: total, skirt: skirt };
+  for (i = 0; i < spots.length; i++) {
+    for (j = i + 1; j < spots.length; j++) {
+      d = Math.hypot(spots[i].x - spots[j].x, spots[i].z - spots[j].z);
+      if (d > span) span = d;
+    }
+  }
+  return { surface: surface, dig: dig, total: total, skirt: skirt, meadow: meadow, meadowEast: meadowEast, meadowSeen: meadowSeen, span: span, spots: spots, spawn: sp };
 }
-var coalSeeds = [1, 2, 4, 7], coalI, coalR;
+var coalSeeds = [1, 2, 4, 7, 42, 2026], coalI, coalR;
 for (coalI = 0; coalI < coalSeeds.length; coalI++) {
   coalR = countCoal(coalSeeds[coalI]);
   if (coalR.surface < 4) fail('seed ' + coalSeeds[coalI] + ' surface coal near spawn ' + coalR.surface);
@@ -1263,17 +1297,27 @@ for (coalI = 0; coalI < coalSeeds.length; coalI++) {
   if (coalR.total < 40) fail('seed ' + coalSeeds[coalI] + ' coal total ' + coalR.total);
   if (coalR.total > 8000) fail('seed ' + coalSeeds[coalI] + ' coal flood ' + coalR.total);
   if (coalR.skirt < 8) fail('seed ' + coalSeeds[coalI] + ' volcano skirt coal ' + coalR.skirt);
+  if (coalR.meadow < 4) fail('seed ' + coalSeeds[coalI] + ' meadow coal ' + coalR.meadow);
+  if (coalR.meadow > 8) fail('seed ' + coalSeeds[coalI] + ' meadow coal flood ' + coalR.meadow);
+  if (coalR.meadowEast < 3) fail('seed ' + coalSeeds[coalI] + ' meadow coal not on the grass ahead ' + coalR.meadowEast);
+  if (coalR.meadowSeen < 3) fail('seed ' + coalSeeds[coalI] + ' meadow coal hidden from spawn eye ' + coalR.meadowSeen);
+  if (coalR.span < 4) fail('seed ' + coalSeeds[coalI] + ' meadow coal clumped ' + coalR.span.toFixed(1));
 }
 MW.grow(1);
-var mineX = -1, mineY = 0, mineZ = 0, mx, my, mz;
+var mineSp = MW.scan().spawn;
+var mineX = -1, mineY = 0, mineZ = 0, mx, my, mz, mineDist;
 for (mz = 0; mz < MW.D && mineX < 0; mz++) {
   for (mx = 0; mx < MW.W && mineX < 0; mx++) {
+    mineDist = Math.hypot(mx + 0.5 - mineSp.x, mz + 0.5 - mineSp.z);
+    if (mineDist < 2.5 || mineDist > 7.5) continue;
     for (my = 0; my < MW.H; my++) {
-      if (MW.at(mx, my, mz) === MW.COAL_ORE) { mineX = mx; mineY = my; mineZ = mz; break; }
+      if (MW.at(mx, my, mz) === MW.COAL_ORE && MW.at(mx, my + 1, mz) === MW.AIR) {
+        mineX = mx; mineY = my; mineZ = mz; break;
+      }
     }
   }
 }
-if (mineX < 0) fail('no coal block to mine');
+if (mineX < 0) fail('no meadow coal block to mine');
 MW.state.equip.tool = '';
 MW.state.inv.coal = 0;
 if (!(MW.breakTime(MW.COAL_ORE) > 0 && MW.breakTime(MW.COAL_ORE) <= MW.breakTime(MW.STONE))) fail('coal mine time ' + MW.breakTime(MW.COAL_ORE));
@@ -1316,4 +1360,4 @@ if (failed) {
   console.error(failed + ' failed');
   process.exit(1);
 }
-console.log('my-world mw20 ok');
+console.log('my-world mw21 ok');
