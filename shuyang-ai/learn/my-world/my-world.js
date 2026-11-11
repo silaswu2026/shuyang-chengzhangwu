@@ -1,8 +1,8 @@
-/* 方块小世界 mw15 · 手摆地形：西岸、平草地、林带、缓坡，雪只在东北高山。 */
+/* 方块小世界 mw16 · 贴脸的野猪，平视挥拳也能打中。手摆地形：西岸、平草地、林带、缓坡，雪只在东北高山。 */
 (function () {
   'use strict';
 
-  var TIP = 'mw15';
+  var TIP = 'mw16';
   var STORE = 'xygo-my-world';
   var HOST_NAME = '杨杨';
   var W = 96, H = 24, D = 96, SEA = 8, DAY = 360;
@@ -14,6 +14,7 @@
   var GUN_DMG = 4;
   var PIG_HP = 4, PIG_DMG = 1, BOAR_SPEED = WALK * 1.15;
   var BOAR_AGGRO = 6.5, BOAR_AGGRO_NIGHT = 11, BOAR_HIT = 1.25;
+  var SWING_GAP = 0.42;
   var COW_HP = 28, COW_DMG = 2, COW_SPEED = WALK * 0.32;
   var SHEEP_HP = 6, SHEEP_FEAR = 6, SHEEP_FLEE = WALK * 1.05;
   var CHICKEN_HP = 3, CHICKEN_FEAR = 5.2, CHICKEN_FLEE = WALK * 1.55;
@@ -140,6 +141,7 @@
   var armorDrop = null;
   var fallPeak = null;
   var shotLock = false;
+  var swingCool = 0;
   var mapOpen = true;
   var suppressMobs = false;
   var state = {
@@ -2045,6 +2047,54 @@
     scan(cows, 'cow');
     return best;
   }
+  function animalInMelee() {
+    var dir = look();
+    var eyeY = state.py + 1.5;
+    var reach = meleeReach();
+    var best = null, bestH = 1e9;
+    function aimedAt(e) {
+      var yaw = e.yaw || 0;
+      var fx = Math.sin(yaw), fz = -Math.cos(yaw);
+      var spots = [
+        [e.x, e.y + 0.36, e.z],
+        [e.x, e.y + 0.62, e.z],
+        [e.x + fx * 0.72, e.y + 0.4, e.z + fz * 0.72]
+      ];
+      var s, dx, dy, dz, horiz, dist, along, hl, facing;
+      for (s = 0; s < spots.length; s++) {
+        dx = spots[s][0] - state.px;
+        dy = spots[s][1] - eyeY;
+        dz = spots[s][2] - state.pz;
+        horiz = Math.hypot(dx, dz);
+        if (horiz > reach) continue;
+        dist = Math.hypot(horiz, dy) || 0.001;
+        along = dx * dir[0] + dz * dir[2];
+        if (dist < 0.3 && along > -0.05) return true;
+        hl = Math.hypot(dir[0], dir[2]);
+        facing = horiz < 0.001 ? 1 : (hl < 0.02 ? 0 : along / (horiz * hl));
+        if (facing > 0.5) return true;
+        if (facing > 0.2 && (along + dy * dir[1]) / dist > 0.72) return true;
+      }
+      return false;
+    }
+    function scan(arr, kind) {
+      var i, e, h;
+      for (i = 0; i < arr.length; i++) {
+        e = arr[i];
+        if (!e.alive) continue;
+        h = Math.hypot(e.x - state.px, e.z - state.pz);
+        if (h > reach + 0.8 || h >= bestH) continue;
+        if (!aimedAt(e)) continue;
+        best = { e: e, kind: kind, i: i };
+        bestH = h;
+      }
+    }
+    scan(chickens, 'chicken');
+    scan(sheep, 'sheep');
+    scan(pigs, 'pig');
+    scan(cows, 'cow');
+    return best;
+  }
   function grantMeat(kind) {
     var n = kind === 'cow' ? 2 : 1;
     state.inv.raw = (state.inv.raw | 0) + n;
@@ -2092,6 +2142,8 @@
     }
   }
   function doPunch(dt) {
+    if (swingCool > 0) swingCool -= dt;
+    if (swingCool < 0) swingCool = 0;
     if (punching && !shotLock && state.hold === 'shears') {
       shotLock = true;
       var woolHit = animalInSight();
@@ -2107,11 +2159,17 @@
       shotLock = true;
       if (tryShoot()) { breakAcc = 0; setBar(false, 0); return; }
     }
-    if (punching && !shotLock && state.equip.weapon !== 'gun') {
-      shotLock = true;
-      var bite = animalInSight();
-      if (bite && Math.hypot(bite.e.x - state.px, bite.e.z - state.pz) < meleeReach()) strikeAnimal(bite, meleeDmg());
-      else pokeFriend();
+    if (punching && state.hold !== 'shears' && state.equip.weapon !== 'gun') {
+      if (swingCool <= 0) {
+        var bite = animalInMelee();
+        if (bite) {
+          strikeAnimal(bite, meleeDmg());
+          swingCool = SWING_GAP;
+        } else if (!shotLock) {
+          shotLock = true;
+          pokeFriend();
+        }
+      }
     }
     if (!punching) shotLock = false;
     var hit = punching ? ray(4.5, true) : null;
