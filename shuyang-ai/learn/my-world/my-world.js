@@ -1,8 +1,8 @@
-/* 方块小世界 mw21 · 出生旁边的草地上就有金盖煤炭。本局仍是 7 分钟，鼠标和金色箱盖不变。 */
+/* 方块小世界 mw22 · 出生面前立着金盖煤炭，平视就能敲到。本局仍是 7 分钟，鼠标和金色箱盖不变。 */
 (function () {
   'use strict';
 
-  var TIP = 'mw21';
+  var TIP = 'mw22';
   var STORE = 'xygo-my-world';
   var HOST_NAME = '杨杨';
   var W = 96, H = 24, D = 96, SEA = 8, DAY = 360;
@@ -10,8 +10,8 @@
   var VOLCANO_FIRST = 120, VOLCANO_DUR = 60, VOLCANO_PERIOD = 180;
   var MOUSE_LOOK = 0.0014;
   var COAL_MARK = [1, 0.86, 0.28];
-  // Sits on the top face (lift > 1) so a walking eye sees a gold cap, not a lip buried in the cube.
-  var COAL_CAP = { lift: 1.012, h: 0.2, w: 0.86, side: 0.44 };
+  // Cap sits on the top face. Side marks are tall enough to meet a walking eye on the center pillar.
+  var COAL_CAP = { lift: 1.02, h: 0.42, w: 0.92, side: 0.48 };
   var CHEST_LID = [0.98, 0.78, 0.16];
   var ROCK_GAP = 1.8, ROCK_LIFE = 1.35;
   var HP_MAX = 10;
@@ -133,9 +133,11 @@
   var blocks = new Uint8Array(W * H * D);
   var worldSeed = 1;
   var spawn = { x: 20.5, y: 10, z: 20.5 };
+  var spawnYaw = null;
   var boats = [];
-  var torchCells = [];
+    var torchCells = [];
   var chestCells = [];
+  var coalCells = [];
   var volcano = null;
   var treasures = [];
   var pigs = [];
@@ -517,7 +519,10 @@
     state.knockZ = 0;
     fallPeak = null;
     state.pitch = 0;
-    state.yaw = openYaw(spot.x, spot.y + 1.5, spot.z);
+    // Near spawn, keep the yaw coal was placed along. Recomputing openYaw after
+    // the eye-level pillar would turn the player away from it.
+    var nearSpawn = Math.hypot(spot.x - spawn.x, spot.z - spawn.z) < 3;
+    state.yaw = (spawnYaw == null || !nearSpawn) ? openYaw(spot.x, spot.y + 1.5, spot.z) : spawnYaw;
   }
   function wearingArmor() {
     var id = state.equip.armor;
@@ -799,92 +804,174 @@
       n++;
     }
   }
-  function seedCoalMeadow() {
-    // mw20 kept this disk empty: the ring above skips hypot(x-18,z-12) < 8,
-    // and the 2% grass sprinkle starts past 10. Spawn stands on the west
-    // edge of that meadow (inlet to the west), so a short walk around the
-    // open grass never met a coal block. Five blocks, 3.1–6.6 from the feet.
-    var want = 5;
-    var placed = [];
-    function spaced(x, z) {
-      var i, p, dx, dz;
-      for (i = 0; i < placed.length; i++) {
-        p = placed[i];
-        dx = p.x - x; dz = p.z - z;
-        if (dx < 0) dx = -dx;
-        if (dz < 0) dz = -dz;
-        if (dx + dz < 3) return false;
+  function eyeCell(yaw, dist) {
+    var lx = Math.sin(yaw), lz = -Math.cos(yaw);
+    return {
+      x: Math.floor(spawn.x + lx * dist),
+      z: Math.floor(spawn.z + lz * dist),
+      y: Math.floor(spawn.y + 1.5)
+    };
+  }
+  function columnCanHold(x, z, eyeY) {
+    if (x < 2 || z < 2 || x >= W - 2 || z >= D - 2) return false;
+    if (Math.hypot(x + 0.5 - spawn.x, z + 0.5 - spawn.z) < 2.1) return false;
+    if (onInlet(x, z, 1.6) || houseAt(x, z)) return false;
+    var top = highestSolid(x, z);
+    if (top < 4 || top + 2 !== eyeY) return false;
+    var id = at(x, top, z);
+    if (id !== GRASS && id !== COAL_ORE) return false;
+    var y, a;
+    for (y = top + 1; y <= eyeY; y++) {
+      a = at(x, y, z);
+      if (a !== AIR && a !== FLOWER && a !== TORCH && a !== CHEST && a !== COAL_ORE) return false;
+    }
+    return true;
+  }
+  function pathClear(yaw, dist) {
+    var lx = Math.sin(yaw), lz = -Math.cos(yaw);
+    var eyeY = Math.floor(spawn.y + 1.5);
+    var t, x, z, id;
+    for (t = 0.6; t < dist - 0.3; t += 0.35) {
+      x = Math.floor(spawn.x + lx * t);
+      z = Math.floor(spawn.z + lz * t);
+      id = at(x, eyeY, z);
+      if (id && id !== FLOWER && id !== TORCH) return false;
+    }
+    return true;
+  }
+  function yawWorks(yaw) {
+    var dist, c;
+    for (dist = 2.6; dist <= 4.7; dist += 0.3) {
+      c = eyeCell(yaw, dist);
+      if (!columnCanHold(c.x, c.z, c.y)) continue;
+      if (!pathClear(yaw, dist)) continue;
+      return dist;
+    }
+    return 0;
+  }
+  function chooseCoalYaw() {
+    var prefer = openYaw(spawn.x, spawn.y + 1.5, spawn.z);
+    if (yawWorks(prefer)) return prefer;
+    var i, a, best = prefer, bestD = 0, d;
+    for (i = 0; i < 8; i++) {
+      a = i * Math.PI / 4;
+      d = yawWorks(a);
+      if (d && (!bestD || d < bestD)) { best = a; bestD = d; }
+    }
+    return best;
+  }
+  function exposedNear(yaw) {
+    var n = 0, x, y, z, dx, dz, dist, len, dot, lx, lz;
+    lx = Math.sin(yaw);
+    lz = -Math.cos(yaw);
+    for (z = 0; z < D; z++) {
+      for (x = 0; x < W; x++) {
+        dx = x + 0.5 - spawn.x;
+        dz = z + 0.5 - spawn.z;
+        dist = Math.hypot(dx, dz);
+        if (dist < 2 || dist > 7.2) continue;
+        len = dist || 1;
+        dot = dx / len * lx + dz / len * lz;
+        if (dot < 0.55) continue;
+        for (y = 0; y < H; y++) {
+          if (at(x, y, z) === COAL_ORE && at(x, y + 1, z) === AIR) n++;
+        }
       }
+    }
+    return n;
+  }
+  function placeCoalColumn(x, z, tall) {
+    x |= 0; z |= 0;
+    if (x < 2 || z < 2 || x >= W - 2 || z >= D - 2) return false;
+    if (Math.hypot(x + 0.5 - spawn.x, z + 0.5 - spawn.z) < 2.1) return false;
+    if (onInlet(x, z, 1.6) || houseAt(x, z)) return false;
+    var top = highestSolid(x, z);
+    if (top < 4) return false;
+    var id = at(x, top, z);
+    if (id === COAL_ORE && at(x, top + 1, z) === AIR) return true;
+    if (id !== GRASS) return false;
+    var eyeY = Math.floor(spawn.y + 1.5);
+    var y, a;
+    if (tall) {
+      if (top + 2 !== eyeY) return false;
+      for (y = top + 1; y <= eyeY; y++) {
+        a = at(x, y, z);
+        if (a !== AIR && a !== FLOWER && a !== TORCH && a !== CHEST && a !== COAL_ORE) return false;
+      }
+      put(x, top + 1, z, COAL_ORE);
+      put(x, eyeY, z, COAL_ORE);
       return true;
     }
-    function column(x, z) {
-      x |= 0; z |= 0;
-      if (x < 2 || z < 2 || x >= W - 2 || z >= D - 2) return -1;
-      var dist = Math.hypot(x + 0.5 - spawn.x, z + 0.5 - spawn.z);
-      if (dist < 3.1 || dist > 6.6) return -1;
-      if (!spaced(x, z)) return -1;
-      if (onInlet(x, z, 2.2)) return -1;
-      if (houseAt(x, z)) return -1;
-      var top = highestSolid(x, z);
-      if (top < 4 || at(x, top, z) !== GRASS) return -1;
-      if (at(x, top + 1, z) !== AIR) return -1;
-      return top;
-    }
-    function commit(x, z, top) {
-      put(x, top, z, COAL_ORE);
-      placed.push({ x: x, z: z });
-    }
-    // Angles are from +X. Spawn looks that way, into the grass, away from the inlet.
-    var aims = [
-      [0, 4.2], [0.7, 5.4], [-0.7, 5.4], [1.2, 6.1], [-1.2, 6.1],
-      [0.3, 6.2], [-0.3, 4.5], [1.55, 4.8], [-1.55, 4.8]
-    ];
-    var i, x, z, top, dx, dz, found;
-    for (i = 0; i < aims.length && placed.length < want; i++) {
-      x = Math.round(spawn.x + Math.cos(aims[i][0]) * aims[i][1]);
-      z = Math.round(spawn.z + Math.sin(aims[i][0]) * aims[i][1]);
-      found = false;
-      for (dz = -2; dz <= 2 && !found; dz++) {
-        for (dx = -2; dx <= 2 && !found; dx++) {
-          top = column(x + dx, z + dz);
-          if (top < 0) continue;
-          commit(x + dx, z + dz, top);
-          found = true;
+    a = at(x, top + 1, z);
+    if (a !== AIR && a !== FLOWER && a !== TORCH) return false;
+    put(x, top + 1, z, COAL_ORE);
+    return true;
+  }
+  function ensureSpawnCoal() {
+    // mw21 wrote five flush coals with angles measured from +X, then Math.round
+    // on a *.5 spawn snapped them onto the next row. The player faces openYaw
+    // and walks that line; a level ray is a full block above the lawn, so it
+    // hit grass or nothing. Chests stand up, which is why those were seen.
+    if (spawnYaw == null) spawnYaw = chooseCoalYaw();
+    var yaw = spawnYaw;
+    var dist = yawWorks(yaw);
+    if (!dist) return;
+    var center = eyeCell(yaw, dist);
+    var lx = Math.sin(yaw), lz = -Math.cos(yaw);
+    var rx = Math.cos(yaw), rz = Math.sin(yaw);
+    placeCoalColumn(center.x, center.z, true);
+    var sats = [[1.15, 1.65], [1.15, -1.65], [2.05, 0.85], [2.05, -0.85], [1.7, 2.4], [1.7, -2.4]];
+    var i, px, pz, dx, dz, x, z, placed;
+    for (i = 0; i < sats.length && exposedNear(yaw) < 5; i++) {
+      px = center.x + 0.5 + lx * sats[i][0] + rx * sats[i][1];
+      pz = center.z + 0.5 + lz * sats[i][0] + rz * sats[i][1];
+      x = Math.floor(px); z = Math.floor(pz);
+      if (x === center.x && z === center.z) continue;
+      placed = placeCoalColumn(x, z, false);
+      if (placed) continue;
+      for (dz = -1; dz <= 1 && exposedNear(yaw) < 5; dz++) {
+        for (dx = -1; dx <= 1; dx++) {
+          if (!dx && !dz) continue;
+          if (center.x === x + dx && center.z === z + dz) continue;
+          if (placeCoalColumn(x + dx, z + dz, false)) { placed = true; break; }
         }
-      }
-    }
-    if (placed.length < want) {
-      var sx = spawn.x | 0, sz = spawn.z | 0;
-      for (dx = 1; dx <= 7 && placed.length < want; dx++) {
-        for (dz = -7; dz <= 7 && placed.length < want; dz++) {
-          top = column(sx + dx, sz + dz);
-          if (top < 0) continue;
-          commit(sx + dx, sz + dz, top);
-        }
-      }
-      for (dx = 0; dx >= -7 && placed.length < want; dx--) {
-        for (dz = -7; dz <= 7 && placed.length < want; dz++) {
-          top = column(sx + dx, sz + dz);
-          if (top < 0) continue;
-          commit(sx + dx, sz + dz, top);
-        }
+        if (placed) break;
       }
     }
   }
+  function faceSpawnCoalIfHome() {
+    if (Math.hypot(state.px - spawn.x, state.pz - spawn.z) > 8) return;
+    var lx = Math.sin(state.yaw), lz = -Math.cos(state.yaw);
+    var best = null, bestD = 1e9;
+    var x, y, z, dx, dz, dist, dot;
+    var eyeY = Math.floor(state.py + 1.5);
+    for (z = 0; z < D; z++) {
+      for (x = 0; x < W; x++) {
+        for (y = eyeY; y <= eyeY + 1 && y < H; y++) {
+          if (at(x, y, z) !== COAL_ORE) continue;
+          dx = x + 0.5 - state.px;
+          dz = z + 0.5 - state.pz;
+          dist = Math.hypot(dx, dz);
+          if (dist < 1.2 || dist > 6.5) continue;
+          dot = dx / dist * lx + dz / dist * lz;
+          if (dot > 0.9) return;
+          if (dist < bestD) { bestD = dist; best = { x: x, z: z }; }
+        }
+      }
+    }
+    if (!best) return;
+    dx = best.x + 0.5 - state.px;
+    dz = best.z + 0.5 - state.pz;
+    state.yaw = Math.atan2(dx, -dz);
+  }
   function markCoal(data, x, y, z) {
     var cap = COAL_CAP;
-    var inset, s, sw, sy;
-    if (!blocksFace(COAL_ORE, at(x, y + 1, z))) {
-      inset = (1 - cap.w) * 0.5;
-      pushCube(data, x + inset, y + cap.lift, z + inset, cap.w, cap.h, cap.w, COAL_MARK);
-    }
-    s = cap.side;
-    sw = 0.5;
-    sy = 0.28;
-    if (!blocksFace(COAL_ORE, at(x + 1, y, z))) pushCube(data, x + 1.01, y + sy, z + (1 - sw) * 0.5, 0.12, s, sw, COAL_MARK);
-    if (!blocksFace(COAL_ORE, at(x - 1, y, z))) pushCube(data, x - 0.13, y + sy, z + (1 - sw) * 0.5, 0.12, s, sw, COAL_MARK);
-    if (!blocksFace(COAL_ORE, at(x, y, z + 1))) pushCube(data, x + (1 - sw) * 0.5, y + sy, z + 1.01, sw, s, 0.12, COAL_MARK);
-    if (!blocksFace(COAL_ORE, at(x, y, z - 1))) pushCube(data, x + (1 - sw) * 0.5, y + sy, z - 0.13, sw, s, 0.12, COAL_MARK);
+    var s = cap.side, sw = 0.42, sy = 0.26;
+    // Gold on the exposed faces, in the band a walking eye actually crosses.
+    if (!blocksFace(COAL_ORE, at(x + 1, y, z))) pushCube(data, x + 1.01, y + sy, z + (1 - sw) * 0.5, 0.14, s, sw, COAL_MARK);
+    if (!blocksFace(COAL_ORE, at(x - 1, y, z))) pushCube(data, x - 0.15, y + sy, z + (1 - sw) * 0.5, 0.14, s, sw, COAL_MARK);
+    if (!blocksFace(COAL_ORE, at(x, y, z + 1))) pushCube(data, x + (1 - sw) * 0.5, y + sy, z + 1.01, sw, s, 0.14, COAL_MARK);
+    if (!blocksFace(COAL_ORE, at(x, y, z - 1))) pushCube(data, x + (1 - sw) * 0.5, y + sy, z - 0.15, sw, s, 0.14, COAL_MARK);
   }
   function volcanoPhase(clock) {
     var c = clock == null ? (state.match || 0) : clock;
@@ -1110,6 +1197,7 @@
   }
   function grow(seed, keepPos) {
     worldSeed = (seed >>> 0) || 1;
+    spawnYaw = null;
     blocks = new Uint8Array(W * H * D);
     village = null;
     armorDrop = null;
@@ -1181,7 +1269,7 @@
     }
     placeTreasures();
     if (!feetClear(spawn.x, spawn.y, spawn.z)) findSpawn();
-    seedCoalMeadow();
+    spawnYaw = chooseCoalYaw();
     if (!keepPos) {
       boats.splice(0, boats.length);
       putOnGround(spawn);
@@ -1190,6 +1278,7 @@
       state.knockZ = 0;
       fallPeak = null;
     }
+    ensureSpawnCoal();
     if (!suppressMobs) spawnMobs();
     syncVolcano();
     dirty = true;
@@ -1266,6 +1355,7 @@
     if (isFinite(raw.clock) && raw.clock >= 0) state.clock = raw.clock % (DAY * 20);
     if (isFinite(raw.match) && raw.match >= 0) state.match = raw.match;
     syncVolcano();
+    ensureSpawnCoal();
     if (isFinite(raw.yaw)) state.yaw = raw.yaw;
     if (isFinite(raw.pitch)) state.pitch = Math.max(-1.2, Math.min(1.2, raw.pitch));
     if (isFinite(raw.px) && feetClear(raw.px, raw.py, raw.pz)) {
@@ -1273,6 +1363,7 @@
     } else {
       putOnGround(spawn);
     }
+    faceSpawnCoalIfHome();
   }
   function freshGame() {
     lockHome = false;
@@ -2833,6 +2924,7 @@
     var data = [];
     torchCells = [];
     chestCells = [];
+    coalCells = [];
     var x, y, z, id, rgb, f, face, s, v, nx, ny, nz, nid;
     for (y = 0; y < H; y++) {
       for (z = 0; z < D; z++) {
@@ -2888,7 +2980,10 @@
               else if (nz < 0) pushCube(data, x + 0.28, y + 0.28, z, 0.44, 0.44, 0.38, [0.95, 0.52, 0.14]);
             }
           }
-          if (id === COAL_ORE) markCoal(data, x, y, z);
+          if (id === COAL_ORE) {
+            markCoal(data, x, y, z);
+            if (at(x, y + 1, z) === AIR) coalCells.push({ x: x, y: y, z: z });
+          }
         }
       }
     }
@@ -3415,6 +3510,12 @@
       pushCube(bright, cc.x + 0.38, cc.y + 0.4, cc.z + 0.02, 0.24, 0.22, 0.12, [1, 0.96, 0.72]);
       pushCube(bright, cc.x + 0.36, cc.y + 0.9, cc.z + 0.36, 0.28, 0.24, 0.28, [1, 0.92, 0.4]);
     }
+    for (t = 0; t < coalCells.length; t++) {
+      var co = coalCells[t];
+      var cap = COAL_CAP;
+      var inset = (1 - cap.w) * 0.5;
+      pushCube(bright, co.x + inset, co.y + cap.lift, co.z + inset, cap.w, cap.h, cap.w, COAL_MARK);
+    }
     var bi;
     for (bi = 0; bi < boats.length; bi++) {
       var b = boats[bi];
@@ -3927,6 +4028,8 @@
     }
     state.gotHost = true;
     lockHome = true;
+    ensureSpawnCoal();
+    faceSpawnCoalIfHome();
     dirty = true;
   }
   function applyRemoteSet(msg, fromConn) {
@@ -4625,7 +4728,7 @@
     applyNet: onNet, applyPos: applyPos, dayFactor: dayFactor, skyRGB: skyRGB,
     setClock: function (s) { state.clock = s; },
     weaponCode: weaponCode, handKind: handKind, inWaterAt: inWaterAt, sim: sim, overlaps: overlaps, tryPlace: tryPlace,
-    feetClear: feetClear, pickSurface: pickSurface, putOnGround: putOnGround,
+    feetClear: feetClear, pickSurface: pickSurface, putOnGround: putOnGround, ray: ray,
     solid: solid, pigs: pigs, cows: cows, sheep: sheep, chickens: chickens, villagers: villagers,
     cowBump: cowBump, tryShoot: tryShoot, mapDots: mapDots, wearingArmor: wearingArmor,
     columnSurface: columnSurface, tryShore: tryShore, toggleRide: toggleRide, toggleSit: toggleSit,

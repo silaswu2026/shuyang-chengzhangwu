@@ -21,7 +21,7 @@ global.localStorage = {
   removeItem: function (k) { delete mem[k]; }
 };
 
-eq(MW.TIP, 'mw21', 'tip');
+eq(MW.TIP, 'mw22', 'tip');
 eq(MW.STORE, 'xygo-my-world', 'store');
 if (MW.KID_NAMES.length < 8) fail('kid names');
 MW.KID_NAMES.forEach(function (n) {
@@ -211,7 +211,7 @@ MW.state.inv.gold = 9;
 MW.save();
 var saved = JSON.parse(localStorage.getItem('xygo-my-world'));
 eq(saved.v, 3, 'save v');
-eq(saved.tip, 'mw21', 'save tip');
+eq(saved.tip, 'mw22', 'save tip');
 eq(saved.seed, 11, 'guest keeps own map');
 eq(saved.inv.gold, 9, 'guest keeps coins');
 eq(saved.inv.wood, 2, 'guest keeps wood');
@@ -224,24 +224,24 @@ var peace = '这游戏没有怪物。';
 var made = '自研小游戏，不是正版《我的世界》。';
 if (html.split(peace).length < 3) fail('peace twice in page');
 if (html.split(made).length < 3) fail('disclaimer twice in page');
-if (html.indexOf('xy-tip" content="mw21"') < 0) fail('meta tip');
-if (html.indexOf('my-world.css?v=mw21') < 0 || html.indexOf('my-world.js?v=mw21') < 0) fail('cache bust');
+if (html.indexOf('xy-tip" content="mw22"') < 0) fail('meta tip');
+if (html.indexOf('my-world.css?v=mw22') < 0 || html.indexOf('my-world.js?v=mw22') < 0) fail('cache bust');
 if (html.indexOf('vendor/peerjs/peerjs.min.js') < 0) fail('vendor peerjs');
-if (html.indexOf('>mw21<') < 0) fail('hud tip');
+if (html.indexOf('>mw22<') < 0) fail('hud tip');
 if (html.indexOf('本局 7:00') < 0) fail('match clock');
 if (html.indexOf('黑煤炭带金点') < 0) fail('coal hint');
 if (html.indexOf('金色箱盖') < 0) fail('chest hint');
 if (learn.indexOf(peace) < 0 || learn.indexOf('不是正版《我的世界》') < 0) fail('learn disclaimers');
-if (learn.indexOf('?v=mw21') < 0) fail('learn url');
+if (learn.indexOf('?v=mw22') < 0) fail('learn url');
 if (learn.indexOf('出生') < 0) fail('learn spawn');
 if (learn.indexOf('台阶') < 0) fail('learn step');
 if (learn.indexOf('看不见自己的手') < 0) fail('learn hand');
 if (learn.indexOf('xygo-my-world') < 0) fail('learn key');
-if (learn.indexOf('xygo-my-world-mw21') < 0) fail('learn channel');
+if (learn.indexOf('xygo-my-world-mw22') < 0) fail('learn channel');
 if (learn.indexOf('0.0014') < 0) fail('learn mouse');
 if (learn.indexOf('7:00') < 0) fail('learn duration');
-if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw21') < 0) fail('hub tip');
-if (hub.indexOf('my-world/?v=mw20') >= 0 || hub.indexOf('my-world/?v=mw16') >= 0 || hub.indexOf('my-world/?v=mw15') >= 0 || hub.indexOf('my-world/?v=mw14') >= 0 || hub.indexOf('my-world/?v=mw13') >= 0 || hub.indexOf('my-world/?v=mw12') >= 0 || hub.indexOf('my-world/?v=mw11') >= 0) fail('old hub tip');
+if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw22') < 0) fail('hub tip');
+if (hub.indexOf('my-world/?v=mw21') >= 0 || hub.indexOf('my-world/?v=mw20') >= 0 || hub.indexOf('my-world/?v=mw16') >= 0 || hub.indexOf('my-world/?v=mw15') >= 0 || hub.indexOf('my-world/?v=mw14') >= 0 || hub.indexOf('my-world/?v=mw13') >= 0 || hub.indexOf('my-world/?v=mw12') >= 0 || hub.indexOf('my-world/?v=mw11') >= 0) fail('old hub tip');
 if (learn.indexOf('野猪') < 0 || learn.indexOf('护甲') < 0) fail('learn mobs');
 if (learn.indexOf('鸡') < 0 || learn.indexOf('雪') < 0 || learn.indexOf('铁剑') < 0 || learn.indexOf('表情') < 0) fail('learn mw12');
 
@@ -610,6 +610,9 @@ eq(MW.state.inv.gold, 0, 'fresh gold');
 if (MW.scan().seed === 11) fail('resumed old seed');
 if (!MW.feetClear(MW.state.px, MW.state.py, MW.state.pz)) fail('fresh spawn');
 if (localStorage.getItem('xygo-my-world')) fail('old save kept');
+MW.state.pitch = 0;
+var bootCoal = MW.ray(6.5, true);
+if (!bootCoal || bootCoal.id !== MW.COAL_ORE || !(bootCoal.dist < 5.5)) fail('boot look missed coal ' + (bootCoal && bootCoal.dist));
 
 if (!(MW.DAY <= 400 && MW.DAY < 720)) fail('day still 12 min ' + MW.DAY);
 if (!(MW.W > 56 && MW.D > 56)) fail('world not bigger');
@@ -685,6 +688,9 @@ function terrainSample() {
 }
 for (seedN = 1; seedN <= 24; seedN++) {
   MW.grow(seedN);
+  MW.state.pitch = 0;
+  var eyeCoal = MW.ray(6.5, true);
+  if (!eyeCoal || eyeCoal.id !== MW.COAL_ORE || !(eyeCoal.dist < 5.5)) fail('seed ' + seedN + ' level look missed spawn coal ' + (eyeCoal && eyeCoal.id + '@' + eyeCoal.dist));
   var ts = MW.treeStats();
   if (ts.n < 8) fail('seed ' + seedN + ' trees ' + ts.n);
   if (!(ts.nearest <= 18)) fail('seed ' + seedN + ' nearest tree ' + ts.nearest);
@@ -1249,7 +1255,8 @@ function countCoal(seed) {
   var sp = MW.scan().spawn;
   var vx = MW.volcanoInfo();
   var surface = 0, dig = 0, total = 0, skirt = 0;
-  var meadow = 0, meadowEast = 0, meadowSeen = 0, span = 0;
+  var meadow = 0, meadowAhead = 0, meadowSeen = 0, span = 0;
+  var lookX = Math.sin(MW.state.yaw), lookZ = -Math.cos(MW.state.yaw);
   var spots = [];
   var x, y, z, id, top, dist, burial, i, j, d;
   for (z = 0; z < MW.D; z++) {
@@ -1272,10 +1279,12 @@ function countCoal(seed) {
         if (vx && Math.hypot(x - vx.cx, z - vx.cz) <= 7 && MW.at(x, y + 1, z) === MW.AIR) skirt++;
         if (burial === 0 && MW.at(x, y + 1, z) === MW.AIR && dist >= 2.5 && dist <= 7.5) {
           meadow++;
-          if (x + 0.5 > sp.x) meadowEast++;
-          var drop = (sp.y + 1.5) - (y + MW.COAL_CAP.lift);
+          var aheadDx = x + 0.5 - sp.x, aheadDz = z + 0.5 - sp.z;
+          var aheadLen = Math.hypot(aheadDx, aheadDz) || 1;
+          if (aheadDx / aheadLen * lookX + aheadDz / aheadLen * lookZ > 0.65) meadowAhead++;
+          var drop = (sp.y + 1.5) - (y + MW.COAL_CAP.lift + MW.COAL_CAP.h * 0.5);
           var lookDown = Math.atan2(drop, Math.max(0.2, dist));
-          if (lookDown > 0 && lookDown < 35 * Math.PI / 180 && capClear(sp, x, y, z)) meadowSeen++;
+          if (lookDown > -0.4 && lookDown < 35 * Math.PI / 180 && capClear(sp, x, y, z)) meadowSeen++;
           spots.push({ x: x, y: y, z: z, dist: dist });
         }
       }
@@ -1287,7 +1296,7 @@ function countCoal(seed) {
       if (d > span) span = d;
     }
   }
-  return { surface: surface, dig: dig, total: total, skirt: skirt, meadow: meadow, meadowEast: meadowEast, meadowSeen: meadowSeen, span: span, spots: spots, spawn: sp };
+  return { surface: surface, dig: dig, total: total, skirt: skirt, meadow: meadow, meadowAhead: meadowAhead, meadowSeen: meadowSeen, span: span, spots: spots, spawn: sp };
 }
 var coalSeeds = [1, 2, 4, 7, 42, 2026], coalI, coalR;
 for (coalI = 0; coalI < coalSeeds.length; coalI++) {
@@ -1299,8 +1308,11 @@ for (coalI = 0; coalI < coalSeeds.length; coalI++) {
   if (coalR.skirt < 8) fail('seed ' + coalSeeds[coalI] + ' volcano skirt coal ' + coalR.skirt);
   if (coalR.meadow < 4) fail('seed ' + coalSeeds[coalI] + ' meadow coal ' + coalR.meadow);
   if (coalR.meadow > 8) fail('seed ' + coalSeeds[coalI] + ' meadow coal flood ' + coalR.meadow);
-  if (coalR.meadowEast < 3) fail('seed ' + coalSeeds[coalI] + ' meadow coal not on the grass ahead ' + coalR.meadowEast);
+  if (coalR.meadowAhead < 3) fail('seed ' + coalSeeds[coalI] + ' meadow coal not in front of the player ' + coalR.meadowAhead);
   if (coalR.meadowSeen < 3) fail('seed ' + coalSeeds[coalI] + ' meadow coal hidden from spawn eye ' + coalR.meadowSeen);
+  MW.state.pitch = 0;
+  var eyeHit = MW.ray(6.5, true);
+  if (!eyeHit || eyeHit.id !== MW.COAL_ORE || !(eyeHit.dist < 5.5)) fail('seed ' + coalSeeds[coalI] + ' eye-level ray missed coal');
   if (coalR.span < 4) fail('seed ' + coalSeeds[coalI] + ' meadow coal clumped ' + coalR.span.toFixed(1));
 }
 MW.grow(1);
@@ -1324,6 +1336,90 @@ if (!(MW.breakTime(MW.COAL_ORE) > 0 && MW.breakTime(MW.COAL_ORE) <= MW.breakTime
 MW.breakBlock({ x: mineX, y: mineY, z: mineZ });
 eq(MW.at(mineX, mineY, mineZ), MW.AIR, 'coal mined away');
 eq(MW.state.inv.coal, 1, 'mining coal yields coal');
+
+MW.grow(1);
+MW.state.pitch = 0;
+MW.state.inv.coal = 0;
+var stepX = Math.sin(MW.state.yaw), stepZ = -Math.cos(MW.state.yaw);
+MW.state.px += stepX * 1.4;
+MW.state.pz += stepZ * 1.4;
+if (!MW.feetClear(MW.state.px, MW.state.py, MW.state.pz)) fail('walk toward coal buried the player');
+var walked = MW.ray(4.5, true);
+if (!walked || walked.id !== MW.COAL_ORE) fail('a few steps forward lost the coal');
+MW.breakBlock(walked);
+eq(MW.state.inv.coal, 1, 'mining the block in front yields coal');
+
+function stripNearCoal() {
+  var sp = MW.scan().spawn;
+  var list = [], x, y, z, dist;
+  for (z = 0; z < MW.D; z++) {
+    for (x = 0; x < MW.W; x++) {
+      dist = Math.hypot(x + 0.5 - sp.x, z + 0.5 - sp.z);
+      if (dist > 9) continue;
+      for (y = 0; y < MW.H; y++) {
+        if (MW.at(x, y, z) === MW.COAL_ORE) list.push(x + ',' + y + ',' + z + ',0');
+      }
+    }
+  }
+  return list;
+}
+MW.grow(1);
+var home = MW.scan().spawn;
+var wiped = {
+  v: 3, tip: 'mw20', seed: 1,
+  px: home.x, py: home.y, pz: home.z, yaw: 0, pitch: 0,
+  inv: { wood: 3 },
+  edits: stripNearCoal()
+};
+if (!wiped.edits.length) fail('nothing to strip');
+MW.loadRaw(wiped);
+eq(MW.state.inv.wood, 3, 'old save keeps wood');
+if (Math.abs(MW.state.px - home.x) > 0.2 || Math.abs(MW.state.pz - home.z) > 0.2) fail('old save left spawn');
+var homeYaw = MW.state.yaw;
+MW.state.pitch = 0;
+var repaired = MW.ray(6.5, true);
+if (!repaired || repaired.id !== MW.COAL_ORE || !(repaired.dist < 5.5)) fail('old save did not put coal in front');
+var farSpot = null, fx, fz, fy, fid;
+for (fz = 0; fz < MW.D && !farSpot; fz++) {
+  for (fx = 0; fx < MW.W && !farSpot; fx++) {
+    if (Math.hypot(fx + 0.5 - home.x, fz + 0.5 - home.z) < 18) continue;
+    for (fy = MW.H - 2; fy >= 2; fy--) {
+      fid = MW.at(fx, fy, fz);
+      if (!fid || fid === MW.WATER || fid === MW.LEAF || fid === MW.FLOWER || fid === MW.TORCH || fid === MW.BED) continue;
+      if (MW.feetClear(fx + 0.5, fy + 1, fz + 0.5)) farSpot = { x: fx + 0.5, y: fy + 1, z: fz + 0.5 };
+      break;
+    }
+  }
+}
+if (!farSpot) fail('need a far standing spot');
+MW.loadRaw({
+  v: 3, tip: 'mw20', seed: 1,
+  px: farSpot.x, py: farSpot.y, pz: farSpot.z, yaw: 0.35, pitch: -0.15,
+  inv: { wood: 2 },
+  edits: wiped.edits
+});
+if (Math.abs(MW.state.yaw - 0.35) > 0.05) fail('far player was turned ' + MW.state.yaw);
+if (Math.abs(MW.state.px - farSpot.x) > 0.2) fail('far player was moved home');
+MW.state.px = home.x; MW.state.py = home.y; MW.state.pz = home.z; MW.state.pitch = 0;
+MW.state.yaw = homeYaw;
+var stillThere = MW.ray(6.5, true);
+if (!stillThere || stillThere.id !== MW.COAL_ORE) fail('far save lost spawn coal');
+
+MW.grow(3);
+var saveSp = MW.scan().spawn;
+var sx2, sy2, sz2, sdist;
+for (sz2 = 0; sz2 < MW.D; sz2++) {
+  for (sx2 = 0; sx2 < MW.W; sx2++) {
+    sdist = Math.hypot(sx2 + 0.5 - saveSp.x, sz2 + 0.5 - saveSp.z);
+    if (sdist > 8) continue;
+    for (sy2 = 0; sy2 < MW.H; sy2++) if (MW.at(sx2, sy2, sz2) === MW.COAL_ORE) MW.put(sx2, sy2, sz2, MW.AIR);
+  }
+}
+MW.save();
+MW.loadRaw(JSON.parse(localStorage.getItem('xygo-my-world')));
+MW.state.pitch = 0;
+var roundTrip = MW.ray(6.5, true);
+if (!roundTrip || roundTrip.id !== MW.COAL_ORE || !(roundTrip.dist < 5.5)) fail('save round trip lost the coal in front');
 
 function countChests(seed) {
   MW.grow(seed);
@@ -1360,4 +1456,4 @@ if (failed) {
   console.error(failed + ' failed');
   process.exit(1);
 }
-console.log('my-world mw21 ok');
+console.log('my-world mw22 ok');
