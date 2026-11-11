@@ -21,7 +21,7 @@ global.localStorage = {
   removeItem: function (k) { delete mem[k]; }
 };
 
-eq(MW.TIP, 'mw16', 'tip');
+eq(MW.TIP, 'mw20', 'tip');
 eq(MW.STORE, 'xygo-my-world', 'store');
 if (MW.KID_NAMES.length < 8) fail('kid names');
 MW.KID_NAMES.forEach(function (n) {
@@ -211,7 +211,7 @@ MW.state.inv.gold = 9;
 MW.save();
 var saved = JSON.parse(localStorage.getItem('xygo-my-world'));
 eq(saved.v, 3, 'save v');
-eq(saved.tip, 'mw16', 'save tip');
+eq(saved.tip, 'mw20', 'save tip');
 eq(saved.seed, 11, 'guest keeps own map');
 eq(saved.inv.gold, 9, 'guest keeps coins');
 eq(saved.inv.wood, 2, 'guest keeps wood');
@@ -224,18 +224,24 @@ var peace = '这游戏没有怪物。';
 var made = '自研小游戏，不是正版《我的世界》。';
 if (html.split(peace).length < 3) fail('peace twice in page');
 if (html.split(made).length < 3) fail('disclaimer twice in page');
-if (html.indexOf('xy-tip" content="mw16"') < 0) fail('meta tip');
-if (html.indexOf('my-world.css?v=mw16') < 0 || html.indexOf('my-world.js?v=mw16') < 0) fail('cache bust');
+if (html.indexOf('xy-tip" content="mw20"') < 0) fail('meta tip');
+if (html.indexOf('my-world.css?v=mw20') < 0 || html.indexOf('my-world.js?v=mw20') < 0) fail('cache bust');
 if (html.indexOf('vendor/peerjs/peerjs.min.js') < 0) fail('vendor peerjs');
-if (html.indexOf('>mw16<') < 0) fail('hud tip');
+if (html.indexOf('>mw20<') < 0) fail('hud tip');
+if (html.indexOf('本局 7:00') < 0) fail('match clock');
+if (html.indexOf('黑煤炭带金点') < 0) fail('coal hint');
+if (html.indexOf('金色箱盖') < 0) fail('chest hint');
 if (learn.indexOf(peace) < 0 || learn.indexOf('不是正版《我的世界》') < 0) fail('learn disclaimers');
-if (learn.indexOf('?v=mw16') < 0) fail('learn url');
+if (learn.indexOf('?v=mw20') < 0) fail('learn url');
 if (learn.indexOf('出生') < 0) fail('learn spawn');
 if (learn.indexOf('台阶') < 0) fail('learn step');
 if (learn.indexOf('看不见自己的手') < 0) fail('learn hand');
 if (learn.indexOf('xygo-my-world') < 0) fail('learn key');
-if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw16') < 0) fail('hub tip');
-if (hub.indexOf('my-world/?v=mw15') >= 0 || hub.indexOf('my-world/?v=mw14') >= 0 || hub.indexOf('my-world/?v=mw13') >= 0 || hub.indexOf('my-world/?v=mw12') >= 0 || hub.indexOf('my-world/?v=mw11') >= 0) fail('old hub tip');
+if (learn.indexOf('xygo-my-world-mw20') < 0) fail('learn channel');
+if (learn.indexOf('0.0014') < 0) fail('learn mouse');
+if (learn.indexOf('7:00') < 0) fail('learn duration');
+if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw20') < 0) fail('hub tip');
+if (hub.indexOf('my-world/?v=mw16') >= 0 || hub.indexOf('my-world/?v=mw15') >= 0 || hub.indexOf('my-world/?v=mw14') >= 0 || hub.indexOf('my-world/?v=mw13') >= 0 || hub.indexOf('my-world/?v=mw12') >= 0 || hub.indexOf('my-world/?v=mw11') >= 0) fail('old hub tip');
 if (learn.indexOf('野猪') < 0 || learn.indexOf('护甲') < 0) fail('learn mobs');
 if (learn.indexOf('鸡') < 0 || learn.indexOf('雪') < 0 || learn.indexOf('铁剑') < 0 || learn.indexOf('表情') < 0) fail('learn mw12');
 
@@ -965,11 +971,20 @@ eq(MW.volcanoPhase(120).on, true, 'minute 2');
 eq(MW.volcanoPhase(179.9).on, true, 'still erupting');
 eq(MW.volcanoPhase(180).on, false, 'cleared');
 eq(MW.volcanoPhase(269).on, false, 'gap');
-eq(MW.volcanoPhase(270).on, true, 'second cycle');
-eq(MW.MATCH_SEC, 300, 'match length');
-eq(MW.matchLabel(), '本局 5:00', 'match hud');
+eq(MW.volcanoPhase(270).on, false, 'still the gap');
+eq(MW.volcanoPhase(300).on, true, 'second cycle');
+eq(MW.volcanoPhase(359).on, true, 'second still going');
+eq(MW.volcanoPhase(360).on, false, 'second cleared');
+eq(MW.MATCH_SEC, 420, 'match length');
+eq(MW.VOLCANO_FIRST, 120, 'volcano still at two minutes');
+eq(MW.VOLCANO_DUR, 60, 'volcano duration');
+eq(MW.VOLCANO_PERIOD, 180, 'volcano period');
+eq(MW.MOUSE_LOOK, 0.0014, 'mouse look');
+if (!(MW.CHEST_LID[0] > 0.9 && MW.CHEST_LID[1] > 0.7 && MW.CHEST_LID[2] < 0.35)) fail('chest lid ' + MW.CHEST_LID);
+if (!(MW.COAL_MARK[0] > 0.9 && MW.COAL_MARK[1] > 0.7)) fail('coal mark ' + MW.COAL_MARK);
+eq(MW.matchLabel(), '本局 7:00', 'match hud');
 MW.setMatch(61);
-if (MW.matchLabel() !== '本局 3:59') fail('match label ' + MW.matchLabel());
+if (MW.matchLabel() !== '本局 5:59') fail('match label ' + MW.matchLabel());
 MW.setMatch(120);
 if ((MW.scan().counts[MW.LAVA] || 0) < 3) fail('lava rose ' + MW.scan().counts[MW.LAVA]);
 MW.setMatch(180);
@@ -1056,7 +1071,7 @@ if (shell.taken !== 'pal') fail('host did not award shell');
 MW.setMatch(0);
 MW.state.started = true;
 MW.state.matchOver = false;
-eq(MW.matchLabel(), '本局 5:00', 'reset label');
+eq(MW.matchLabel(), '本局 7:00', 'reset label');
 
 function parkMobs() {
   var mi;
@@ -1211,8 +1226,94 @@ MW.applyNet({ mw: 3, t: 'mob', from: 'solo', k: 'pig', i: 2, hp: MW.PIG_HP });
 if (gunBoar.alive) fail('own mob packet revived the boar');
 MW.setRole(null);
 
+function countCoal(seed) {
+  MW.grow(seed);
+  var sp = MW.scan().spawn;
+  var vx = MW.volcanoInfo();
+  var surface = 0, dig = 0, total = 0, skirt = 0;
+  var x, y, z, id, top, dist, burial;
+  for (z = 0; z < MW.D; z++) {
+    for (x = 0; x < MW.W; x++) {
+      top = -1;
+      for (y = MW.H - 1; y >= 0; y--) {
+        id = MW.at(x, y, z);
+        if (id && id !== MW.AIR && id !== MW.WATER && id !== MW.LEAF && id !== MW.FLOWER && id !== MW.TORCH && id !== MW.BED) {
+          top = y;
+          break;
+        }
+      }
+      dist = Math.hypot(x + 0.5 - sp.x, z + 0.5 - sp.z);
+      for (y = 0; y < MW.H; y++) {
+        if (MW.at(x, y, z) !== MW.COAL_ORE) continue;
+        total++;
+        burial = top - y;
+        if (burial === 0 && dist >= 8 && dist <= 22) surface++;
+        if (burial >= 1 && burial <= 4 && dist <= 30) dig++;
+        if (vx && Math.hypot(x - vx.cx, z - vx.cz) <= 7 && MW.at(x, y + 1, z) === MW.AIR) skirt++;
+      }
+    }
+  }
+  return { surface: surface, dig: dig, total: total, skirt: skirt };
+}
+var coalSeeds = [1, 2, 4, 7], coalI, coalR;
+for (coalI = 0; coalI < coalSeeds.length; coalI++) {
+  coalR = countCoal(coalSeeds[coalI]);
+  if (coalR.surface < 4) fail('seed ' + coalSeeds[coalI] + ' surface coal near spawn ' + coalR.surface);
+  if (coalR.dig < 12) fail('seed ' + coalSeeds[coalI] + ' shallow coal ' + coalR.dig);
+  if (coalR.total < 40) fail('seed ' + coalSeeds[coalI] + ' coal total ' + coalR.total);
+  if (coalR.total > 8000) fail('seed ' + coalSeeds[coalI] + ' coal flood ' + coalR.total);
+  if (coalR.skirt < 8) fail('seed ' + coalSeeds[coalI] + ' volcano skirt coal ' + coalR.skirt);
+}
+MW.grow(1);
+var mineX = -1, mineY = 0, mineZ = 0, mx, my, mz;
+for (mz = 0; mz < MW.D && mineX < 0; mz++) {
+  for (mx = 0; mx < MW.W && mineX < 0; mx++) {
+    for (my = 0; my < MW.H; my++) {
+      if (MW.at(mx, my, mz) === MW.COAL_ORE) { mineX = mx; mineY = my; mineZ = mz; break; }
+    }
+  }
+}
+if (mineX < 0) fail('no coal block to mine');
+MW.state.equip.tool = '';
+MW.state.inv.coal = 0;
+if (!(MW.breakTime(MW.COAL_ORE) > 0 && MW.breakTime(MW.COAL_ORE) <= MW.breakTime(MW.STONE))) fail('coal mine time ' + MW.breakTime(MW.COAL_ORE));
+MW.breakBlock({ x: mineX, y: mineY, z: mineZ });
+eq(MW.at(mineX, mineY, mineZ), MW.AIR, 'coal mined away');
+eq(MW.state.inv.coal, 1, 'mining coal yields coal');
+
+function countChests(seed) {
+  MW.grow(seed);
+  var sp = MW.scan().spawn;
+  var n = 0, open = 0, near = 0, x, y, z;
+  for (z = 0; z < MW.D; z++) {
+    for (x = 0; x < MW.W; x++) {
+      for (y = 0; y < MW.H; y++) {
+        if (MW.at(x, y, z) !== MW.CHEST) continue;
+        n++;
+        if (MW.at(x, y + 1, z) === MW.AIR) open++;
+        if (Math.hypot(x + 0.5 - sp.x, z + 0.5 - sp.z) < 40) near++;
+      }
+    }
+  }
+  return { n: n, open: open, near: near };
+}
+var chestSeeds = [1, 3, 6], chestI, chestR;
+for (chestI = 0; chestI < chestSeeds.length; chestI++) {
+  chestR = countChests(chestSeeds[chestI]);
+  if (chestR.n < 8) fail('seed ' + chestSeeds[chestI] + ' chests ' + chestR.n);
+  if (chestR.n > 160) fail('seed ' + chestSeeds[chestI] + ' chest flood ' + chestR.n);
+  if (chestR.open < chestR.n - 2) fail('seed ' + chestSeeds[chestI] + ' buried chests ' + chestR.open + '/' + chestR.n);
+  if (chestR.near < 3) fail('seed ' + chestSeeds[chestI] + ' chests near play ' + chestR.near);
+}
+if (js.indexOf('movementX * MOUSE_LOOK') < 0) fail('mouse path');
+if (js.indexOf('0.0022') >= 0) fail('old mouse sens');
+if (js.indexOf('(e.clientX - lx) * 0.005') < 0) fail('touch look changed');
+if (js.indexOf('xygo-my-world-\' + TIP') < 0) fail('room channel pattern');
+eq(MW.PIG_HP, 4, 'boar hp stays 4');
+eq(MW.STORE, 'xygo-my-world', 'save key stays');
+
 if (failed) {
   console.error(failed + ' failed');
   process.exit(1);
 }
-console.log('my-world mw16 ok');
+console.log('my-world mw20 ok');

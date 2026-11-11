@@ -1,13 +1,16 @@
-/* 方块小世界 mw16 · 贴脸的野猪，平视挥拳也能打中。手摆地形：西岸、平草地、林带、缓坡，雪只在东北高山。 */
+/* 方块小世界 mw20 · 煤炭在草地和浅石头里，本局 7 分钟，电脑鼠标没那么飘，箱子是金色盖。 */
 (function () {
   'use strict';
 
-  var TIP = 'mw16';
+  var TIP = 'mw20';
   var STORE = 'xygo-my-world';
   var HOST_NAME = '杨杨';
   var W = 96, H = 24, D = 96, SEA = 8, DAY = 360;
-  var MATCH_SEC = 300;
-  var VOLCANO_FIRST = 120, VOLCANO_DUR = 60, VOLCANO_PERIOD = 150;
+  var MATCH_SEC = 420;
+  var VOLCANO_FIRST = 120, VOLCANO_DUR = 60, VOLCANO_PERIOD = 180;
+  var MOUSE_LOOK = 0.0014;
+  var COAL_MARK = [1, 0.86, 0.28];
+  var CHEST_LID = [0.98, 0.78, 0.16];
   var ROCK_GAP = 1.8, ROCK_LIFE = 1.35;
   var HP_MAX = 10;
   var WALK = 3.0;
@@ -35,13 +38,13 @@
     8: [0.98, 0.28, 0.55],
     9: [1, 0.82, 0.12],
     10: [1, 0.62, 0.12],
-    11: [0.86, 0.42, 0.12],
+    11: [0.98, 0.74, 0.16],
     12: [0.95, 0.22, 0.38],
     13: [0.58, 0.62, 0.70],
     14: [0.93, 0.96, 1],
     15: [0.95, 0.28, 0.06],
     16: [0.42, 0.12, 0.08],
-    17: [0.16, 0.16, 0.18]
+    17: [0.14, 0.13, 0.12]
   };
   var SHADE = [1, 0.55, 0.82, 0.68, 0.9, 0.64];
   var FACES = [
@@ -130,6 +133,7 @@
   var spawn = { x: 20.5, y: 10, z: 20.5 };
   var boats = [];
   var torchCells = [];
+  var chestCells = [];
   var volcano = null;
   var treasures = [];
   var pigs = [];
@@ -749,7 +753,9 @@
           } else if (y < top) put(x, y, z, STONE);
           else put(x, y, z, AIR);
         }
-        if (h >= 4 && dist > 4.1 && hash2(x, z, 44) < 0.55) put(x, top - 1, z, COAL_ORE);
+        // Height >= 4 only happens near the crater (dist <= ~2.7), so the old
+        // "rim" test (dist > 4.1) never placed coal. The skirt surface is the stone at top-1.
+        if (dist >= 3.4 && dist <= 5.8 && hash2(x, z, 44) < 0.62) put(x, top - 1, z, COAL_ORE);
       }
     }
     var pool = [];
@@ -770,14 +776,25 @@
     volcano = { cx: cx, cz: cz, base: base, floor: floor, lip: floor + 4, pool: pool, r: 6 };
   }
   function seedCoalNear() {
-    var n = 0, g = 0, x, z, y;
-    while (n < 5 && g < 70) {
+    // A short ring of coal on the grass around the meadow. The old loop
+    // wrote the first stone from y=2 upward, which is the bottom of the world.
+    var n = 0, g = 0, x, z, top, y, ang, rad;
+    while (n < 7 && g < 96) {
       g++;
-      x = 20 + ((g * 5 + (worldSeed % 5)) % 16);
-      z = 14 + ((g * 7) % 14);
-      for (y = 2; y <= 5; y++) {
-        if (at(x, y, z) === STONE) { put(x, y, z, COAL_ORE); n++; break; }
-      }
+      ang = g * 2.399963 + (worldSeed % 9) * 0.17;
+      rad = 10 + (g % 4);
+      x = Math.round(18 + Math.cos(ang) * rad);
+      z = Math.round(12 + Math.sin(ang) * rad);
+      if (x < 2 || z < 2 || x >= W - 2 || z >= D - 2) continue;
+      if (Math.hypot(x - 18, z - 12) < 8) continue;
+      if (onInlet(x, z, 3.4)) continue;
+      top = highestSolid(x, z);
+      if (top < 4 || at(x, top, z) !== GRASS) continue;
+      if (at(x, top + 1, z) !== AIR) continue;
+      put(x, top, z, COAL_ORE);
+      y = top - 3;
+      if (y > 1 && at(x, y, z) === STONE) put(x, y, z, COAL_ORE);
+      n++;
     }
   }
   function volcanoPhase(clock) {
@@ -1033,7 +1050,9 @@
           }
           if (id === STONE && y > 0 && y <= 5 && y < h && hash2(x + y * 17, z + y * 3, 4) < 0.04) id = GOLD;
           else if (id === STONE && y > 1 && y <= 8 && y < h && hash2(x + y * 9, z + 4, 6) < 0.05) id = IRON_ORE;
-          else if (id === STONE && y > 1 && y <= 7 && y < h && hash2(x + y * 13, z + 9, 31) < 0.055) id = COAL_ORE;
+          // Shallow stone under the local cap. The old band was absolute y=2..7,
+          // which sits under the mw15 sea (SEA=8, grass at about y=9).
+          else if (id === STONE && y > 1 && y < h && y >= h - 5 && y <= h - 3 && hash2(x + y * 13, z + 9, 31) < 0.12) id = COAL_ORE;
           put(x, y, z, id);
         }
         if (h < SEA) {
@@ -2723,6 +2742,7 @@
   function buildMesh() {
     var data = [];
     torchCells = [];
+    chestCells = [];
     var x, y, z, id, rgb, f, face, s, v, nx, ny, nz, nid;
     for (y = 0; y < H; y++) {
       for (z = 0; z < D; z++) {
@@ -2741,6 +2761,11 @@
           if (id === FLOWER) {
             rgb = [[0.93, 0.45, 0.58], [0.95, 0.82, 0.28], [0.95, 0.95, 0.98], [0.72, 0.45, 0.86]][(hash2(x, z, 21) * 4) | 0];
             pushCube(data, x + 0.35, y, z + 0.35, 0.3, 0.55, 0.3, rgb);
+            continue;
+          }
+          if (id === CHEST) {
+            chestCells.push({ x: x, y: y, z: z });
+            pushCube(data, x + 0.08, y, z + 0.1, 0.84, 0.52, 0.8, [0.42, 0.2, 0.06]);
             continue;
           }
           rgb = (COL[id] || [1, 1, 1]).slice();
@@ -2772,7 +2797,13 @@
               else if (nz > 0) pushCube(data, x + 0.28, y + 0.28, z + 0.62, 0.44, 0.44, 0.38, [0.95, 0.52, 0.14]);
               else if (nz < 0) pushCube(data, x + 0.28, y + 0.28, z, 0.44, 0.44, 0.38, [0.95, 0.52, 0.14]);
             }
-            if (id === COAL_ORE && ny > 0) pushCube(data, x + 0.3, y + 0.7, z + 0.3, 0.4, 0.28, 0.4, [0.05, 0.05, 0.06]);
+            if (id === COAL_ORE) {
+              if (ny > 0) pushCube(data, x + 0.18, y + 0.86, z + 0.18, 0.64, 0.2, 0.64, COAL_MARK);
+              else if (nx > 0) pushCube(data, x + 0.86, y + 0.26, z + 0.22, 0.2, 0.48, 0.52, COAL_MARK);
+              else if (nx < 0) pushCube(data, x - 0.06, y + 0.26, z + 0.22, 0.2, 0.48, 0.52, COAL_MARK);
+              else if (nz > 0) pushCube(data, x + 0.22, y + 0.26, z + 0.86, 0.52, 0.48, 0.2, COAL_MARK);
+              else if (nz < 0) pushCube(data, x + 0.22, y + 0.26, z - 0.06, 0.52, 0.48, 0.2, COAL_MARK);
+            }
           }
         }
       }
@@ -3293,6 +3324,12 @@
       var tc = torchCells[t];
       pushCube(bright, tc.x - 0.07, tc.y - 0.28, tc.z - 0.07, 0.14, 0.4, 0.14, [0.45, 0.28, 0.12]);
       pushCube(bright, tc.x - 0.12, tc.y + 0.08, tc.z - 0.12, 0.24, 0.24, 0.24, [1, 0.78, 0.25]);
+    }
+    for (t = 0; t < chestCells.length; t++) {
+      var cc = chestCells[t];
+      pushCube(bright, cc.x + 0.05, cc.y + 0.5, cc.z + 0.06, 0.9, 0.42, 0.88, CHEST_LID);
+      pushCube(bright, cc.x + 0.38, cc.y + 0.4, cc.z + 0.02, 0.24, 0.22, 0.12, [1, 0.96, 0.72]);
+      pushCube(bright, cc.x + 0.36, cc.y + 0.9, cc.z + 0.36, 0.28, 0.24, 0.28, [1, 0.92, 0.4]);
     }
     var bi;
     for (bi = 0; bi < boats.length; bi++) {
@@ -4310,8 +4347,8 @@
     window.addEventListener('mouseup', function () { if (!pointerPunch) punching = false; });
     document.addEventListener('mousemove', function (e) {
       if (!canvas || document.pointerLockElement !== canvas) return;
-      state.yaw += e.movementX * 0.0022;
-      state.pitch -= e.movementY * 0.0022;
+      state.yaw += e.movementX * MOUSE_LOOK;
+      state.pitch -= e.movementY * MOUSE_LOOK;
       if (state.pitch > 1.2) state.pitch = 1.2;
       if (state.pitch < -1.2) state.pitch = -1.2;
     });
@@ -4522,7 +4559,8 @@
     selfId: function () { return selfId; },
     setSelfForTest: function (id) { selfId = id; },
     setRole: function (role) { netRole = role; },
-    HOST_NAME: HOST_NAME, MATCH_SEC: MATCH_SEC,
+    HOST_NAME: HOST_NAME, MATCH_SEC: MATCH_SEC, MOUSE_LOOK: MOUSE_LOOK,
+    COAL_MARK: COAL_MARK, CHEST_LID: CHEST_LID,
     VOLCANO_FIRST: VOLCANO_FIRST, VOLCANO_DUR: VOLCANO_DUR, VOLCANO_PERIOD: VOLCANO_PERIOD,
     LAVA: LAVA, MAGMA: MAGMA, COAL_ORE: COAL_ORE,
     MIX: MIX, GEAR: GEAR,
