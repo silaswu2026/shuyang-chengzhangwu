@@ -21,7 +21,7 @@ global.localStorage = {
   removeItem: function (k) { delete mem[k]; }
 };
 
-eq(MW.TIP, 'mw22', 'tip');
+eq(MW.TIP, 'mw23', 'tip');
 eq(MW.STORE, 'xygo-my-world', 'store');
 if (MW.KID_NAMES.length < 8) fail('kid names');
 MW.KID_NAMES.forEach(function (n) {
@@ -211,7 +211,7 @@ MW.state.inv.gold = 9;
 MW.save();
 var saved = JSON.parse(localStorage.getItem('xygo-my-world'));
 eq(saved.v, 3, 'save v');
-eq(saved.tip, 'mw22', 'save tip');
+eq(saved.tip, 'mw23', 'save tip');
 eq(saved.seed, 11, 'guest keeps own map');
 eq(saved.inv.gold, 9, 'guest keeps coins');
 eq(saved.inv.wood, 2, 'guest keeps wood');
@@ -224,24 +224,24 @@ var peace = '这游戏没有怪物。';
 var made = '自研小游戏，不是正版《我的世界》。';
 if (html.split(peace).length < 3) fail('peace twice in page');
 if (html.split(made).length < 3) fail('disclaimer twice in page');
-if (html.indexOf('xy-tip" content="mw22"') < 0) fail('meta tip');
-if (html.indexOf('my-world.css?v=mw22') < 0 || html.indexOf('my-world.js?v=mw22') < 0) fail('cache bust');
+if (html.indexOf('xy-tip" content="mw23"') < 0) fail('meta tip');
+if (html.indexOf('my-world.css?v=mw23') < 0 || html.indexOf('my-world.js?v=mw23') < 0) fail('cache bust');
 if (html.indexOf('vendor/peerjs/peerjs.min.js') < 0) fail('vendor peerjs');
-if (html.indexOf('>mw22<') < 0) fail('hud tip');
+if (html.indexOf('>mw23<') < 0) fail('hud tip');
 if (html.indexOf('本局 7:00') < 0) fail('match clock');
 if (html.indexOf('黑煤炭带金点') < 0) fail('coal hint');
 if (html.indexOf('金色箱盖') < 0) fail('chest hint');
 if (learn.indexOf(peace) < 0 || learn.indexOf('不是正版《我的世界》') < 0) fail('learn disclaimers');
-if (learn.indexOf('?v=mw22') < 0) fail('learn url');
+if (learn.indexOf('?v=mw23') < 0) fail('learn url');
 if (learn.indexOf('出生') < 0) fail('learn spawn');
 if (learn.indexOf('台阶') < 0) fail('learn step');
 if (learn.indexOf('看不见自己的手') < 0) fail('learn hand');
 if (learn.indexOf('xygo-my-world') < 0) fail('learn key');
-if (learn.indexOf('xygo-my-world-mw22') < 0) fail('learn channel');
+if (learn.indexOf('xygo-my-world-mw23') < 0) fail('learn channel');
 if (learn.indexOf('0.0014') < 0) fail('learn mouse');
 if (learn.indexOf('7:00') < 0) fail('learn duration');
-if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw22') < 0) fail('hub tip');
-if (hub.indexOf('my-world/?v=mw21') >= 0 || hub.indexOf('my-world/?v=mw20') >= 0 || hub.indexOf('my-world/?v=mw16') >= 0 || hub.indexOf('my-world/?v=mw15') >= 0 || hub.indexOf('my-world/?v=mw14') >= 0 || hub.indexOf('my-world/?v=mw13') >= 0 || hub.indexOf('my-world/?v=mw12') >= 0 || hub.indexOf('my-world/?v=mw11') >= 0) fail('old hub tip');
+if (hub.indexOf('shuyang-ai/learn/my-world/?v=mw23') < 0) fail('hub tip');
+if (hub.indexOf('my-world/?v=mw22') >= 0 || hub.indexOf('my-world/?v=mw21') >= 0 || hub.indexOf('my-world/?v=mw20') >= 0 || hub.indexOf('my-world/?v=mw16') >= 0 || hub.indexOf('my-world/?v=mw15') >= 0 || hub.indexOf('my-world/?v=mw14') >= 0 || hub.indexOf('my-world/?v=mw13') >= 0 || hub.indexOf('my-world/?v=mw12') >= 0 || hub.indexOf('my-world/?v=mw11') >= 0) fail('old hub tip');
 if (learn.indexOf('野猪') < 0 || learn.indexOf('护甲') < 0) fail('learn mobs');
 if (learn.indexOf('鸡') < 0 || learn.indexOf('雪') < 0 || learn.indexOf('铁剑') < 0 || learn.indexOf('表情') < 0) fail('learn mw12');
 
@@ -1349,6 +1349,47 @@ if (!walked || walked.id !== MW.COAL_ORE) fail('a few steps forward lost the coa
 MW.breakBlock(walked);
 eq(MW.state.inv.coal, 1, 'mining the block in front yields coal');
 
+var woodSeeds = [1, 2, 3, 5, 9, 24, 42, 2026], woodI, woodSp, woodYaw, woodLx, woodLz;
+var woodX, woodZ, woodY, woodDx, woodDz, woodDist, woodDot, woodEye, woodBest;
+for (woodI = 0; woodI < woodSeeds.length; woodI++) {
+  MW.grow(woodSeeds[woodI]);
+  woodSp = MW.scan().spawn;
+  MW.state.px = woodSp.x;
+  MW.state.py = woodSp.y;
+  MW.state.pz = woodSp.z;
+  MW.state.pitch = 0;
+  woodYaw = MW.state.yaw;
+  woodLx = Math.sin(woodYaw);
+  woodLz = -Math.cos(woodYaw);
+  var stillCoal = MW.ray(6.5, true);
+  if (!stillCoal || stillCoal.id !== MW.COAL_ORE) fail('seed ' + woodSeeds[woodI] + ' tree covered the coal');
+  woodEye = Math.floor(woodSp.y + 1.5);
+  woodBest = null;
+  for (woodZ = 0; woodZ < MW.D; woodZ++) {
+    for (woodX = 0; woodX < MW.W; woodX++) {
+      if (MW.at(woodX, woodEye, woodZ) !== MW.LOG) continue;
+      woodDx = woodX + 0.5 - woodSp.x;
+      woodDz = woodZ + 0.5 - woodSp.z;
+      woodDist = Math.hypot(woodDx, woodDz);
+      if (woodDist > 7.2) continue;
+      woodDot = (woodDx * woodLx + woodDz * woodLz) / (woodDist || 1);
+      if (woodDot < 0.88) continue;
+      if (!woodBest || woodDist < woodBest.dist) woodBest = { x: woodX, y: woodEye, z: woodZ, dist: woodDist };
+    }
+  }
+  if (!woodBest) fail('seed ' + woodSeeds[woodI] + ' no eye-level trunk beside the coal');
+  MW.state.yaw = Math.atan2(woodBest.x + 0.5 - woodSp.x, -(woodBest.z + 0.5 - woodSp.z));
+  MW.state.equip.tool = '';
+  MW.state.inv.wood = 0;
+  var trunkHit = MW.ray(9, true);
+  if (!trunkHit || trunkHit.id !== MW.LOG) fail('seed ' + woodSeeds[woodI] + ' look at trunk missed ' + (trunkHit && trunkHit.id));
+  MW.breakBlock(trunkHit);
+  eq(MW.state.inv.wood, 1, 'seed ' + woodSeeds[woodI] + ' trunk wood');
+  MW.state.yaw = woodYaw;
+}
+if (js.indexOf('火把要用 1 个煤炭和 1 个木头') < 0) fail('torch recipe toast');
+if (js.indexOf('做火把要 3 个木头') >= 0) fail('old torch toast');
+
 function stripNearCoal() {
   var sp = MW.scan().spawn;
   var list = [], x, y, z, dist;
@@ -1456,4 +1497,4 @@ if (failed) {
   console.error(failed + ' failed');
   process.exit(1);
 }
-console.log('my-world mw22 ok');
+console.log('my-world mw23 ok');

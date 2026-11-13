@@ -1,8 +1,8 @@
-/* 方块小世界 mw22 · 出生面前立着金盖煤炭，平视就能敲到。本局仍是 7 分钟，鼠标和金色箱盖不变。 */
+/* 方块小世界 mw23 · 出生面前的煤旁边有树干，平视转一点就能敲到木头。 */
 (function () {
   'use strict';
 
-  var TIP = 'mw22';
+  var TIP = 'mw23';
   var STORE = 'xygo-my-world';
   var HOST_NAME = '杨杨';
   var W = 96, H = 24, D = 96, SEA = 8, DAY = 360;
@@ -964,6 +964,55 @@
     dz = best.z + 0.5 - state.pz;
     state.yaw = Math.atan2(dx, -dz);
   }
+  function trunkRoom(x, z) {
+    x |= 0; z |= 0;
+    if (x < 2 || z < 2 || x >= W - 2 || z >= D - 2) return false;
+    var grass = (spawn.y - 1) | 0;
+    if (highestSolid(x, z) !== grass || at(x, grass, z) !== GRASS) return false;
+    if (Math.hypot(x + 0.5 - spawn.x, z + 0.5 - spawn.z) < 4.8) return false;
+    if (onInlet(x, z, 1.6) || houseAt(x, z)) return false;
+    var y, a;
+    for (y = grass + 1; y <= grass + 4; y++) {
+      a = at(x, y, z);
+      if (a !== AIR && a !== FLOWER && a !== TORCH) return false;
+    }
+    return true;
+  }
+  function plantSpawnTrunk(x, z) {
+    if (!trunkRoom(x, z)) return false;
+    var h = (spawn.y - 1) | 0;
+    var y;
+    for (y = h + 1; y <= h + 4; y++) {
+      if (at(x, y, z) === FLOWER || at(x, y, z) === TORCH) put(x, y, z, AIR);
+    }
+    return placeTree(x, z, h);
+  }
+  function ensureSpawnWood() {
+    // Coal sits on the look line at about 3 blocks. The old grove starts
+    // 8–12 blocks off to the side, so a level look never meets a trunk.
+    // Two trees stand just past the coal, one to each side, still in view.
+    if (spawnYaw == null) return;
+    var yaw = spawnYaw;
+    var lx = Math.sin(yaw), lz = -Math.cos(yaw);
+    var rx = Math.cos(yaw), rz = Math.sin(yaw);
+    var plan = [[6.4, 2.15], [7.6, -2.15], [8.2, 2.9], [8.2, -2.9], [7.2, 3.4], [7.2, -3.4]];
+    var placed = 0, i, along, side, x, z, dx, dz, found;
+    for (i = 0; i < plan.length && placed < 2; i++) {
+      along = plan[i][0];
+      side = plan[i][1];
+      x = Math.floor(spawn.x + lx * along + rx * side);
+      z = Math.floor(spawn.z + lz * along + rz * side);
+      found = false;
+      if (plantSpawnTrunk(x, z)) found = true;
+      for (dz = -1; dz <= 1 && !found; dz++) {
+        for (dx = -1; dx <= 1; dx++) {
+          if (!dx && !dz) continue;
+          if (plantSpawnTrunk(x + dx, z + dz)) { found = true; break; }
+        }
+      }
+      if (found) placed++;
+    }
+  }
   function markCoal(data, x, y, z) {
     var cap = COAL_CAP;
     var s = cap.side, sw = 0.42, sy = 0.26;
@@ -1279,6 +1328,7 @@
       fallPeak = null;
     }
     ensureSpawnCoal();
+    ensureSpawnWood();
     if (!suppressMobs) spawnMobs();
     syncVolcano();
     dirty = true;
@@ -1909,7 +1959,7 @@
     var r = RECIPES[name];
     if (!r) return false;
     if (r.woodGate && (state.inv.wood | 0) < r.woodGate) {
-      toast('小宇：先敲到 1 个木头，才能做火把和小船');
+      toast('小宇：先敲到木头，才能做小船');
       return false;
     }
     var k;
@@ -1993,7 +2043,7 @@
     return true;
   }
   function placeTorch() {
-    if ((state.inv.torch | 0) < 1) { toast('小宇：做火把要 3 个木头'); return false; }
+    if ((state.inv.torch | 0) < 1) { toast('小宇：火把要用 1 个煤炭和 1 个木头'); return false; }
     if (countId(TORCH) >= 32) { toast('小宇：火把够多了'); return false; }
     var hit = ray(4.5, true);
     if (!hit) { toast('小宇：对准要插的方块'); return false; }
