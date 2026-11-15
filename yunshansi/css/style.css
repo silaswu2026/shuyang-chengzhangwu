@@ -1,0 +1,113 @@
+:root {
+  --ink: #1a1814;
+  --paper: #f3efe6;
+  --mist: rgba(243, 239, 230, 0.88);
+  --accent: #6b4f2a;
+  --sage: #3d5a45;
+  --dao: #4a5d6a;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #0d0c0a; color: var(--paper); font-family: "Noto Serif SC", "Songti SC", "SimSun", serif; }
+#app { position: relative; width: 100%; height: 100%; }
+canvas#view { display: block; width: 100%; height: 100%; touch-action: none; }
+
+#gate {
+  position: absolute; inset: 0; z-index: 40;
+  display: flex; align-items: center; justify-content: center;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(80,70,50,.35), transparent 55%),
+    linear-gradient(180deg, #12100e, #1c1914 60%, #0a0908);
+}
+#gate.hidden { display: none; }
+.gate-card {
+  width: min(420px, 92vw); padding: 28px 26px 24px;
+  background: var(--mist); color: var(--ink); border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.45);
+}
+.gate-card h1 { margin: 0 0 6px; font-size: 1.55rem; letter-spacing: .12em; font-weight: 600; }
+.gate-card .sub { margin: 0 0 18px; opacity: .72; font-size: .92rem; line-height: 1.5; }
+.gate-card label { display: block; font-size: .8rem; margin: 12px 0 6px; opacity: .75; }
+.gate-card input, .gate-card select {
+  width: 100%; padding: 10px 12px; border: 1px solid #c9c0b0; border-radius: 8px;
+  background: #fffdf8; color: var(--ink); font: inherit;
+}
+.avatar-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+.avatar-pick button {
+  border: 1px solid #c9c0b0; background: #fffdf8; border-radius: 10px; padding: 12px 8px;
+  cursor: pointer; font: inherit; color: var(--ink);
+}
+.avatar-pick button.active { outline: 2px solid var(--accent); background: #f7efe0; }
+.avatar-pick small { display: block; opacity: .65; margin-top: 4px; font-size: .75rem; }
+#enterBtn {
+  margin-top: 18px; width: 100%; padding: 12px; border: 0; border-radius: 10px;
+  background: var(--ink); color: var(--paper); font: inherit; letter-spacing: .2em; cursor: pointer;
+}
+#enterBtn:disabled { opacity: .5; cursor: wait; }
+.hint { margin-top: 12px; font-size: .75rem; opacity: .6; line-height: 1.45; }
+
+#hud {
+  position: absolute; inset: 0; z-index: 20; pointer-events: none;
+  display: none;
+}
+#hud.on { display: block; }
+#hud .bar {
+  pointer-events: auto; position: absolute; left: 50%; transform: translateX(-50%);
+  bottom: 18px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+  max-width: 96vw;
+}
+#hud button, #hud .chip {
+  pointer-events: auto; border: 0; border-radius: 999px; padding: 10px 14px;
+  background: rgba(20,18,14,.72); color: var(--paper); backdrop-filter: blur(8px);
+  font: inherit; cursor: pointer; font-size: .86rem;
+}
+#hud button.active { background: rgba(107,79,42,.92); }
+#topLeft {
+  pointer-events: none; position: absolute; top: 14px; left: 14px;
+  background: rgba(20,18,14,.55); padding: 10px 12px; border-radius: 10px; font-size: .82rem; line-height: 1.45;
+}
+#topRight {
+  pointer-events: auto; position: absolute; top: 14px; right: 14px;
+  background: rgba(20,18,14,.55); padding: 10px 12px; border-radius: 10px; width: min(220px, 46vw);
+  font-size: .78rem;
+}
+#topRight label { display: flex; justify-content: space-between; gap: 8px; margin: 6px 0; align-items: center; }
+#topRight input[type=range] { width: 110px; }
+#sceneBar {
+  pointer-events: auto; position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 90vw;
+}
+#sceneBar button { font-size: .78rem; padding: 8px 12px; }
+#queue {
+  position: absolute; left: 50%; top: 58px; transform: translateX(-50%);
+  background: rgba(20,18,14,.65); padding: 8px 14px; border-radius: 8px; font-size: .8rem;
+  display: none; max-width: 90vw; text-align: center;
+}
+#queue.show { display: block; }
+#beadsOverlay {
+  display: none; position: absolute; inset: 0; z-index: 30;
+  background: rgba(8,7,6,.72); pointer-events: auto;
+  align-items: center; justify-content: center; flex-direction: column; gap: 12px;
+}
+#beadsOverlay.on { display: flex; }
+#beadsTrack {
+  width: min(320px, 80vw); height: 64px; border-radius: 999px;
+  background: linear-gradient(90deg, #3a2a18, #6b4f2a 40%, #c2a36a 70%, #3a2a18);
+  position: relative; touch-action: none; cursor: grab; box-shadow: inset 0 0 20px rgba(0,0,0,.35);
+}
+#beadKnob {
+  position: absolute; top: 8px; width: 48px; height: 48px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #e8d3a4, #8a6a32 70%);
+  left: 0; box-shadow: 0 4px 12px rgba(0,0,0,.4);
+}
+#beadCount { font-size: 1.4rem; letter-spacing: .15em; }
+#mobileStick {
+  display: none; position: absolute; left: 18px; bottom: 90px; width: 110px; height: 110px;
+  border-radius: 50%; background: rgba(255,255,255,.08); pointer-events: auto; touch-action: none;
+}
+#mobileStick .knob {
+  position: absolute; left: 35px; top: 35px; width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,255,255,.28);
+}
+@media (pointer: coarse) {
+  #mobileStick { display: block; }
+}

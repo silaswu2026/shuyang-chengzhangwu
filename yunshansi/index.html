@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>云山寺 · 单机预览</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <canvas id="view"></canvas>
+
+    <div id="gate">
+      <div class="gate-card">
+        <h1>云山寺</h1>
+        <p class="sub">山水间，歇一息。这是单机预览，暂不显示其他香客。<br/>佛家在左，道家在右；先进山门。</p>
+        <label for="nickname">诗意昵称</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="nickname" maxlength="16" autocomplete="off" />
+          <button type="button" id="rerollName" style="white-space:nowrap;padding:10px 12px;border-radius:8px;border:1px solid #c9c0b0;background:#fffdf8;cursor:pointer">换一个</button>
+        </div>
+        <label>形象</label>
+        <div class="avatar-pick">
+          <button type="button" data-avatar="shami"><strong>小沙弥</strong><small>佛家 · 随机袈裟色</small></button>
+          <button type="button" data-avatar="daotong"><strong>道童</strong><small>道家 · 随机道袍</small></button>
+        </div>
+        <button id="enterBtn" type="button">入寺</button>
+        <p class="hint">入寺后开启声音。桌面：点地走 / WASD / 拖环视 / 滚轮缩放<br/>快捷键 1或E/空格礼拜 · 2念珠 · 3合掌 · 5木鱼（Shift+5自动）</p>
+      </div>
+    </div>
+
+    <div id="hud">
+      <div id="topLeft">
+        <div id="roomInfo">云山一院 · 单机预览</div>
+        <div id="serviceInfo">个人静心</div>
+      </div>
+      <div id="sceneBar"></div>
+      <div id="queue"></div>
+      <div id="topRight">
+        <div>分轨音量</div>
+        <label>环境 <input id="vol-ambient" type="range" min="0" max="1" step="0.01" value="0.35" /></label>
+        <label>经/道乐 <input id="vol-chant" type="range" min="0" max="1" step="0.01" value="0.4" /></label>
+        <label>效果 <input id="vol-sfx" type="range" min="0" max="1" step="0.01" value="0.55" /></label>
+      </div>
+      <div class="bar">
+        <button type="button" id="btnHapjang">合掌 (3)</button>
+        <button type="button" id="btnBow">礼拜 (1)</button>
+        <button type="button" id="btnBeads">念珠 (2)</button>
+        <button type="button" id="btnMoktak">木鱼 (5)</button>
+        <button type="button" id="btnMoktakAuto">木鱼自动</button>
+      </div>
+      <div id="mobileStick"><div class="knob"></div></div>
+    </div>
+
+    <div id="beadsOverlay">
+      <div id="beadCount">0 / 108</div>
+      <div id="beadsTrack"><div id="beadKnob"></div></div>
+      <p style="opacity:.75;font-size:.85rem">左右拖动拨珠 · Esc 或下方关闭</p>
+      <button type="button" id="closeBeads" style="padding:10px 16px;border:0;border-radius:999px;background:rgba(255,255,255,.15);color:#fff;cursor:pointer">放下念珠</button>
+    </div>
+  </div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
