@@ -19,7 +19,7 @@ function has(src, needle, msg) {
   if (src.indexOf(needle) === -1) fail(msg || ('missing ' + needle));
 }
 
-if (EN.TIP !== 'en2') fail('TIP en2, got ' + EN.TIP);
+if (EN.TIP !== 'en3') fail('TIP en3, got ' + EN.TIP);
 if (EN.STORAGE_KEY !== 'xygo-english-en1') fail('STORAGE_KEY must stay xygo-english-en1, got ' + EN.STORAGE_KEY);
 if (EN.DISCLAIMER !== '这是成长屋家庭陪伴计划，不是芝麻街官方课程，也不是学习诊断。芝麻街教的是字母怎么读、怎么发音，不是学校那张国际音标表。') {
   fail('disclaimer text');
@@ -56,9 +56,9 @@ localFiles.forEach(function (name) {
 });
 
 var html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
-has(html, 'content="en2"', 'meta tip');
-has(html, 'english.css?v=en2', 'css cache bust');
-has(html, 'english.js?v=en2', 'js cache bust');
+has(html, 'content="en3"', 'meta tip');
+has(html, 'english.css?v=en3', 'css cache bust');
+has(html, 'english.js?v=en3', 'js cache bust');
 has(html, '../../../brand-tokens.css', 'brand tokens');
 has(html, '../../../favicon.png', 'favicon');
 has(html, EN.DISCLAIMER, 'html disclaimer');
@@ -336,33 +336,43 @@ if (qids.indexOf('word:bed') === -1) fail('quiz must include due item');
 if (qids.indexOf('word:mom') === -1) fail('quiz must include not-yet-remembered item');
 if (quiz.length === Object.keys(store.items).length) fail('quiz must not be the whole bank');
 
-/* skip new sound when review load is heavy; threshold scales with shorter evening */
+/* skip new sound when review load is heavy; estimate by due sound families, not every word card */
 var heavy = EN.emptyStore();
-for (var i = 0; i < 6; i++) {
-  var it = EN.makeItem('word', 'w' + i, 'm', now);
-  heavy.items[it.id] = it;
-}
-if (EN.estimateReviewMinutes(heavy, now) !== 12) fail('6 due items = 12 minutes');
-if (!EN.shouldSkipNewSound(heavy, now)) fail('12 minutes should skip new sound');
+['m', 'n', 'b'].forEach(function (id) { EN.introduceSound(heavy, id, now); });
+if (EN.dueSoundIds(heavy, now).length !== 3) fail('heavy has 3 due sounds');
+if (EN.estimateReviewMinutes(heavy, now) !== 6) fail('3 due sounds = 6 minutes, not 2 minutes per word card');
+if (!EN.shouldSkipNewSound(heavy, now)) fail('3 due sounds / 6 minutes should skip new sound');
 var mid = EN.emptyStore();
-for (var j = 0; j < 3; j++) {
-  var midItem = EN.makeItem('word', 'm' + j, 'm', now);
-  mid.items[midItem.id] = midItem;
-}
-if (EN.estimateReviewMinutes(mid, now) !== 6) fail('3 due items = 6 minutes');
-if (!EN.shouldSkipNewSound(mid, now)) fail('6 minutes is most of the short evening, skip new sound');
+['m', 'n'].forEach(function (id) { EN.introduceSound(mid, id, now); });
+if (EN.estimateReviewMinutes(mid, now) !== 4) fail('2 due sounds = 4 minutes');
+if (EN.shouldSkipNewSound(mid, now)) fail('2 due sounds should still allow a new sound');
 var light = EN.emptyStore();
 light.items['word:mom'] = EN.makeItem('word', 'mom', 'm', now);
 if (EN.shouldSkipNewSound(light, now)) fail('light review should allow new sound');
 
+var onlyM = EN.emptyStore();
+EN.introduceSound(onlyM, 'm', now);
+if (EN.estimateReviewMinutes(onlyM, now) !== 2) fail('one sound family is about 2 minutes, not 8');
+if (EN.shouldSkipNewSound(onlyM, now)) fail('only /m/ due must not skip new sound');
+var onlyMPlan = EN.planSession('evening', onlyM, now);
+if (onlyMPlan.skipNewSound || onlyMPlan.reviewOnly) fail('only /m/ evening should still teach');
+if (!onlyMPlan.introduceSound || onlyMPlan.introduceSound.id !== 'n') fail('next sound after /m/ is /n/');
+if (onlyMPlan.steps.join() !== 'listen,say,quiz') fail('only /m/ evening steps ' + onlyMPlan.steps.join());
+if (!onlyMPlan.watchSound || onlyMPlan.watchSound.id !== 'm') fail('replay official /m/ clip when new sound has no short');
+var onlyMWatch = EN.childWatchHtml(onlyMPlan.watchSound) + EN.childWatchHtml(onlyMPlan.introduceSound);
+if (onlyMWatch.indexOf('player.bilibili.com') === -1 || onlyMWatch.indexOf('BV1VW4y1R7VD') === -1) fail('/m/ replay must embed official M clip');
+if (onlyMWatch.indexOf('<iframe') === -1) fail('only /m/ evening must still show a player');
+if (EN.childWatchHtml(onlyMPlan.introduceSound).indexOf('<iframe') !== -1) fail('/n/ must not invent a stand-in clip');
+
 var heavyPlan = EN.planSession('evening', heavy, now);
 if (!heavyPlan.skipNewSound || heavyPlan.introduceSound) fail('heavy evening must skip new sound');
 if (!heavyPlan.heavyReview) fail('heavy flag');
-if (heavyPlan.skipReason.indexOf('12') === -1) fail('plain skip reason');
+if (heavyPlan.skipReason.indexOf('6') === -1) fail('plain skip reason');
 if (heavyPlan.mode !== 'evening' || heavyPlan.minutes !== 10) fail('evening shape minutes');
-if (heavyPlan.steps.indexOf('listen') !== -1) fail('skipped evening should not start listen');
 if (heavyPlan.allowNewSound) fail('heavy evening allowNewSound');
-if (heavyPlan.steps.join() !== 'quiz') fail('short review-only evening steps');
+if (heavyPlan.steps.join() !== 'listen,quiz') fail('review-only evening still replays a clip then quizzes, got ' + heavyPlan.steps.join());
+if (!heavyPlan.watchSound || heavyPlan.watchSound.id !== 'm') fail('heavy review should replay /m/ official clip');
+if (EN.childWatchHtml(heavyPlan.watchSound).indexOf('BV1VW4y1R7VD') === -1) fail('heavy review iframe is official M');
 
 var morningPlan = EN.planSession('morning', light, morning);
 if (morningPlan.mode !== 'morning' || morningPlan.minutes !== 6) fail('morning shape minutes');
@@ -384,6 +394,8 @@ if (!EN.isWeeklyReviewEvening(weekDone, evening)) fail('expected weekly review-o
 var weeklyPlan = EN.planSession('evening', weekDone, evening);
 if (weeklyPlan.introduceSound || !weeklyPlan.skipNewSound) fail('weekly review must skip new sound');
 if (!weeklyPlan.weeklyReview) fail('weeklyReview flag should stay on even if review is also heavy');
+if (weeklyPlan.steps.join() !== 'listen,quiz') fail('weekly review should still replay a clip, got ' + weeklyPlan.steps.join());
+if (!weeklyPlan.watchSound || weeklyPlan.watchSound.id !== 'm') fail('weekly review watch /m/');
 EN.markReviewOnlyEvening(weekDone, evening);
 if (EN.isWeeklyReviewEvening(weekDone, evening)) fail('weekly review already logged');
 if (weekDone.activeWeek !== 2) fail('advance week after review-only evening');
@@ -409,7 +421,7 @@ if (box.getItem('xygo-mi8-results') !== '{"no":1}') fail('save must not touch ot
 if (js.indexOf("var STORAGE_KEY = 'xygo-english-en1'") === -1) fail('js storage key');
 if (/localStorage\.(get|set)Item\(\s*'xygo-(?!english-en1)/.test(js)) fail('js touches other keys');
 
-/* homepage: course 6 live en2, 1-5 unchanged, 7-16 soon */
+/* homepage: course 6 live en3, 1-5 unchanged, 7-16 soon */
 var home = fs.readFileSync(path.join(__dirname, '../../../index.html'), 'utf8');
 function tile(src, n) {
   var re = new RegExp('<a class="course[^"]*"[^>]*>\\s*<span class="n">' + n + '<\\/span>[\\s\\S]*?<\\/a>');
@@ -420,7 +432,7 @@ var t6 = tile(home, '6');
 if (!t6) fail('missing course 6 tile');
 if (t6.indexOf('class="course soon"') !== -1) fail('course 6 should not be soon');
 if (/\bsoon\b/.test(t6)) fail('course 6 still soon');
-if (t6.indexOf('href="shuyang-ai/learn/english/?v=en2"') === -1) fail('course 6 href');
+if (t6.indexOf('href="shuyang-ai/learn/english/?v=en3"') === -1) fail('course 6 href');
 if (t6.indexOf('课程占位 6') !== -1) fail('course 6 still placeholder title');
 if (t6.indexOf('今晚主课') !== -1 || /<span class="tag">今天<\/span>/.test(t6)) fail('course 6 must not steal 今晚主课 / 今天');
 if (t6.indexOf('英语学习') === -1) fail('course 6 title should stay 英语学习');
@@ -452,7 +464,7 @@ for (var n = 7; n <= 16; n++) {
 }
 
 if (home.indexOf('今天 · 小歌编辑器') === -1) fail('hero hint must stay 今天 · 小歌编辑器');
-if (home.indexOf('href="shuyang-ai/learn/english/?v=en2">英语学习</a>') === -1) fail('.links 英语学习');
+if (home.indexOf('href="shuyang-ai/learn/english/?v=en3">英语学习</a>') === -1) fail('.links 英语学习');
 ['小歌课件', '小歌编辑器', '选关 · 五关', '兴趣小问', '今晚探索', '方块小世界', 'mi2', 'se1', 'mw22'].forEach(function (keep) {
   if (home.indexOf(keep) === -1) fail('homepage missing link/text ' + keep);
 });
@@ -464,4 +476,4 @@ if (failed) {
   console.error(failed + ' failed');
   process.exit(1);
 }
-console.log('english en2 ok');
+console.log('english en3 ok');

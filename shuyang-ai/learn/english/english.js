@@ -1,10 +1,10 @@
-/* 成长屋英语学习 · 家庭陪伴短课。缓存 en2。
+/* 成长屋英语学习 · 家庭陪伴短课。缓存 en3。
    只写 localStorage 键 xygo-english-en1，不碰方块小世界或其他课的存档。
    发音按美式英语 General American。孩子这条路只内嵌哔哩哔哩官方芝麻街播放器，并使用本页读音。不下载、不转载受版权保护的片子。 */
 (function (root) {
   'use strict';
 
-  var TIP = 'en2';
+  var TIP = 'en3';
   var STORAGE_KEY = 'xygo-english-en1';
   var CHILD = '伍澍暘';
   var NICKNAME = '芃芃';
@@ -415,8 +415,39 @@
     return items.filter(function (it) { return isDueOrUnremembered(it, now); });
   }
 
+  function dueSoundIds(storeOrItems, now) {
+    var ids = [];
+    selectQuizItems(storeOrItems, now).forEach(function (it) {
+      if (it && it.soundId && ids.indexOf(it.soundId) === -1) ids.push(it.soundId);
+    });
+    return ids;
+  }
+
+  /* 按到期的声音家族估算，不把同一个声音下的几张词卡、句型卡各算 2 分钟。一个声音大约 2 分钟；三个声音大约 6 分钟，就先不学新的。 */
   function estimateReviewMinutes(storeOrItems, now) {
-    return selectQuizItems(storeOrItems, now).length * REVIEW_MINUTES_PER_ITEM;
+    return dueSoundIds(storeOrItems, now).length * REVIEW_MINUTES_PER_ITEM;
+  }
+
+  function officialClipSound(sound) {
+    return !!(sound && sound.sesame && sound.sesame.length);
+  }
+
+  function pickWatchSound(store, now, incoming) {
+    if (officialClipSound(incoming)) return incoming;
+    var due = dueSoundIds(store, now);
+    var i;
+    for (i = 0; i < due.length; i++) {
+      if (incoming && due[i] === incoming.id) continue;
+      var s = soundById(due[i]);
+      if (officialClipSound(s)) return s;
+    }
+    var intro = (store && store.introducedSounds) || [];
+    for (i = intro.length - 1; i >= 0; i--) {
+      if (incoming && intro[i] === incoming.id) continue;
+      var s2 = soundById(intro[i]);
+      if (officialClipSound(s2)) return s2;
+    }
+    return null;
   }
 
   function shouldSkipNewSound(storeOrItems, now) {
@@ -574,6 +605,7 @@
         mode: 'morning',
         minutes: MORNING_MINUTES,
         introduceSound: null,
+        watchSound: null,
         skipNewSound: true,
         skipReason: '早上只回想，不学新声音。',
         reviewOnly: true,
@@ -595,11 +627,15 @@
       reason = '这周有一晚只回想，不学新声音。';
     }
     var incoming = skip ? null : nextNewSound(store);
-    var steps = skip ? ['quiz'] : ['listen', 'say', 'quiz'];
+    var watchSound = pickWatchSound(store, now, incoming);
+    var steps = skip
+      ? (watchSound ? ['listen', 'quiz'] : ['quiz'])
+      : ['listen', 'say', 'quiz'];
     return {
       mode: 'evening',
       minutes: EVENING_MINUTES,
       introduceSound: incoming,
+      watchSound: watchSound,
       skipNewSound: skip,
       skipReason: reason,
       reviewOnly: skip,
@@ -718,6 +754,9 @@
     introduceSound: introduceSound,
     isDueOrUnremembered: isDueOrUnremembered,
     selectQuizItems: selectQuizItems,
+    dueSoundIds: dueSoundIds,
+    officialClipSound: officialClipSound,
+    pickWatchSound: pickWatchSound,
     estimateReviewMinutes: estimateReviewMinutes,
     shouldSkipNewSound: shouldSkipNewSound,
     nextMorningAt: nextMorningAt,
@@ -811,6 +850,7 @@
       state.plan = planSession(mode, store, new Date());
       state.stepIndex = 0;
       state.sound = state.plan.introduceSound;
+      state.watchSound = state.plan.watchSound || state.sound;
       state.quiz = (state.plan.quizItems || []).slice();
       state.quizIndex = 0;
       state.pendingRequeue = [];
@@ -950,18 +990,31 @@
       var sound = state.sound;
       var head = '<p class="disclaimer">' + esc(DISCLAIMER) + '<span class="build-tip">' + esc(TIP) + '</span></p>';
       var talk = '<p class="who">' + esc(ASSISTANT) + ' · ' + (plan.mode === 'morning' ? '早上回想' : '今晚学') + '</p>';
-      if (plan.skipNewSound && (step === 'quiz' || step === 'retrieval') && plan.skipReason) {
+      if (plan.skipNewSound && (step === 'quiz' || step === 'retrieval' || step === 'listen') && plan.skipReason) {
         talk += '<p class="banner">' + esc(plan.skipReason) + '</p>';
       }
       talk += feedbackSlot();
-      if (step === 'listen' && sound) {
+      if (step === 'listen' && (sound || state.watchSound)) {
+        var watch = state.watchSound || sound;
+        var heading = '先听这个声音';
+        var lead = esc(NICKNAME) + '，先别看符号。听 ' + esc(ASSISTANT) + ' 读，有短片就在这一页点一下看。';
+        if (!sound && watch) {
+          heading = '再听一遍';
+          lead = esc(NICKNAME) + '，先再听一口已经学过的短片，然后做个小回想。';
+        } else if (sound && watch && watch.id !== sound.id) {
+          lead = esc(NICKNAME) + '，这个新声音暂时没有官方短片。我们用这一页的读音，也可以再听一口以前的短片。';
+        }
+        var voice = sound || watch;
+        var clips = '';
+        if (sound) clips += childWatchHtml(sound);
+        if (watch && (!sound || watch.id !== sound.id)) clips += childWatchHtml(watch);
         return '<div class="shell">' + head + talk +
-          '<h1>先听这个声音</h1>' +
-          '<p class="lead">' + esc(NICKNAME) + '，先别看符号。听 ' + esc(ASSISTANT) + ' 读，有短片就在这一页点一下看。</p>' +
-          '<p class="cue">' + esc(sound.cue) + '</p>' +
+          '<h1>' + heading + '</h1>' +
+          '<p class="lead">' + lead + '</p>' +
+          '<p class="cue">' + esc(voice.cue) + '</p>' +
           speechNote() +
-          '<div class="actions"><button type="button" class="primary" data-action="speak" data-say="' + esc(sound.speak) + '">听一听</button></div>' +
-          childWatchHtml(sound) +
+          '<div class="actions"><button type="button" class="primary" data-action="speak" data-say="' + esc(voice.speak) + '">听一听</button></div>' +
+          clips +
           '<div class="actions"><button type="button" class="primary" data-action="next">我听到了</button><button type="button" class="ghost" data-action="home">先回路线</button></div>' +
         '</div>';
       }
