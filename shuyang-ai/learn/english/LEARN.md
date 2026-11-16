@@ -1,10 +1,10 @@
-# 英语学习（en1）
+# 英语学习（en2）
 
 给伍澍暘（9 岁，家里叫芃芃）晚上和早上用的成长屋英语短课。页面上的助手叫小宇。
 
 直播路径（合并后）：
 
-`https://silaswu2026.github.io/shuyang-chengzhangwu/shuyang-ai/learn/english/?v=en1`
+`https://silaswu2026.github.io/shuyang-chengzhangwu/shuyang-ai/learn/english/?v=en2`
 
 声明（第一屏就有，每一屏顶上还留着，`<noscript>` 里也有，原文不改）：
 
@@ -12,63 +12,96 @@
 
 给爸爸的小注（折起来，不挡住孩子）：
 
-> 发音按美式英语（General American）。有些元音和中国课本里的英式 RP 音标不一样：比如 octopus、hot 在美式里是 /ɑ/，BBC 片段里 lot 用 /ɒ/；美式有 /ɝ/ /ɚ/，英式 RP 是 /ɜː/ /ə/。
+> 发音按美式英语（General American）。有些元音和中国课本里的英式 RP 音标不一样：比如 octopus、hot 在美式里是 /ɑ/。孩子这条路只在页面里播放哔哩哔哩官方芝麻街短片，再用本页美式读音。中国这边打不开 YouTube，YouTube 内嵌也同样不行，所以不再跳转到 YouTube。没有找到可在中国直接播放的 BBC 官方嵌入，也不使用粉丝搬运（包括非官方的「BBC官方音标」合集）。
 
 ## 这是什么
 
-八周第一轮，大约 20–24 个核心声音（按声音家族大约每周 4 组），由易到难。先听会声音，再配词，再放进句子架子，最后轻轻碰一点语法模样。不是学校那张国际音标总表，也不从背符号开始。
+八周第一轮，大约 20–24 个核心声音（按声音家族大约每周 4 组），由易到难。先听会声音，再配词，最后轻轻碰一点语法模样。不是学校那张国际音标总表，也不从背符号开始。
 
 芝麻街官方教的是字母怎么读、怎么发音（phonics / letter sounds），不是国际音标课。本课不是芝麻街官方课程。
 
+芃芃以前学过国际音标，但还没有完全掌握，所以课要短、步骤要少，做对了马上给反馈，不拉成长课，也不把长合集当晚作业。
+
 ## 今晚学 / 早上回想
 
-- **今晚学**大约 20 分钟：如果回想负担允许，就学一个新的声音家族；再混进以前的词；只回想「还没记住」或「已经到期」的卡片。
-- **早上回想**大约 10 分钟：只回想，不学新声音。
+- **今晚学**大约 8–12 分钟（页面上写大约 10 分钟）：一次只学一个声音家族。先听（官方短片或本页读音）→ 跟着说 → 做一个小小练习 / 回想，马上反馈。如果回想已经占掉这节短课的大部分（大约 6 分钟或更多），就先不学新声音，并直接说清楚。
+- **早上回想**大约 5–8 分钟（页面上写大约 6 分钟）：只回想，不学新声音。
 - 按 Asia/Shanghai 的本地时间自动建议：大约 5:00–11:59 更像早上，其他时间更像今晚。父子随时可以改选另一边。
-- 如果今晚到期的回想大约要占掉 20 分钟里的 12 分钟，就先不学新声音，并直接说清楚。
 - 每周安排一晚只回想。第一轮也不把 /z ʒ ŋ ɔɪ/ 塞进第 1 周。
 
-新声音的顺序：听（官方观看链接和/或页面上的美式读音）→ 跟着说 → 再练 → 配上简单的词。声音熟了以后才出示国际音标。芃芃喜欢摆关，所以有分类、三个词一组、或用一句话说出规则。
+新声音的顺序：听（页面里的官方芝麻街短片，或本页美式读音）→ 跟着说 → 一个短练习。声音熟了以后才出示国际音标。
 
 ## 记忆怎么走
 
 页面上看见的是声音路线，以及「我会了 / 再练一遍」。不出现 Anki、FSRS、SM-2 或成人调度界面。
 
-成功回想后的间隔：明天早上 → 2 天 → 5 天 → 10 天 → 21 天。
+成功回想后的间隔：明天早上 → 2 天 → 4 天 → 最多 7 天。间隔从上次成功（或刚认识那天）算起，最长不超过 7 天，一周里至少会再遇见一次。不会再排到 10 天或 21 天以后。
 
 没想起：同一趟里稍后只再试 1–2 次，不连着敲；仍不会，就排到今晚或明天。记住的会存起来，到了记忆点再混回来。测验不会每次把整个词库都拉出来。
+
+进度仍使用原来的钥匙 `xygo-english-en1`，已经介绍过的 /m/ 会留下来；新的到期时间按 7 天以内的梯子来算。
 
 ## 八周坡道
 
 | 周 | 新声音 | 说明 |
 |---|---|---|
 | 1 | /m n b p t d/ | 靠近普通话，由易开始 |
-| 2 | /s k g h/，以及 /i u ɑ/ | 简单元音。美式 octopus / hot 是 /ɑ/ |
-| 3 | /ɪ/ 对 /i/，以及 /æ ɛ/ | 开始组 CVC 词。E 的两个声音用《I Love the Letter E》（短 eh / 长 ee） |
-| 4 | /ʌ/，/ʊ/ 对 /u/ | 继续混 CVC |
-| 5 | /f/ 对 /v/，/ʃ tʃ/ | 开始句子架子：I see a ___ / This is a ___ |
-| 6 | /dʒ/，/θ ð/ | 更多句子。sh / th 没有芝麻街主频道短片，用标注过的 BBC 补充 |
-| 7 | /r l/，/eɪ aɪ/ | 轻轻碰 a/an、简单复数、This is a ___ |
-| 8 | /oʊ aʊ/ | 架子里的一般现在时和复数；本周偏回想 |
+| 2 | /s k g h/，以及 /i u ɑ/ | 简单元音。美式 octopus / hot 是 /ɑ/。官方 O 短片是 Ocean，更接近 /oʊ/，/ɑ/ 先用本页读音 |
+| 3 | /ɪ/ 对 /i/，以及 /æ ɛ/ | 开始组 CVC 词。E 的两个声音用官方《我爱字母E！》（短 eh / 长 ee） |
+| 4 | /ʌ/，/ʊ/ 对 /u/ | 继续混 CVC。官方每周字母里没有 Letter U，这两个 U 相关声音先用本页读音 |
+| 5 | /f/ 对 /v/，/ʃ tʃ/ | 开始句子架子：I see a ___ / This is a ___。sh / ch 没有官方芝麻街短片，用本页读音 |
+| 6 | /dʒ/，/θ ð/ | 更多句子。th 没有官方芝麻街短片，用本页读音 |
+| 7 | /r l/，/eɪ aɪ/ | 轻轻碰 a/an、简单复数、This is a ___。/eɪ/ 没有对应官方短片，用本页读音；/aɪ/ 可用 I is for Ice cream |
+| 8 | /oʊ aʊ/ | 架子里的一般现在时和复数；本周偏回想。/oʊ/ 可用 O is for Ocean；/aʊ/ 用本页读音 |
 
-例词偏向简单美式：cat, bed, sit, hot, cup, see, food, ship, chip, thin, this, red, like, go, house。Alphabeats 粗对照（美式）：A alligator /æ/；E egg /ɛ/；I inchworm /ɪ/；O octopus /ɑ/；U umbrella /ʌ/；辅音常取常见词首（C cake = /k/，X in box = /ks/）。
+例词偏向简单美式：cat, bed, sit, hot, cup, see, food, ship, chip, thin, this, red, like, go, house。Alphabeats 粗对照（美式，只作家长说明，不再把 YouTube 片子给孩子看）：A alligator /æ/；E egg /ɛ/；I inchworm /ɪ/；O octopus /ɑ/；U umbrella /ʌ/；辅音常取常见词首（C cake = /k/，X in box = /ks/）。
 
 不要声称芝麻街教 Magic e / silent e。这是官方空白。也不把剩余声音（如 /z ʒ ŋ ɔɪ/）当作第 1 周必学的新声音。
 
 ## 媒体许可
 
-芝麻街、BBC Learning English 的材料只以**观看页 URL** 出现，在新标签页打开。不打包、不下载、不 iframe 热链、不转载受版权保护的音视频。不编造片名或 YouTube 编号。只用代码里 `ALLOWED_URLS` / `MEDIA` 列出的地址。
+孩子这条路只在**本页内嵌**哔哩哔哩官方播放器，并配合本页 Web Speech 美式读音。不打包、不下载、不转载、不热链受版权保护的芝麻街或 BBC 音视频。不把片子存进仓库。不使用粉丝搬运。不编造 BV 号。只用代码里 `ALLOWED_URLS` / `MEDIA` 列出的、已核对过的官方地址。
 
-- 字母发音主线：Alphabeats；Do the ABC Rap! 也可作短导入。
-- Letter of the Day 多半是认字母、庆祝字母，不是系统发音课。Letter A 的编号必须是 `GEQfcjWAsvI`（中间 fcj 为小写；`GEQFcjWAsvI` 是 404）。
-- 主频道没有单独能用的 Letter T / U of the Day。T / U 出现在合集里，合集不当一晚作业。《T is for Turtle》可辅助认字母 T。《Find the Hidden Letter U》是认字母 U，不是系统的 /ʌ/ 或 /u/ 课。
-- Charlie's Ch Sounds 要标明来自 **Sesame Street Classics**（经典频道，不是主频道）。
-- 所有 BBC 条目都标明「补充，不是芝麻街」。长合集约 75 分钟，不当一晚作业。
-- 若某个声音没有官方芝麻街短片，要说清楚，再用已标注的 BBC 补充（尤其是 sh / th）。
-- 官网可提及：sesamestreet.org、sesamestreet.org/games（Letter Dance Party 是认字母，不是音标课，不深链未核对的游戏编号）、sesameworkshop.org、PBS Parents 的芝麻街页。认字母、写字母的公开资源页如需引用，只用已核对过的地址。
-- 不用：粉丝搬运、错误大小写的 Letter A 编号、未核对的 British Council Sounds Right、未核对且 403 的 PBS Kids / LearningMedia、把已停用的 BBC World Service 音标表当主入口、旧 Drupal 游戏主机。
+官方账号（核对于 2026-11-16）：
 
-页面读音使用浏览器 Web Speech API，语言为 `en-US`。有的手机或微信内置浏览器可能读不出来，这时请家人打开观看链接一起听。
+- 名称：芝麻街SesameStreet
+- mid：`1517070574`
+- 空间：https://space.bilibili.com/1517070574
+- 简介常见写法：「芝麻街唯一官方~ 1969年至今故事精彩继续！」
+- 哔哩哔哩搜索页将其标为「芝麻街SesameStreet官方账号」
+
+官方字母主线是合集「💛芝麻街每周字母💚」（season id `1123506`），入口：https://www.bilibili.com/video/BV1EG411D7u5/ 。这是 28 支**各自独立的短片**（不是同一个视频的多分 P），每支有自己的 BV 号。合集末尾有一条约 1:39 的角色名回顾，不当一晚作业，也不在课里整段播放。
+
+已核对、可按声音嵌入的官方短片（均为 mid `1517070574`）：
+
+| 短片 | BV | 大约时长 | 用在 |
+|---|---|---|---|
+| A is for Apple | BV1hv4y1b7dF | 1:14 | /æ/ |
+| B is for Book | BV1g84y1V7r8 | 2:02 | /b/ |
+| C is for Cookie | BV1Uv4y1x7S1 | 1:31 | /k/（cake / cookie 的词首） |
+| D is for Dance | BV1Sy4y1Z7DN | 0:53 | /d/ |
+| 我爱字母E！（E is for Eating） | BV1iT411v7uX | 1:04 | /ɛ/ 与长音 /i/（E 的两个声音） |
+| F is for Food | BV1tM411x7dZ | 2:29 | /f/ |
+| G is for Glee | BV1Nh4y1W7dw | 3:52 | /g/（稍长，孩子看一会儿即可，不必看完） |
+| H is for Home | BV1n14y1Z7tg | 1:10 | /h/（同字母另有 Hair / Horse，不在同一课里叠放） |
+| I is for Ice cream | BV1Vm4y117fR | 2:23 | /aɪ/（不是短音 /ɪ/） |
+| J is for Jam | BV1824y1M7sL | 1:53 | /dʒ/ |
+| L is for Lion | BV1Lz4y1B75Z | 0:36 | /l/ |
+| M is for Marshmallow | BV1VW4y1R7VD | 1:19 | /m/ |
+| O is for Ocean | BV1bc411g75L | 1:24 | /oʊ/（不是美式 /ɑ/） |
+| P is for Pizza | BV1mX4y1q7wB | 1:25 | /p/ |
+| R is for Rainbow | BV1Gh4y1f7Mx | 1:09 | /r/ |
+| S is for Sandwich | BV1Vh4y1L7Wm | 0:52 | /s/ |
+| T is for Tea | BV1L14y167AN | 1:02 | /t/ |
+| V is for Vest | BV1Ph4y1T7r3 | 2:04 | /v/ |
+
+合集里还有 K / Q / W / X / Y / Z、字母歌、以及三条 H，本课不把它们当晚作业。合集里**没有** Letter N、Letter U。
+
+若某个声音没有官方芝麻街短片，要说清楚：「这个声音在哔哩哔哩官方芝麻街号上暂时没有短片。」然后只用本页读音。不要改用粉丝搬运。尤其是：N、U、/ɑ/、/ɪ/、/ʌ/、/ʊ/、/ʃ/、/tʃ/、/θ/、/ð/、/eɪ/、/aʊ/。
+
+播放方式：官方播放器 `https://player.bilibili.com/player.html?isOutside=true&bvid=BV…&page=1&high_quality=1&danmaku=0&autoplay=0`，本页 iframe 内嵌，不自动播放，需要孩子点一下。大按钮、16:9，方便 iPhone Safari 和微信内置浏览器。
+
+页面读音使用浏览器 Web Speech API，语言为 `en-US`。有的手机或微信内置浏览器可能读不出来，这时请一起看本页短片，或由家人读给他听。
 
 ## 存在哪里
 
@@ -78,7 +111,7 @@
 
 钥匙里大致是：已介绍的声音、每张卡片的阶段和到期时间、本周进度、每周那一晚只回想的记录、未做完的草稿。若浏览器禁止本地存储，当次仍可学，离开后不保留。
 
-静态资源带 `?v=en1`。页面角上有小字 `en1`。小屋首页第 6 格和旁路「英语学习」指向本课，不改第 1–5 格、选关、螺丝拆拆乐的标题或链接，也不占用「今晚主课」「今天」标签。
+静态资源带 `?v=en2`。页面角上有小字 `en2`。小屋首页第 6 格和旁路「英语学习」指向本课，不改第 1–5 格、选关、螺丝拆拆乐的标题或链接，也不占用「今晚主课」「今天」标签。
 
 ## 怎么测
 
@@ -86,4 +119,4 @@
 node shuyang-ai/learn/english/english.test.js
 ```
 
-通过时应印出含有恰好这一句的一行：`english en1 ok`。
+通过时应印出含有恰好这一句的一行：`english en2 ok`。
