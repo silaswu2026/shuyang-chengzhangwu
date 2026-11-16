@@ -1,14 +1,15 @@
-/* 成长屋英语学习 · 家庭陪伴短课。缓存 en3。
+/* 成长屋英语学习 · 家庭陪伴短课。缓存 en4。
    只写 localStorage 键 xygo-english-en1，不碰方块小世界或其他课的存档。
    发音按美式英语 General American。孩子这条路只内嵌哔哩哔哩官方芝麻街播放器，并使用本页读音。不下载、不转载受版权保护的片子。 */
 (function (root) {
   'use strict';
 
-  var TIP = 'en3';
+  var TIP = 'en4';
   var STORAGE_KEY = 'xygo-english-en1';
   var CHILD = '伍澍暘';
   var NICKNAME = '芃芃';
   var ASSISTANT = '小宇';
+  var HOME_MISSION = '每次先记住一个字母在这些词里怎么读。以后再看见类似的词，就知道这个地方该怎么发音。';
   var DISCLAIMER = '这是成长屋家庭陪伴计划，不是芝麻街官方课程，也不是学习诊断。芝麻街教的是字母怎么读、怎么发音，不是学校那张国际音标表。';
   var PARENT_NOTE = '发音按美式英语（General American）。有些元音和中国课本里的英式 RP 音标不一样：比如 octopus、hot 在美式里是 /ɑ/。孩子这条路只在页面里播放哔哩哔哩官方芝麻街短片，再用本页美式读音。中国这边打不开 YouTube，YouTube 内嵌也同样不行，所以不再跳转到 YouTube。没有找到可在中国直接播放的 BBC 官方嵌入，也不使用粉丝搬运。';
   var EVENING_MINUTES = 10;
@@ -157,37 +158,37 @@
   }
 
   var SOUNDS = [
-    { id: 'm', ipa: 'm', title: '嘴唇音 m', week: 1, cue: '嘴唇先闭上，再张开。', speak: 'm', words: ['mom', 'map', 'me'], sesame: mediaList('letterM'), bbc: [], builder: { type: 'group', prompt: '把三个都有这个声音的词放在一起。', words: ['mom', 'map', 'me'], rule: '嘴唇闭上再张开，就是这个声音。' } },
-    { id: 'n', ipa: 'n', title: '鼻子音 n', week: 1, cue: '舌尖抵住上牙龈，气从鼻子出来。', speak: 'n', words: ['no', 'net', 'nap'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'group', prompt: '找出三个都有 n 声音的词。', words: ['no', 'net', 'nap'], rule: '舌尖抵住，气从鼻子走。' } },
-    { id: 'b', ipa: 'b', title: '爆破音 b', week: 1, cue: '嘴唇闭上，再轻轻爆开，声带要振动。', speak: 'b', words: ['bed', 'bus', 'big'], sesame: mediaList('letterB'), bbc: [], builder: { type: 'sort', prompt: '把 b 和 p 分开。b 会振动，p 不振动。', words: ['bed', 'bus', 'pen'], rule: 'b 和 p 嘴巴动作很像，b 嗓子会响。' } },
-    { id: 'p', ipa: 'p', title: '爆破音 p', week: 1, cue: '嘴唇闭上，再轻轻爆开，送一口气。', speak: 'p', words: ['pen', 'cup', 'map'], sesame: mediaList('letterP'), bbc: [], builder: { type: 'sort', prompt: '把带 p 的词放一起。', words: ['pen', 'cup', 'map'], rule: 'p 送一口气，嗓子不振动。' } },
-    { id: 't', ipa: 't', title: '舌尖音 t', week: 1, cue: '舌尖轻轻弹一下上牙龈。', speak: 't', words: ['ten', 'cat', 'hat'], sesame: mediaList('letterT'), bbc: [], builder: { type: 'group', prompt: '三个词里都有 t，把它们放一起。', words: ['ten', 'cat', 'hat'], rule: '舌尖弹一下，就是 t。' } },
-    { id: 'd', ipa: 'd', title: '舌尖音 d', week: 1, cue: '舌尖弹一下，嗓子要振动。', speak: 'd', words: ['dad', 'dog', 'bed'], sesame: mediaList('letterD'), bbc: [], builder: { type: 'sort', prompt: '把 t 和 d 分开。d 会振动。', words: ['dad', 'dog', 'ten'], rule: 'd 和 t 位置很像，d 嗓子会响。' } },
-    { id: 's', ipa: 's', title: '气流音 s', week: 2, cue: '牙齿靠近，送出细细的气。', speak: 's', words: ['sun', 'sit', 'bus'], sesame: mediaList('letterS'), bbc: [], builder: { type: 'group', prompt: '把三个有 s 的词放一起。', words: ['sun', 'sit', 'bus'], rule: '细细的气流，就是 s。' } },
-    { id: 'k', ipa: 'k', title: '后口音 k', week: 2, cue: '舌头后部抬起，再放开。C cake 也是这个音。', speak: 'k', words: ['cat', 'cake', 'cup'], sesame: mediaList('letterC'), bbc: [], builder: { type: 'rule', prompt: '用一句话说出这条摆关规则。', words: ['cat', 'cake', 'cup'], rule: '字母 C 在 cake 里读 /k/。' } },
-    { id: 'g', ipa: 'g', title: '后口音 g', week: 2, cue: '和 k 位置相近，但嗓子要振动。', speak: 'g', words: ['go', 'big', 'gum'], sesame: mediaList('letterG'), bbc: [], builder: { type: 'sort', prompt: '把 k 和 g 分开。g 会振动。', words: ['go', 'big', 'cat'], rule: 'g 和 k 位置很像，g 嗓子会响。' } },
-    { id: 'h', ipa: 'h', title: '呵气音 h', week: 2, cue: '轻轻呵一口气。', speak: 'h', words: ['hat', 'hot', 'house'], sesame: mediaList('letterH'), bbc: [], builder: { type: 'group', prompt: '三个词都有 h，放一起。', words: ['hat', 'hot', 'house'], rule: '轻轻呵气，就是 h。' } },
-    { id: 'i', ipa: 'i', title: '长元音 ee', week: 2, cue: '嘴角拉开，声音拉长，像 see。', speak: 'ee', words: ['see', 'me', 'eat'], sesame: mediaList('loveLetterE'), bbc: [], builder: { type: 'group', prompt: '把 see、me、eat 放一起。', words: ['see', 'me', 'eat'], rule: '嘴角拉开、声音拉长，就是这个音。' } },
-    { id: 'u', ipa: 'u', title: '长元音 oo', week: 2, cue: '嘴唇收圆，声音拉长，像 food。', speak: 'oo', words: ['food', 'too', 'moon'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'group', prompt: '三个拉长的 oo 放一起。', words: ['food', 'too', 'moon'], rule: '嘴唇收圆再拉长，像 food。' } },
-    { id: 'ɑ', ipa: 'ɑ', title: '开口音 ah', week: 2, cue: '嘴巴张开，像美式 hot、octopus。', speak: 'ah', words: ['hot', 'octopus', 'box'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, parentCue: '美式 octopus / hot 是 /ɑ/。官方每周字母的 O 是 Ocean，更接近 /oʊ/，所以这个音先用页面读音。', builder: { type: 'rule', prompt: '用一句话说出这条规则。', words: ['hot', 'octopus', 'box'], rule: '美式 hot、octopus 嘴巴张得比较开，是 /ɑ/。' } },
-    { id: 'ɪ', ipa: 'ɪ', title: '短元音 ih', week: 3, cue: '比 see 更短、更松，像 sit。', speak: 'ih', words: ['sit', 'inchworm', 'big'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, contrastWith: 'i', builder: { type: 'sort', prompt: '把 sit 和 see 分开：一个短，一个长。', words: ['sit', 'big', 'see'], rule: 'sit 短而松，see 长而亮。' } },
-    { id: 'æ', ipa: 'æ', title: '扁口音 a', week: 3, cue: '嘴巴横着张开，像 cat、alligator。', speak: 'a', words: ['cat', 'alligator', 'map'], sesame: mediaList('letterA'), bbc: [], builder: { type: 'group', prompt: '把 cat、map、alligator 放一起。', words: ['cat', 'alligator', 'map'], rule: 'A 在 apple、alligator、cat 里常常是这个声音。' } },
-    { id: 'ɛ', ipa: 'ɛ', title: '短元音 eh', week: 3, cue: '像 egg、bed。字母 E 还有一个长音 ee。', speak: 'eh', words: ['bed', 'egg', 'red'], sesame: mediaList('loveLetterE'), bbc: [], twoSoundsE: true, builder: { type: 'sort', prompt: 'E 有两个声音：egg 的 eh，和 see 的 ee。把它们分开。', words: ['egg', 'bed', 'see'], rule: '《我爱字母E！》说 E 有两个声音：短 eh 和长 ee。芝麻街没有教 Magic e / silent e。' } },
-    { id: 'ʌ', ipa: 'ʌ', title: '短元音 uh', week: 4, cue: '嘴巴放松，像 cup、umbrella。', speak: 'uh', words: ['cup', 'umbrella', 'sun'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'group', prompt: '三个短 uh 放一起。', words: ['cup', 'umbrella', 'sun'], rule: 'U 在 umbrella、cup 里常常是这个短声音。' } },
-    { id: 'ʊ', ipa: 'ʊ', title: '短元音 oo', week: 4, cue: '比 food 更短、更松，像 book。', speak: 'oo', words: ['book', 'good', 'put'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, contrastWith: 'u', builder: { type: 'sort', prompt: '把 book 和 food 分开：一个短，一个长。', words: ['book', 'good', 'food'], rule: 'book 短而松，food 长而圆。' } },
-    { id: 'f', ipa: 'f', title: '咬唇音 f', week: 5, cue: '上牙轻轻咬住下唇，送气。', speak: 'f', words: ['food', 'fan', 'if'], sesame: mediaList('letterF'), bbc: [], builder: { type: 'sort', prompt: '把 f 和 v 分开。v 会振动。', words: ['food', 'fan', 'van'], rule: 'f 和 v 嘴巴很像，f 只送气。' } },
-    { id: 'v', ipa: 'v', title: '咬唇音 v', week: 5, cue: '上牙轻轻咬住下唇，嗓子振动。', speak: 'v', words: ['van', 'five', 'have'], sesame: mediaList('letterV'), bbc: [], builder: { type: 'sort', prompt: '把 f 和 v 分开。', words: ['van', 'five', 'fan'], rule: 'v 和 f 嘴巴很像，v 嗓子会响。' } },
-    { id: 'ʃ', ipa: 'ʃ', title: 'shh 音', week: 5, cue: '嘴唇稍圆，送出 shh。', speak: 'sh', words: ['ship', 'fish', 'shoe'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'sort', prompt: '把 ship 和 chip 分开。', words: ['ship', 'fish', 'chip'], rule: 'ship 是 shh，chip 前面多一个轻轻的 t。' } },
-    { id: 'tʃ', ipa: 'tʃ', title: 'ch 音', week: 5, cue: '先轻轻堵住，再放出 shh，像 chip。', speak: 'ch', words: ['chip', 'chin', 'lunch'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'group', prompt: '三个 ch 放一起。', words: ['chip', 'chin', 'lunch'], rule: '先轻轻堵住，再放出 shh。' } },
-    { id: 'dʒ', ipa: 'dʒ', title: 'j 音', week: 6, cue: '和 ch 位置相近，但嗓子要振动，像 jump。', speak: 'j', words: ['jump', 'jam', 'juice'], sesame: mediaList('letterJ'), bbc: [], builder: { type: 'group', prompt: '三个 j 声音放一起。', words: ['jump', 'jam', 'juice'], rule: 'j 和 ch 位置很像，j 嗓子会响。' } },
-    { id: 'θ', ipa: 'θ', title: '咬舌音 th（轻）', week: 6, cue: '舌尖轻轻伸到上下牙之间，只送气，像 thin。', speak: 'th', words: ['thin', 'three', 'bath'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'sort', prompt: '把 thin 和 this 分开：一个只送气，一个会振动。', words: ['thin', 'three', 'this'], rule: 'thin 只送气，this 嗓子会响。' } },
-    { id: 'ð', ipa: 'ð', title: '咬舌音 th（浊）', week: 6, cue: '舌头位置和 thin 一样，但嗓子要振动，像 this。', speak: 'th', words: ['this', 'that', 'the'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'sort', prompt: '把 this 和 thin 分开。', words: ['this', 'that', 'thin'], rule: 'this、that 会振动，thin 只送气。' } },
-    { id: 'r', ipa: 'r', title: '美式 r', week: 7, cue: '舌尖不要碰到牙，舌中微微抬起，像 red。', speak: 'r', words: ['red', 'run', 'car'], sesame: mediaList('letterR'), bbc: [], builder: { type: 'sort', prompt: '把 r 和 l 分开。', words: ['red', 'run', 'like'], rule: 'r 舌尖不碰牙，l 舌尖要抵住。' } },
-    { id: 'l', ipa: 'l', title: '边音 l', week: 7, cue: '舌尖抵住上牙龈，气从两边走，像 like。', speak: 'l', words: ['like', 'lip', 'ball'], sesame: mediaList('letterL'), bbc: [], builder: { type: 'sort', prompt: '把 l 和 r 分开。', words: ['like', 'lip', 'red'], rule: 'l 舌尖抵住，r 舌尖不碰牙。' } },
-    { id: 'eɪ', ipa: 'eɪ', title: '双元音 ay', week: 7, cue: '从 eh 滑向 ee，像 cake、day。', speak: 'ay', words: ['late', 'cake', 'day'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'group', prompt: '三个 ay 放一起。', words: ['late', 'cake', 'day'], rule: '先 eh 再滑向 ee。不是 Magic e 课，芝麻街没有教 silent e。' } },
-    { id: 'aɪ', ipa: 'aɪ', title: '双元音 eye', week: 7, cue: '从 ah 滑向 ee，像 like。', speak: 'eye', words: ['like', 'my', 'kite'], sesame: mediaList('letterI'), bbc: [], builder: { type: 'group', prompt: '三个 eye 放一起。', words: ['like', 'my', 'kite'], rule: '从开口滑到 ee。' } },
-    { id: 'oʊ', ipa: 'oʊ', title: '双元音 oh', week: 8, cue: '从 o 滑向 oo，像 go。', speak: 'oh', words: ['go', 'home', 'boat'], sesame: mediaList('letterO'), bbc: [], builder: { type: 'group', prompt: '三个 oh 放一起。', words: ['go', 'home', 'boat'], rule: '从 o 滑向 oo，像 go。' } },
-    { id: 'aʊ', ipa: 'aʊ', title: '双元音 ow', week: 8, cue: '从 ah 滑向 oo，像 house。', speak: 'ow', words: ['house', 'out', 'now'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'group', prompt: '三个 ow 放一起。', words: ['house', 'out', 'now'], rule: '从 ah 滑向 oo，像 house。' } }
+    { id: 'm', ipa: 'm', title: '嘴唇音 m', week: 1, cue: '嘴唇先闭上，再张开。', speak: 'm', words: ['mom', 'map', 'me'], marks: ['m'], sesame: mediaList('letterM'), bbc: [], builder: { type: 'group', prompt: '把三个都有这个声音的词放在一起。', words: ['mom', 'map', 'me'], rule: '嘴唇闭上再张开，就是这个声音。' } },
+    { id: 'n', ipa: 'n', title: '鼻子音 n', week: 1, cue: '舌尖抵住上牙龈，气从鼻子出来。', speak: 'n', words: ['no', 'net', 'nap'], marks: ['n'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'group', prompt: '找出三个都有 n 声音的词。', words: ['no', 'net', 'nap'], rule: '舌尖抵住，气从鼻子走。' } },
+    { id: 'b', ipa: 'b', title: '爆破音 b', week: 1, cue: '嘴唇闭上，再轻轻爆开，声带要振动。', speak: 'b', words: ['bed', 'bus', 'big'], marks: ['b'], sesame: mediaList('letterB'), bbc: [], builder: { type: 'sort', prompt: '把 b 和 p 分开。b 会振动，p 不振动。', words: ['bed', 'bus', 'pen'], rule: 'b 和 p 嘴巴动作很像，b 嗓子会响。' } },
+    { id: 'p', ipa: 'p', title: '爆破音 p', week: 1, cue: '嘴唇闭上，再轻轻爆开，送一口气。', speak: 'p', words: ['pen', 'cup', 'map'], marks: ['p'], sesame: mediaList('letterP'), bbc: [], builder: { type: 'sort', prompt: '把带 p 的词放一起。', words: ['pen', 'cup', 'map'], rule: 'p 送一口气，嗓子不振动。' } },
+    { id: 't', ipa: 't', title: '舌尖音 t', week: 1, cue: '舌尖轻轻弹一下上牙龈。', speak: 't', words: ['ten', 'cat', 'hat'], marks: ['t'], sesame: mediaList('letterT'), bbc: [], builder: { type: 'group', prompt: '三个词里都有 t，把它们放一起。', words: ['ten', 'cat', 'hat'], rule: '舌尖弹一下，就是 t。' } },
+    { id: 'd', ipa: 'd', title: '舌尖音 d', week: 1, cue: '舌尖弹一下，嗓子要振动。', speak: 'd', words: ['dad', 'dog', 'bed'], marks: ['d'], sesame: mediaList('letterD'), bbc: [], builder: { type: 'sort', prompt: '把 t 和 d 分开。d 会振动。', words: ['dad', 'dog', 'ten'], rule: 'd 和 t 位置很像，d 嗓子会响。' } },
+    { id: 's', ipa: 's', title: '气流音 s', week: 2, cue: '牙齿靠近，送出细细的气。', speak: 's', words: ['sun', 'sit', 'bus'], marks: ['s'], sesame: mediaList('letterS'), bbc: [], builder: { type: 'group', prompt: '把三个有 s 的词放一起。', words: ['sun', 'sit', 'bus'], rule: '细细的气流，就是 s。' } },
+    { id: 'k', ipa: 'k', title: '后口音 k', week: 2, cue: '舌头后部抬起，再放开。C cake 也是这个音。', speak: 'k', words: ['cat', 'cake', 'cup'], marks: ['c', 'k'], sesame: mediaList('letterC'), bbc: [], builder: { type: 'rule', prompt: '用一句话说出这条摆关规则。', words: ['cat', 'cake', 'cup'], rule: '字母 C 在 cake 里读 /k/。' } },
+    { id: 'g', ipa: 'g', title: '后口音 g', week: 2, cue: '和 k 位置相近，但嗓子要振动。', speak: 'g', words: ['go', 'big', 'gum'], marks: ['g'], sesame: mediaList('letterG'), bbc: [], builder: { type: 'sort', prompt: '把 k 和 g 分开。g 会振动。', words: ['go', 'big', 'cat'], rule: 'g 和 k 位置很像，g 嗓子会响。' } },
+    { id: 'h', ipa: 'h', title: '呵气音 h', week: 2, cue: '轻轻呵一口气。', speak: 'h', words: ['hat', 'hot', 'house'], marks: ['h'], sesame: mediaList('letterH'), bbc: [], builder: { type: 'group', prompt: '三个词都有 h，放一起。', words: ['hat', 'hot', 'house'], rule: '轻轻呵气，就是 h。' } },
+    { id: 'i', ipa: 'i', title: '长元音 ee', week: 2, cue: '嘴角拉开，声音拉长，像 see。', speak: 'ee', words: ['see', 'me', 'eat'], marks: ['ee', 'ea', 'e'], sesame: mediaList('loveLetterE'), bbc: [], builder: { type: 'group', prompt: '把 see、me、eat 放一起。', words: ['see', 'me', 'eat'], rule: '嘴角拉开、声音拉长，就是这个音。' } },
+    { id: 'u', ipa: 'u', title: '长元音 oo', week: 2, cue: '嘴唇收圆，声音拉长，像 food。', speak: 'oo', words: ['food', 'too', 'moon'], marks: ['oo'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'group', prompt: '三个拉长的 oo 放一起。', words: ['food', 'too', 'moon'], rule: '嘴唇收圆再拉长，像 food。' } },
+    { id: 'ɑ', ipa: 'ɑ', title: '开口音 ah', week: 2, cue: '嘴巴张开，像美式 hot、octopus。', speak: 'ah', words: ['hot', 'octopus', 'box'], marks: ['o'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, parentCue: '美式 octopus / hot 是 /ɑ/。官方每周字母的 O 是 Ocean，更接近 /oʊ/，所以这个音先用页面读音。', builder: { type: 'rule', prompt: '用一句话说出这条规则。', words: ['hot', 'octopus', 'box'], rule: '美式 hot、octopus 嘴巴张得比较开，是 /ɑ/。' } },
+    { id: 'ɪ', ipa: 'ɪ', title: '短元音 ih', week: 3, cue: '比 see 更短、更松，像 sit。', speak: 'ih', words: ['sit', 'inchworm', 'big'], marks: ['i'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, contrastWith: 'i', builder: { type: 'sort', prompt: '把 sit 和 see 分开：一个短，一个长。', words: ['sit', 'big', 'see'], rule: 'sit 短而松，see 长而亮。' } },
+    { id: 'æ', ipa: 'æ', title: '扁口音 a', week: 3, cue: '嘴巴横着张开，像 cat、alligator。', speak: 'a', words: ['cat', 'alligator', 'map'], marks: ['a'], sesame: mediaList('letterA'), bbc: [], builder: { type: 'group', prompt: '把 cat、map、alligator 放一起。', words: ['cat', 'alligator', 'map'], rule: 'A 在 apple、alligator、cat 里常常是这个声音。' } },
+    { id: 'ɛ', ipa: 'ɛ', title: '短元音 eh', week: 3, cue: '像 egg、bed。字母 E 还有一个长音 ee。', speak: 'eh', words: ['bed', 'egg', 'red'], marks: ['e'], sesame: mediaList('loveLetterE'), bbc: [], twoSoundsE: true, builder: { type: 'sort', prompt: 'E 有两个声音：egg 的 eh，和 see 的 ee。把它们分开。', words: ['egg', 'bed', 'see'], rule: '《我爱字母E！》说 E 有两个声音：短 eh 和长 ee。芝麻街没有教 Magic e / silent e。' } },
+    { id: 'ʌ', ipa: 'ʌ', title: '短元音 uh', week: 4, cue: '嘴巴放松，像 cup、umbrella。', speak: 'uh', words: ['cup', 'umbrella', 'sun'], marks: ['u'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'group', prompt: '三个短 uh 放一起。', words: ['cup', 'umbrella', 'sun'], rule: 'U 在 umbrella、cup 里常常是这个短声音。' } },
+    { id: 'ʊ', ipa: 'ʊ', title: '短元音 oo', week: 4, cue: '比 food 更短、更松，像 book。', speak: 'oo', words: ['book', 'good', 'put'], marks: ['oo', 'u'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, contrastWith: 'u', builder: { type: 'sort', prompt: '把 book 和 food 分开：一个短，一个长。', words: ['book', 'good', 'food'], rule: 'book 短而松，food 长而圆。' } },
+    { id: 'f', ipa: 'f', title: '咬唇音 f', week: 5, cue: '上牙轻轻咬住下唇，送气。', speak: 'f', words: ['food', 'fan', 'if'], marks: ['f'], sesame: mediaList('letterF'), bbc: [], builder: { type: 'sort', prompt: '把 f 和 v 分开。v 会振动。', words: ['food', 'fan', 'van'], rule: 'f 和 v 嘴巴很像，f 只送气。' } },
+    { id: 'v', ipa: 'v', title: '咬唇音 v', week: 5, cue: '上牙轻轻咬住下唇，嗓子振动。', speak: 'v', words: ['van', 'five', 'have'], marks: ['v'], sesame: mediaList('letterV'), bbc: [], builder: { type: 'sort', prompt: '把 f 和 v 分开。', words: ['van', 'five', 'fan'], rule: 'v 和 f 嘴巴很像，v 嗓子会响。' } },
+    { id: 'ʃ', ipa: 'ʃ', title: 'shh 音', week: 5, cue: '嘴唇稍圆，送出 shh。', speak: 'sh', words: ['ship', 'fish', 'shoe'], marks: ['sh'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'sort', prompt: '把 ship 和 chip 分开。', words: ['ship', 'fish', 'chip'], rule: 'ship 是 shh，chip 前面多一个轻轻的 t。' } },
+    { id: 'tʃ', ipa: 'tʃ', title: 'ch 音', week: 5, cue: '先轻轻堵住，再放出 shh，像 chip。', speak: 'ch', words: ['chip', 'chin', 'lunch'], marks: ['ch'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'group', prompt: '三个 ch 放一起。', words: ['chip', 'chin', 'lunch'], rule: '先轻轻堵住，再放出 shh。' } },
+    { id: 'dʒ', ipa: 'dʒ', title: 'j 音', week: 6, cue: '和 ch 位置相近，但嗓子要振动，像 jump。', speak: 'j', words: ['jump', 'jam', 'juice'], marks: ['j'], sesame: mediaList('letterJ'), bbc: [], builder: { type: 'group', prompt: '三个 j 声音放一起。', words: ['jump', 'jam', 'juice'], rule: 'j 和 ch 位置很像，j 嗓子会响。' } },
+    { id: 'θ', ipa: 'θ', title: '咬舌音 th（轻）', week: 6, cue: '舌尖轻轻伸到上下牙之间，只送气，像 thin。', speak: 'th', words: ['thin', 'three', 'bath'], marks: ['th'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'sort', prompt: '把 thin 和 this 分开：一个只送气，一个会振动。', words: ['thin', 'three', 'this'], rule: 'thin 只送气，this 嗓子会响。' } },
+    { id: 'ð', ipa: 'ð', title: '咬舌音 th（浊）', week: 6, cue: '舌头位置和 thin 一样，但嗓子要振动，像 this。', speak: 'th', words: ['this', 'that', 'the'], marks: ['th'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'sort', prompt: '把 this 和 thin 分开。', words: ['this', 'that', 'thin'], rule: 'this、that 会振动，thin 只送气。' } },
+    { id: 'r', ipa: 'r', title: '美式 r', week: 7, cue: '舌尖不要碰到牙，舌中微微抬起，像 red。', speak: 'r', words: ['red', 'run', 'car'], marks: ['r'], sesame: mediaList('letterR'), bbc: [], builder: { type: 'sort', prompt: '把 r 和 l 分开。', words: ['red', 'run', 'like'], rule: 'r 舌尖不碰牙，l 舌尖要抵住。' } },
+    { id: 'l', ipa: 'l', title: '边音 l', week: 7, cue: '舌尖抵住上牙龈，气从两边走，像 like。', speak: 'l', words: ['like', 'lip', 'ball'], marks: ['l'], sesame: mediaList('letterL'), bbc: [], builder: { type: 'sort', prompt: '把 l 和 r 分开。', words: ['like', 'lip', 'red'], rule: 'l 舌尖抵住，r 舌尖不碰牙。' } },
+    { id: 'eɪ', ipa: 'eɪ', title: '双元音 ay', week: 7, cue: '从 eh 滑向 ee，像 cake、day。', speak: 'ay', words: ['late', 'cake', 'day'], marks: ['ay', 'a'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'group', prompt: '三个 ay 放一起。', words: ['late', 'cake', 'day'], rule: '先 eh 再滑向 ee。不是 Magic e 课，芝麻街没有教 silent e。' } },
+    { id: 'aɪ', ipa: 'aɪ', title: '双元音 eye', week: 7, cue: '从 ah 滑向 ee，像 like。', speak: 'eye', words: ['like', 'my', 'kite'], marks: ['i', 'y'], sesame: mediaList('letterI'), bbc: [], builder: { type: 'group', prompt: '三个 eye 放一起。', words: ['like', 'my', 'kite'], rule: '从开口滑到 ee。' } },
+    { id: 'oʊ', ipa: 'oʊ', title: '双元音 oh', week: 8, cue: '从 o 滑向 oo，像 go。', speak: 'oh', words: ['go', 'home', 'boat'], marks: ['oa', 'o'], sesame: mediaList('letterO'), bbc: [], builder: { type: 'group', prompt: '三个 oh 放一起。', words: ['go', 'home', 'boat'], rule: '从 o 滑向 oo，像 go。' } },
+    { id: 'aʊ', ipa: 'aʊ', title: '双元音 ow', week: 8, cue: '从 ah 滑向 oo，像 house。', speak: 'ow', words: ['house', 'out', 'now'], marks: ['ou', 'ow'], sesame: [], bbc: [], sesameGap: NO_OFFICIAL_CLIP, builder: { type: 'group', prompt: '三个 ow 放一起。', words: ['house', 'out', 'now'], rule: '从 ah 滑向 oo，像 house。' } }
   ];
 
   var WORD_GLOSS = {
@@ -599,7 +600,7 @@
     now = now ? new Date(now) : new Date();
     store = store || emptyStore();
     var quizAll = selectQuizItems(store, now);
-    var reviewMinutes = quizAll.length * REVIEW_MINUTES_PER_ITEM;
+    var reviewMinutes = estimateReviewMinutes(store, now);
     if (mode === 'morning') {
       return {
         mode: 'morning',
@@ -701,6 +702,127 @@
     return html;
   }
 
+  function formatWordList(sound) {
+    return ((sound && sound.words) || []).slice(0, 3).join('、');
+  }
+
+  function letterPlaceLabel(sound) {
+    var marks = (sound && sound.marks) || [];
+    if (marks.length >= 2 && marks[0].length === 1 && marks[1].length === 1) {
+      return marks[0] + ' 或 ' + marks[1];
+    }
+    return marks[0] || (sound && (sound.speak || sound.id)) || '';
+  }
+
+  /* 先匹配更长的字母组合，避免 day 只标 a、ship 只标 s。 */
+  function highlightWordHtml(word, marks) {
+    var text = String(word || '');
+    var list = (marks || []).slice().sort(function (a, b) {
+      return String(b).length - String(a).length;
+    });
+    var out = '';
+    var i = 0;
+    var lower = text.toLowerCase();
+    while (i < text.length) {
+      var hit = '';
+      for (var m = 0; m < list.length; m++) {
+        var mark = String(list[m] || '');
+        if (!mark) continue;
+        if (lower.indexOf(mark.toLowerCase(), i) === i) {
+          hit = text.slice(i, i + mark.length);
+          break;
+        }
+      }
+      if (hit) {
+        out += '<span class="letter-mark">' + esc(hit) + '</span>';
+        i += hit.length;
+      } else {
+        out += esc(text.charAt(i));
+        i += 1;
+      }
+    }
+    return out;
+  }
+
+  function missionWordsHtml(sound) {
+    if (!sound || !sound.words || !sound.words.length) return '';
+    var marks = sound.marks || [];
+    var items = sound.words.slice(0, 3).map(function (w) {
+      var gloss = WORD_GLOSS[w] || '';
+      return '<li class="mission-word"><span class="mission-spell">' + highlightWordHtml(w, marks) + '</span>' +
+        (gloss ? '<span class="mission-gloss">' + esc(gloss) + '</span>' : '') +
+        '</li>';
+    }).join('');
+    return '<ul class="mission-words">' + items + '</ul>';
+  }
+
+  function wordButtonHtml(word, sound, ipaHtml) {
+    var gloss = WORD_GLOSS[word] || '';
+    var marked = highlightWordHtml(word, (sound && sound.marks) || []);
+    return '<button type="button" class="word" data-action="speak" data-say="' + esc(word) + '"><strong>' + marked + '</strong>' + (ipaHtml || '') + '<span>' + esc(gloss) + '</span></button>';
+  }
+
+  function listenLead(introduceSound, watchSound) {
+    var target = introduceSound || watchSound;
+    var words = formatWordList(target);
+    var letter = letterPlaceLabel(target);
+    var base = '片子是英文的，句子不用都听懂。';
+    if (introduceSound) {
+      var lead = NICKNAME + '，' + base + '只要注意这个字母反复出现的那个声音。';
+      if (!officialClipSound(introduceSound) && watchSound && watchSound.id !== introduceSound.id) {
+        lead += '这个新声音暂时没有官方短片，可以再听一口以前的短片，比较这两个声音。';
+      }
+      lead += '记住以后，再看到 ' + words + ' 这样的词，这个地方的 ' + letter + ' 常常就这样读。';
+      return lead;
+    }
+    return NICKNAME + '，' + base + '再听那个反复出现的声音。再看到这样的词，这个地方还是这样读。';
+  }
+
+  function listenHtml(introduceSound, watchSound, extraAfterCue) {
+    var sound = introduceSound || null;
+    var watch = watchSound || sound;
+    var heading = sound ? '今晚记住这一件事' : '再听一遍';
+    var missionSound = sound || watch;
+    var voice = sound || watch;
+    var html = '<h1>' + esc(heading) + '</h1>' +
+      '<p class="lead">' + esc(listenLead(sound, watch)) + '</p>';
+    if (missionSound) html += missionWordsHtml(missionSound);
+    if (voice && voice.cue) html += '<p class="cue">' + esc(voice.cue) + '</p>';
+    if (extraAfterCue) html += extraAfterCue;
+    if (voice) {
+      html += '<div class="actions"><button type="button" class="primary" data-action="speak" data-say="' + esc(voice.speak) + '">听一听</button></div>';
+    }
+    if (sound) html += childWatchHtml(sound);
+    if (watch && (!sound || watch.id !== sound.id)) html += childWatchHtml(watch);
+    return html;
+  }
+
+  function sayHtml(sound, ipaForWord) {
+    if (!sound) return '';
+    var sayWords = (sound.words || []).map(function (w) {
+      var ipa = typeof ipaForWord === 'function' ? (ipaForWord(w, sound) || '') : '';
+      return wordButtonHtml(w, sound, ipa);
+    }).join('');
+    return '<h1>跟着说</h1>' +
+      '<p class="lead">刚才反复出现的，就是这个声音。我们跟着读一遍。</p>' +
+      '<p class="lead">以后再看见这样的词，试着在这个地方这样读。</p>' +
+      '<p class="cue">' + esc(sound.cue) + '</p>' +
+      '<div class="actions"><button type="button" class="primary" data-action="speak" data-say="' + esc(sound.speak) + '">再听一次</button></div>' +
+      '<div class="words">' + sayWords + '</div>' +
+      '<div class="actions"><button type="button" class="primary" data-action="next">我说了</button></div>';
+  }
+
+  function doneHtml() {
+    return '<div class="shell">' +
+      '<p class="disclaimer">' + esc(DISCLAIMER) + '<span class="build-tip">' + esc(TIP) + '</span></p>' +
+      '<p class="who">' + esc(ASSISTANT) + '</p>' +
+      '<h1>今天先到这里</h1>' +
+      '<p class="lead">' + esc(NICKNAME) + '，你已经走完这一小段。记住的会在一周里再遇见。记住这个读法，以后再遇到带这个字母的词，就试试在这个地方这样读。</p>' +
+      '<div class="actions"><button type="button" class="primary" data-action="home">看声音路线</button><a class="ghost" href="../../../index.html">回小屋</a></div>' +
+    '</div>';
+  }
+
+
   var English = {
     TIP: TIP,
     STORAGE_KEY: STORAGE_KEY,
@@ -734,6 +856,16 @@
     WEEK_PLAN: WEEK_PLAN,
     SOUNDS: SOUNDS,
     WORD_GLOSS: WORD_GLOSS,
+    HOME_MISSION: HOME_MISSION,
+    highlightWordHtml: highlightWordHtml,
+    missionWordsHtml: missionWordsHtml,
+    wordButtonHtml: wordButtonHtml,
+    listenLead: listenLead,
+    listenHtml: listenHtml,
+    sayHtml: sayHtml,
+    doneHtml: doneHtml,
+    formatWordList: formatWordList,
+    letterPlaceLabel: letterPlaceLabel,
     soundById: soundById,
     weekByNumber: weekByNumber,
     week1RequiredIds: week1RequiredIds,
@@ -780,6 +912,8 @@
   if (root) {
     root.EnglishEn1 = English;
     root.EnglishEn2 = English;
+    root.EnglishEn3 = English;
+    root.EnglishEn4 = English;
   }
 
   function boot() {
@@ -950,12 +1084,6 @@
       return '<p class="fine warn">这台手机暂时不能直接读出来。有短片就在这一页看，或请身边的人读给你听。</p>';
     }
 
-    function wordCard(word, sound) {
-      var gloss = WORD_GLOSS[word] || '';
-      var ipa = sound && shouldShowIpa(store.items[itemId('sound', sound.id)]) ? ' <span class="ipa">/' + esc(sound.ipa) + '/</span>' : '';
-      return '<button type="button" class="word" data-action="speak" data-say="' + esc(word) + '"><strong>' + esc(word) + '</strong>' + ipa + '<span>' + esc(gloss) + '</span></button>';
-    }
-
     function feedbackSlot() {
       if (state.message) return '<p class="banner" id="xy-feedback">' + esc(state.message) + '</p>';
       return '<p id="xy-feedback" hidden></p>';
@@ -969,6 +1097,7 @@
         '<p class="disclaimer">' + esc(DISCLAIMER) + '<span class="build-tip">' + esc(TIP) + '</span></p>' +
         '<p class="who">' + esc(ASSISTANT) + '</p>' +
         '<h1>' + esc(CHILD) + ' · 英语学习</h1>' +
+        '<p class="mission-idea">' + esc(HOME_MISSION) + '</p>' +
         '<p class="lead">' + esc(ASSISTANT) + '对 ' + esc(CHILD) + ' / ' + esc(NICKNAME) + ' 说：我们一次只听一个声音，课很短。先听、再说、做一个小练习。做对了我会马上告诉你。熟悉了才看符号。</p>' +
         '<div class="avatars" aria-label="小宇和伍澍暘"><figure><img src="../../avatars/xiaoyu.jpg" alt="小宇"/><figcaption>小宇</figcaption></figure><figure><img src="../../avatars/pengpeng.jpg" alt="伍澍暘"/><figcaption>伍澍暘</figcaption></figure></div>' +
         '<p class="fine hint-mode">' + esc(suggestLabel) + '。想选另一边也可以。</p>' +
@@ -996,37 +1125,16 @@
       talk += feedbackSlot();
       if (step === 'listen' && (sound || state.watchSound)) {
         var watch = state.watchSound || sound;
-        var heading = '先听这个声音';
-        var lead = esc(NICKNAME) + '，先别看符号。听 ' + esc(ASSISTANT) + ' 读，有短片就在这一页点一下看。';
-        if (!sound && watch) {
-          heading = '再听一遍';
-          lead = esc(NICKNAME) + '，先再听一口已经学过的短片，然后做个小回想。';
-        } else if (sound && watch && watch.id !== sound.id) {
-          lead = esc(NICKNAME) + '，这个新声音暂时没有官方短片。我们用这一页的读音，也可以再听一口以前的短片。';
-        }
-        var voice = sound || watch;
-        var clips = '';
-        if (sound) clips += childWatchHtml(sound);
-        if (watch && (!sound || watch.id !== sound.id)) clips += childWatchHtml(watch);
         return '<div class="shell">' + head + talk +
-          '<h1>' + heading + '</h1>' +
-          '<p class="lead">' + lead + '</p>' +
-          '<p class="cue">' + esc(voice.cue) + '</p>' +
-          speechNote() +
-          '<div class="actions"><button type="button" class="primary" data-action="speak" data-say="' + esc(voice.speak) + '">听一听</button></div>' +
-          clips +
+          listenHtml(sound, watch, speechNote()) +
           '<div class="actions"><button type="button" class="primary" data-action="next">我听到了</button><button type="button" class="ghost" data-action="home">先回路线</button></div>' +
         '</div>';
       }
       if (step === 'say' && sound) {
-        var sayWords = sound.words.map(function (w) { return wordCard(w, sound); }).join('');
         return '<div class="shell">' + head + talk +
-          '<h1>跟着说</h1>' +
-          '<p class="lead">' + esc(CHILD) + '，听完以后，你也说一遍。说得慢一点也没关系。</p>' +
-          '<p class="cue">' + esc(sound.cue) + '</p>' +
-          '<div class="actions"><button type="button" class="primary" data-action="speak" data-say="' + esc(sound.speak) + '">再听一次</button></div>' +
-          '<div class="words">' + sayWords + '</div>' +
-          '<div class="actions"><button type="button" class="primary" data-action="next">我说了</button></div>' +
+          sayHtml(sound, function (w, s) {
+            return shouldShowIpa(store.items[itemId('sound', s.id)]) ? ' <span class="ipa">/' + esc(s.ipa) + '/</span>' : '';
+          }) +
         '</div>';
       }
       if (step === 'quiz' || step === 'retrieval') {
@@ -1045,7 +1153,7 @@
         return '<div class="shell">' + head + talk +
           '<h1>回想一下</h1>' +
           '<p class="fine">' + (state.quizIndex + 1) + ' / ' + state.quiz.length + '</p>' +
-          '<p class="lead">看到它，你能读出来吗？</p>' +
+          '<p class="lead">看到这个词，这个地方该怎么读？</p>' +
           '<div class="quiz-card"><strong>' + esc(label) + '</strong></div>' +
           ipaLine +
           '<div class="actions"><button type="button" class="ghost" data-action="speak" data-say="' + esc(say) + '">听一听</button></div>' +
@@ -1056,16 +1164,6 @@
         '</div>';
       }
       return '<div class="shell">' + head + '<button type="button" class="primary" data-action="home">回路线</button></div>';
-    }
-
-    function doneHtml() {
-      return '<div class="shell">' +
-        '<p class="disclaimer">' + esc(DISCLAIMER) + '<span class="build-tip">' + esc(TIP) + '</span></p>' +
-        '<p class="who">' + esc(ASSISTANT) + '</p>' +
-        '<h1>今天先到这里</h1>' +
-        '<p class="lead">' + esc(NICKNAME) + '，你已经走完这一小段。记住的会在一周里再遇见。</p>' +
-        '<div class="actions"><button type="button" class="primary" data-action="home">看声音路线</button><a class="ghost" href="../../../index.html">回小屋</a></div>' +
-      '</div>';
     }
 
     function render() {
