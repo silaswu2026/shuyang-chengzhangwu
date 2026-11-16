@@ -19,7 +19,7 @@ function has(src, needle, msg) {
   if (src.indexOf(needle) === -1) fail(msg || ('missing ' + needle));
 }
 
-if (EN.TIP !== 'en3') fail('TIP en3, got ' + EN.TIP);
+if (EN.TIP !== 'en4') fail('TIP en4, got ' + EN.TIP);
 if (EN.STORAGE_KEY !== 'xygo-english-en1') fail('STORAGE_KEY must stay xygo-english-en1, got ' + EN.STORAGE_KEY);
 if (EN.DISCLAIMER !== '这是成长屋家庭陪伴计划，不是芝麻街官方课程，也不是学习诊断。芝麻街教的是字母怎么读、怎么发音，不是学校那张国际音标表。') {
   fail('disclaimer text');
@@ -56,9 +56,9 @@ localFiles.forEach(function (name) {
 });
 
 var html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
-has(html, 'content="en3"', 'meta tip');
-has(html, 'english.css?v=en3', 'css cache bust');
-has(html, 'english.js?v=en3', 'js cache bust');
+has(html, 'content="en4"', 'meta tip');
+has(html, 'english.css?v=en4', 'css cache bust');
+has(html, 'english.js?v=en4', 'js cache bust');
 has(html, '../../../brand-tokens.css', 'brand tokens');
 has(html, '../../../favicon.png', 'favicon');
 has(html, EN.DISCLAIMER, 'html disclaimer');
@@ -367,7 +367,8 @@ if (EN.childWatchHtml(onlyMPlan.introduceSound).indexOf('<iframe') !== -1) fail(
 var heavyPlan = EN.planSession('evening', heavy, now);
 if (!heavyPlan.skipNewSound || heavyPlan.introduceSound) fail('heavy evening must skip new sound');
 if (!heavyPlan.heavyReview) fail('heavy flag');
-if (heavyPlan.skipReason.indexOf('6') === -1) fail('plain skip reason');
+if (heavyPlan.reviewMinutes !== 6) fail('plan reviewMinutes should use estimateReviewMinutes, got ' + heavyPlan.reviewMinutes);
+if (heavyPlan.skipReason.indexOf('大约要用 6 分钟') === -1) fail('skip reason minutes should match family estimate, got ' + heavyPlan.skipReason);
 if (heavyPlan.mode !== 'evening' || heavyPlan.minutes !== 10) fail('evening shape minutes');
 if (heavyPlan.allowNewSound) fail('heavy evening allowNewSound');
 if (heavyPlan.steps.join() !== 'listen,quiz') fail('review-only evening still replays a clip then quizzes, got ' + heavyPlan.steps.join());
@@ -421,7 +422,77 @@ if (box.getItem('xygo-mi8-results') !== '{"no":1}') fail('save must not touch ot
 if (js.indexOf("var STORAGE_KEY = 'xygo-english-en1'") === -1) fail('js storage key');
 if (/localStorage\.(get|set)Item\(\s*'xygo-(?!english-en1)/.test(js)) fail('js touches other keys');
 
-/* homepage: course 6 live en3, 1-5 unchanged, 7-16 soon */
+/* teaching idea: Chinese frame first, English clip is only for the recurring sound */
+if (EN.HOME_MISSION !== '每次先记住一个字母在这些词里怎么读。以后再看见类似的词，就知道这个地方该怎么发音。') {
+  fail('home mission line');
+}
+has(js, EN.HOME_MISSION, 'home idea appears on the course home');
+has(js, "class=\"mission-idea\"", 'home idea class');
+
+EN.SOUNDS.forEach(function (s) {
+  if (!s.marks || !s.marks.length) fail(s.id + ' missing marks');
+  var prev = Infinity;
+  s.marks.forEach(function (m) {
+    if (m.length > prev) fail(s.id + ' marks should list longer letters first');
+    prev = m.length;
+  });
+});
+
+var cake = EN.highlightWordHtml('cake', EN.soundById('k').marks);
+if (cake.indexOf('<span class="letter-mark">c</span>') === -1) fail('cake should highlight c, got ' + cake);
+var ship = EN.highlightWordHtml('ship', EN.soundById('ʃ').marks);
+if (ship.indexOf('<span class="letter-mark">sh</span>') === -1) fail('ship should highlight sh, got ' + ship);
+if (ship.indexOf('<span class="letter-mark">s</span>') !== -1) fail('ship must not highlight only s, got ' + ship);
+var day = EN.highlightWordHtml('day', EN.soundById('eɪ').marks);
+if (day.indexOf('<span class="letter-mark">ay</span>') === -1) fail('day should highlight ay, got ' + day);
+if (day.indexOf('<span class="letter-mark">a</span>') !== -1) fail('day must not highlight only a, got ' + day);
+
+var firstListen = EN.listenHtml(firstEvening.introduceSound, firstEvening.watchSound);
+has(firstListen, '片子是英文的', 'listen says the clip is in English');
+has(firstListen, '这个地方', 'listen names 这个地方');
+has(firstListen, '今晚记住这一件事', 'listen title for a new sound');
+['mom', 'map', 'me'].forEach(function (w) {
+  if (firstListen.indexOf('<span class="letter-mark">m</span>') === -1) fail('/m/ listen should highlight m');
+  if (firstListen.indexOf(w) === -1) fail('/m/ listen missing ' + w);
+});
+has(firstListen, '妈妈', '/m/ gloss mom');
+has(firstListen, '地图', '/m/ gloss map');
+if (firstListen.indexOf('>我<') === -1 && firstListen.indexOf('我</span>') === -1) fail('/m/ gloss me');
+has(firstListen, 'mom、map、me', '/m/ transfer words');
+has(firstListen, '这个地方的 m', '/m/ letter in transfer line');
+has(firstListen, '听一听', 'keeps listen button');
+has(firstListen, 'player.bilibili.com/player.html', 'keeps official iframe');
+has(firstListen, 'autoplay=0', 'player stays autoplay 0');
+
+var nListen = EN.listenHtml(onlyMPlan.introduceSound, onlyMPlan.watchSound);
+has(nListen, '片子是英文的', '/n/ listen still says the clip is English');
+has(nListen, 'no、net、nap', '/n/ idea targets n words');
+has(nListen, '这个地方的 n', '/n/ letter, not the replayed /m/');
+has(nListen, '以前的短片', '/n/ may replay an earlier clip');
+has(nListen, '比较这两个声音', '/n/ compare the two sounds');
+if (nListen.indexOf('这个地方的 m') !== -1) fail('/n/ listen must not aim the idea at replayed /m/');
+has(nListen, '不', '/n/ gloss no');
+has(nListen, '网', '/n/ gloss net');
+has(nListen, '小睡', '/n/ gloss nap');
+if (nListen.indexOf('<span class="letter-mark">n</span>') === -1) fail('/n/ words should highlight n');
+
+var reviewListen = EN.listenHtml(heavyPlan.introduceSound, heavyPlan.watchSound);
+has(reviewListen, '片子是英文的', 'review listen still says the clip is English');
+has(reviewListen, '这个地方还是这样读', 'review transfer line');
+
+var sayM = EN.sayHtml(EN.soundById('m'));
+has(sayM, '刚才反复出现的，就是这个声音。我们跟着读一遍。', 'say lead');
+has(sayM, '以后再看见这样的词，试着在这个地方这样读。', 'say transfer');
+has(sayM, '<span class="letter-mark">m</span>', 'say highlights example words');
+
+has(js, '看到这个词，这个地方该怎么读？', 'quiz lead');
+if (js.indexOf('看到它，你能读出来吗？') !== -1) fail('old quiz lead remains');
+
+var done = EN.doneHtml();
+has(done, '记住的会在一周里再遇见', 'done still mentions meeting again in a week');
+has(done, '记住这个读法，以后再遇到带这个字母的词，就试试在这个地方这样读。', 'done transfer line');
+
+/* homepage: course 6 live en4, 1-5 unchanged, 7-16 soon */
 var home = fs.readFileSync(path.join(__dirname, '../../../index.html'), 'utf8');
 function tile(src, n) {
   var re = new RegExp('<a class="course[^"]*"[^>]*>\\s*<span class="n">' + n + '<\\/span>[\\s\\S]*?<\\/a>');
@@ -432,7 +503,7 @@ var t6 = tile(home, '6');
 if (!t6) fail('missing course 6 tile');
 if (t6.indexOf('class="course soon"') !== -1) fail('course 6 should not be soon');
 if (/\bsoon\b/.test(t6)) fail('course 6 still soon');
-if (t6.indexOf('href="shuyang-ai/learn/english/?v=en3"') === -1) fail('course 6 href');
+if (t6.indexOf('href="shuyang-ai/learn/english/?v=en4"') === -1) fail('course 6 href');
 if (t6.indexOf('课程占位 6') !== -1) fail('course 6 still placeholder title');
 if (t6.indexOf('今晚主课') !== -1 || /<span class="tag">今天<\/span>/.test(t6)) fail('course 6 must not steal 今晚主课 / 今天');
 if (t6.indexOf('英语学习') === -1) fail('course 6 title should stay 英语学习');
@@ -464,7 +535,7 @@ for (var n = 7; n <= 16; n++) {
 }
 
 if (home.indexOf('今天 · 小歌编辑器') === -1) fail('hero hint must stay 今天 · 小歌编辑器');
-if (home.indexOf('href="shuyang-ai/learn/english/?v=en3">英语学习</a>') === -1) fail('.links 英语学习');
+if (home.indexOf('href="shuyang-ai/learn/english/?v=en4">英语学习</a>') === -1) fail('.links 英语学习');
 ['小歌课件', '小歌编辑器', '选关 · 五关', '兴趣小问', '今晚探索', '方块小世界', 'mi2', 'se1', 'mw22'].forEach(function (keep) {
   if (home.indexOf(keep) === -1) fail('homepage missing link/text ' + keep);
 });
@@ -476,4 +547,4 @@ if (failed) {
   console.error(failed + ' failed');
   process.exit(1);
 }
-console.log('english en3 ok');
+console.log('english en4 ok');
