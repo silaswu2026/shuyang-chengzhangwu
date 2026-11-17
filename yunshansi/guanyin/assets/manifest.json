@@ -7,61 +7,61 @@
       "id": "front",
       "yaw": 0.0,
       "texture": "assets/front.webp",
-      "nverts": 26941,
-      "nfaces": 50979,
+      "nverts": 27586,
+      "nfaces": 51879,
       "idxWidth": 2,
       "offset": 8,
-      "size": 736962
+      "size": 752682
     },
     {
       "id": "l45",
       "yaw": 55.0,
       "texture": "assets/l45.webp",
-      "nverts": 23479,
-      "nfaces": 43859,
+      "nverts": 24734,
+      "nfaces": 45732,
       "idxWidth": 2,
-      "offset": 736970,
-      "size": 638850
+      "offset": 752690,
+      "size": 670168
     },
     {
       "id": "l90",
       "yaw": 90.0,
       "texture": "assets/l90.webp",
-      "nverts": 21780,
-      "nfaces": 40764,
+      "nverts": 22270,
+      "nfaces": 41388,
       "idxWidth": 2,
-      "offset": 1375820,
-      "size": 593096
+      "offset": 1422858,
+      "size": 604680
     },
     {
       "id": "back",
       "yaw": 180.0,
       "texture": "assets/back.webp",
-      "nverts": 27981,
-      "nfaces": 53649,
+      "nverts": 28381,
+      "nfaces": 53667,
       "idxWidth": 2,
-      "offset": 1968916,
-      "size": 769622
+      "offset": 2027538,
+      "size": 776130
     },
     {
       "id": "r90",
       "yaw": -90.0,
       "texture": "assets/r90.webp",
-      "nverts": 22228,
-      "nfaces": 41577,
+      "nverts": 22457,
+      "nfaces": 41647,
       "idxWidth": 2,
-      "offset": 2738538,
-      "size": 605142
+      "offset": 2803668,
+      "size": 609226
     },
     {
       "id": "r45",
       "yaw": -55.0,
       "texture": "assets/r45.webp",
-      "nverts": 24057,
-      "nfaces": 45700,
+      "nverts": 25267,
+      "nfaces": 46530,
       "idxWidth": 2,
-      "offset": 3343680,
-      "size": 659144
+      "offset": 3412894,
+      "size": 683484
     }
   ],
   "bin": "assets/guanyin.bin"
