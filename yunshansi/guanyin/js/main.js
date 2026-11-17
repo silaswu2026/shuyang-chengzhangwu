@@ -333,136 +333,7 @@ function unlockAndChant() {
 
 setupAudio();
 
-function decodeGYS3(dv) {
-  const le = true;
-  let o = 0;
-  const magic = String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3));
-  if (magic !== "GYS3") throw new Error("expected GYS3, got " + magic);
-  o = 4;
-  const version = dv.getUint32(o, le); o += 4;
-  const flags = dv.getUint32(o, le); o += 4;
-  const nverts = dv.getUint32(o, le); o += 4;
-  const nfaces = dv.getUint32(o, le); o += 4;
-  const ox = dv.getFloat32(o, le); o += 4;
-  const oy = dv.getFloat32(o, le); o += 4;
-  const oz = dv.getFloat32(o, le); o += 4;
-  const scale = dv.getFloat32(o, le); o += 4;
-  o += 16; // reserved
-  const hasUV = (flags & 2) !== 0;
-  const hasNrm = (flags & 4) !== 0;
-  const idxWidth = (flags & 1) ? 2 : 4;
-
-  const pos = new Float32Array(nverts * 3);
-  for (let i = 0; i < nverts * 3; i++, o += 2) {
-    const c = i % 3 === 0 ? ox : i % 3 === 1 ? oy : oz;
-    pos[i] = (dv.getInt16(o, le) / 32767) * scale + c;
-  }
-  let nrm = null;
-  if (hasNrm) {
-    nrm = new Float32Array(nverts * 3);
-    for (let i = 0; i < nverts * 3; i++, o += 2) nrm[i] = dv.getInt16(o, le) / 32767;
-  }
-  if (hasUV) o += nverts * 2 * 2; // skip dummy uvs
-  const idx = new Uint32Array(nfaces * 3);
-  if (idxWidth === 2) {
-    for (let i = 0; i < nfaces * 3; i++, o += 2) idx[i] = dv.getUint16(o, le);
-  } else {
-    for (let i = 0; i < nfaces * 3; i++, o += 4) idx[i] = dv.getUint32(o, le);
-  }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  if (nrm) geo.setAttribute("normal", new THREE.BufferAttribute(nrm, 3));
-  else geo.computeVertexNormals();
-  geo.setIndex(new THREE.BufferAttribute(idx, 1));
-  geo.computeBoundingSphere();
-  return geo;
-}
-
-function makeProjectiveMaterial(viewRecs, textures) {
-  const uniforms = {
-    camPos: { value: camera.position },
-  };
-  const lines = [];
-  for (let i = 0; i < 6; i++) {
-    const v = viewRecs[i];
-    uniforms[`map${i}`] = { value: textures[i] };
-    uniforms[`eye${i}`] = { value: new THREE.Vector3(...v.eye) };
-    uniforms[`sA${i}`] = { value: new THREE.Vector3(...v.s) };
-    uniforms[`uA${i}`] = { value: new THREE.Vector3(...v.u) };
-    uniforms[`fA${i}`] = { value: new THREE.Vector3(...v.f) };
-    uniforms[`intr${i}`] = { value: new THREE.Vector4(v.fx, v.fy, v.cx, v.cy) };
-    uniforms[`tsz${i}`] = { value: new THREE.Vector2(v.width, v.height) };
-    uniforms[`yaw${i}`] = { value: (v.yaw * Math.PI) / 180 };
-    lines.push(`
-      {
-        vec3 rel = vWorldPos - eye${i};
-        float X = dot(rel, sA${i});
-        float Y = dot(rel, uA${i});
-        float Z = dot(rel, fA${i});
-        if (Z > 0.15) {
-          float px = X / Z * intr${i}.x + intr${i}.z - 0.5;
-          float py = -Y / Z * intr${i}.y + intr${i}.w - 0.5;
-          vec2 uv = vec2((px + 0.5) / tsz${i}.x, 1.0 - (py + 0.5) / tsz${i}.y);
-          if (uv.x > 0.003 && uv.x < 0.997 && uv.y > 0.003 && uv.y < 0.997) {
-            vec4 samp = texture2D(map${i}, uv);
-            if (samp.a > 0.35) {
-              float d = camAz - yaw${i};
-              d = mod(d + 3.14159265, 6.2831853) - 3.14159265;
-              float waz = pow(max(0.0, cos(d)), 16.0);
-              acc += samp.rgb * waz * samp.a;
-              wsum += waz * samp.a;
-            }
-          }
-        }
-      }`);
-  }
-  const unis = [];
-  for (let i = 0; i < 6; i++) {
-    unis.push(`uniform sampler2D map${i};`);
-    unis.push(`uniform vec3 eye${i};`);
-    unis.push(`uniform vec3 sA${i};`);
-    unis.push(`uniform vec3 uA${i};`);
-    unis.push(`uniform vec3 fA${i};`);
-    unis.push(`uniform vec4 intr${i};`);
-    unis.push(`uniform vec2 tsz${i};`);
-    unis.push(`uniform float yaw${i};`);
-  }
-  const mat = new THREE.ShaderMaterial({
-    uniforms,
-    vertexShader: `
-      varying vec3 vWorldPos;
-      varying vec3 vNormal;
-      void main() {
-        vec4 wp = modelMatrix * vec4(position, 1.0);
-        vWorldPos = wp.xyz;
-        vNormal = normalize(mat3(modelMatrix) * normal);
-        gl_Position = projectionMatrix * viewMatrix * wp;
-      }
-    `,
-    fragmentShader: `
-      uniform vec3 camPos;
-      ${unis.join("\n")}
-      varying vec3 vWorldPos;
-      varying vec3 vNormal;
-      void main() {
-        float camAz = atan(camPos.x, camPos.z);
-        vec3 acc = vec3(0.0);
-        float wsum = 0.0;
-        ${lines.join("\n")}
-        vec3 color;
-        if (wsum > 1e-5) color = acc / wsum;
-        else color = vec3(0.45, 0.16, 0.14);
-        gl_FragColor = vec4(color, 1.0);
-      }
-    `,
-    side: THREE.FrontSide,
-    toneMapped: true,
-  });
-  return mat;
-}
-
 async function loadManifest() {
-
   const res = await fetch("./assets/manifest.json");
   if (!res.ok) throw new Error("manifest " + res.status);
   return res.json();
@@ -557,13 +428,6 @@ function angDiff(a, b) {
 }
 
 function updateViewBlend() {
-  // Projective shader reads camera.position; nothing to blend per-shell.
-  if (!statueViews.length) return;
-  const mat = statueViews[0].mat;
-  if (mat && mat.uniforms && mat.uniforms.camPos) {
-    mat.uniforms.camPos.value = camera.position;
-  }
-  return;
   if (!statueViews.length) return;
   const az = azimuthOf(camera.position);
   let sum = 0;
@@ -722,20 +586,20 @@ window.addEventListener("resize", () => {
   try {
     const manifest = await loadManifest();
     const dv = await loadBin("./" + manifest.bin);
-    const geo = decodeGYS3(dv);
-    const recs = manifest.views;
-    if (!recs || recs.length < 6) throw new Error("need 6 projective views");
-    const textures = [];
-    for (const rec of recs) {
+    for (const rec of manifest.views) {
+      const { geo, yaw } = decodeView(dv, rec);
       const map = await loadTexture("./" + rec.texture);
-      map.flipY = true;
-      textures.push(map);
+      const mat = viewMaterial(map);
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.renderOrder = 1;
+      scene.add(mesh);
+      statueViews.push({
+        mesh,
+        mat,
+        yawRad: THREE.MathUtils.degToRad(rec.yaw ?? yaw),
+      });
     }
-    const mat = makeProjectiveMaterial(recs, textures);
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.renderOrder = 1;
-    scene.add(mesh);
-    statueViews.push({ mesh, mat, yawRad: 0 });
+    updateViewBlend();
     loaderEl.classList.add("hide");
     startFoyin();
   } catch (err) {
