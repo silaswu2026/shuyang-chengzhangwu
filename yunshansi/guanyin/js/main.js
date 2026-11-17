@@ -22,23 +22,23 @@ scene.background = new THREE.Color(0x0a0908);
 scene.fog = new THREE.FogExp2(0x0a0908, 0.045);
 
 const camera = new THREE.PerspectiveCamera(
-  32,
+  34,
   window.innerWidth / window.innerHeight,
   0.05,
   40
 );
-camera.position.set(0.55, 1.05, 3.55);
+camera.position.set(2.05, 1.18, 2.25);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.06;
 controls.autoRotate = true;
-controls.autoRotateSpeed = 0.55;
+controls.autoRotateSpeed = 1.15;
 controls.enablePan = false;
-controls.minDistance = 1.7;
-controls.maxDistance = 6.5;
-controls.minPolarAngle = 0.55;
-controls.maxPolarAngle = Math.PI * 0.58;
+controls.minDistance = 1.45;
+controls.maxDistance = 5.4;
+controls.minPolarAngle = 0.38;
+controls.maxPolarAngle = Math.PI * 0.62;
 controls.target.set(0, 0.86, 0);
 
 const texLoader = new THREE.TextureLoader();

@@ -8,60 +8,60 @@
       "yaw": 0.0,
       "texture": "assets/front.webp",
       "nverts": 26941,
-      "nfaces": 51115,
+      "nfaces": 50979,
       "idxWidth": 2,
       "offset": 8,
-      "size": 737778
+      "size": 736962
     },
     {
       "id": "l45",
       "yaw": 55.0,
       "texture": "assets/l45.webp",
       "nverts": 23479,
-      "nfaces": 44033,
+      "nfaces": 43859,
       "idxWidth": 2,
-      "offset": 737786,
-      "size": 639894
+      "offset": 736970,
+      "size": 638850
     },
     {
       "id": "l90",
       "yaw": 90.0,
       "texture": "assets/l90.webp",
       "nverts": 21780,
-      "nfaces": 40890,
+      "nfaces": 40764,
       "idxWidth": 2,
-      "offset": 1377680,
-      "size": 593852
+      "offset": 1375820,
+      "size": 593096
     },
     {
       "id": "back",
       "yaw": 180.0,
       "texture": "assets/back.webp",
       "nverts": 27981,
-      "nfaces": 53722,
+      "nfaces": 53649,
       "idxWidth": 2,
-      "offset": 1971532,
-      "size": 770060
+      "offset": 1968916,
+      "size": 769622
     },
     {
       "id": "r90",
       "yaw": -90.0,
       "texture": "assets/r90.webp",
       "nverts": 22228,
-      "nfaces": 41671,
+      "nfaces": 41577,
       "idxWidth": 2,
-      "offset": 2741592,
-      "size": 605706
+      "offset": 2738538,
+      "size": 605142
     },
     {
       "id": "r45",
       "yaw": -55.0,
       "texture": "assets/r45.webp",
       "nverts": 24057,
-      "nfaces": 45814,
+      "nfaces": 45700,
       "idxWidth": 2,
-      "offset": 3347298,
-      "size": 659828
+      "offset": 3343680,
+      "size": 659144
     }
   ],
   "bin": "assets/guanyin.bin"
