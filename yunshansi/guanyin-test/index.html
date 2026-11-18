@@ -18,20 +18,22 @@
 <body>
   <div id="stage"></div>
 
-  <header class="ui-top">
+  <header class="ui-top hall-ui" hidden>
+    <button type="button" id="btn-back" class="btn-back">返回选像处</button>
+    <button type="button" id="btn-music" class="btn-music">佛乐</button>
     <p class="eyebrow">云山寺 · 测试页</p>
     <h1>观音殿</h1>
     <p class="banner">测试占位，非正式白玉观音</p>
   </header>
 
-  <p class="credit" id="credit">
+  <p class="credit hall-ui" id="credit" hidden>
     主尊占位：明尼阿波利斯美术馆《水月观音》32122（CC0，12世纪彩绘木雕坐像，不是白玉）· 香案/烛台：Poly Haven（CC0）· 香炉：Freer/SI F1947.15（公共领域）· 蒲团木鱼佛珠殿壳自制 · 不算验收通过
   </p>
 
-  <p class="hint" id="hint">左右滑动可环顾殿内</p>
-  <p class="merit" id="merit"></p>
+  <p class="hint hall-ui" id="hint" hidden>左右滑动可环顾殿内</p>
+  <p class="merit hall-ui" id="merit" hidden></p>
 
-  <nav class="actions" aria-label="礼敬">
+  <nav class="actions hall-ui" aria-label="礼敬" hidden>
     <button type="button" id="btn-sit">坐下</button>
     <button type="button" id="btn-bai">礼拜</button>
     <button type="button" id="btn-incense">上香</button>
@@ -42,10 +44,49 @@
     <button type="button" id="btn-muyu">木鱼</button>
   </nav>
 
+  <div id="select-hall" hidden>
+    <div class="select-inner">
+      <p class="eyebrow">云山寺</p>
+      <h1>选像处</h1>
+      <p class="select-lead">山门已开，请择一尊入殿礼敬</p>
+
+      <div class="select-cards">
+        <article class="select-card" id="card-yangliu">
+          <div class="select-preview">
+            <img src="./assets/images/yangliu_jingping_guanyin.jpg" alt="杨柳净瓶观音" width="864" height="1152" />
+          </div>
+          <h2>杨柳净瓶观音</h2>
+          <p class="select-intro">云山寺主尊。白衣立像，右手杨柳，左手净瓶，以德化白瓷（白玉）奉请。杨柳沾甘露，净瓶盛清净水，表大慈悲、随处救度。本殿为云山寺原创造像，正式迎请后方可入殿礼敬。</p>
+          <button type="button" class="btn-soon" disabled>即将迎请</button>
+        </article>
+
+        <article class="select-card" id="card-water-moon">
+          <div class="select-preview">
+            <img src="./assets/images/water_moon_guanyin.jpg" alt="水月观音" width="864" height="1152" />
+          </div>
+          <h2>水月观音</h2>
+          <p class="select-intro">观音应化之一。自在而坐，澄然如水中之月，表清净观照、无所住而生其心。本测试殿暂以明尼阿波利斯美术馆十二世纪木雕坐像（馆藏 32122，CC0 公共领域）作为占位，非正式造像。</p>
+          <button type="button" class="btn-enter" data-hall="water_moon">入殿礼敬</button>
+        </article>
+
+        <article class="select-card" id="card-eleven">
+          <div class="select-preview">
+            <img src="./assets/images/eleven_headed_guanyin.jpg" alt="十一面观音" width="864" height="1152" />
+          </div>
+          <h2>十一面观音</h2>
+          <p class="select-intro">观音应化之一。十一面遍观十方，慈眼视众生。本测试殿暂以克利夫兰美术馆北宋至金木雕立像（馆藏 1981.53，CC0 公共领域）作为占位，非正式造像。</p>
+          <button type="button" class="btn-enter" data-hall="eleven">入殿礼敬</button>
+        </article>
+      </div>
+
+      <p class="select-foot">测试页 · 占位造像须注明出处，非正式白玉验收</p>
+    </div>
+  </div>
+
   <div id="loader">
     <div class="loader-inner">
       <div class="lotus"></div>
-      <p id="loader-text">正在进殿…</p>
+      <p id="loader-text">正在备殿…</p>
       <div class="bar"><span id="loader-bar"></span></div>
     </div>
   </div>

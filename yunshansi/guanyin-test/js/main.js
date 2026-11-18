@@ -29,19 +29,19 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.28;
+renderer.toneMappingExposure = 1.38;
 renderer.shadowMap.enabled = false;
 stage.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0c0a08);
-scene.fog = new THREE.FogExp2(0x16110c, 0.032);
+scene.fog = new THREE.FogExp2(0x1c1610, 0.016);
 
 const camera = new THREE.PerspectiveCamera(
   60,
   window.innerWidth / window.innerHeight,
   0.08,
-  48
+  64
 );
 scene.add(camera);
 
@@ -87,6 +87,50 @@ function applyView() {
   camera.lookAt(player.x + dirX, player.y + dirY, player.z + dirZ);
 }
 applyView();
+
+const CREDITS = {
+  water_moon:
+    "主尊占位：明尼阿波利斯美术馆《水月观音》32122（CC0，12世纪彩绘木雕坐像，不是白玉）· 香案/烛台：Poly Haven（CC0）· 香炉：Freer/SI F1947.15（公共领域）· 蒲团木鱼佛珠殿壳自制 · 不算验收通过",
+  eleven:
+    "主尊占位：克利夫兰美术馆《十一面观音》1981.53（CC0，北宋至金彩绘木雕立像，不是白玉）· 香案/烛台：Poly Haven（CC0）· 香炉：Freer/SI F1947.15（公共领域）· 蒲团木鱼佛珠殿壳自制 · 不算验收通过",
+};
+
+const HALL_VIEWS = {
+  water_moon: {
+    // 坐像：含莲座约 5 米，站距约 5 米。默认仰望面容与宝冠占画面上半，不为此缩小主尊或拉远机位；低头可见佛台。
+    fov: 64,
+    standY: 1.60,
+    sitY: 1.10,
+    homeZ: -0.45,
+    sitZ: -0.80,
+    pitch: 0.54,
+    statueHeight: 5.0,
+    platformTop: 1.10,
+    statueZ: -5.45,
+    lightTargetY: 4.95,
+    lightY: 7.6,
+  },
+  eleven: {
+    // 立像面容更高，单独仰角；仍是约五米像、约五米外，默认以面容宝冠为主
+    fov: 52,
+    standY: 1.60,
+    sitY: 1.10,
+    homeZ: -0.45,
+    sitZ: -0.80,
+    pitch: 0.66,
+    statueHeight: 5.0,
+    platformTop: 1.10,
+    statueZ: -5.45,
+    lightTargetY: 5.25,
+    lightY: 7.7,
+  },
+};
+
+const statues = { water_moon: null, eleven: null };
+let currentHall = null;
+let inHall = false;
+let hintTimer = 0;
+let enterAt = 0;
 
 /* ---------- textures ---------- */
 function canvasTex(w, h, draw, srgb = true) {
@@ -190,7 +234,7 @@ scene.add(hall);
 
 const HALL_W = 8.6;
 const HALL_D = 12.2;
-const HALL_H = 6.2;
+const HALL_H = 8.8;
 const WALL_Z_BACK = -6.15;
 const WALL_Z_FRONT = 6.05;
 
@@ -275,17 +319,17 @@ function makeHall() {
   box(4.5, 1.04, 2.10, matStone, 0, 0.52, 0, plat);
   box(4.15, 0.34, 1.80, matWoodDark, 0, 1.21, 0.04, plat);
   box(4.3, 0.12, 0.28, matStone, 0, 1.10, 1.02, plat);
-  box(3.9, 3.85, 0.10, matWoodDark, 0, 3.25, -0.95, plat);
+  box(3.9, 5.8, 0.10, matWoodDark, 0, 4.15, -0.95, plat);
   const nicheGlow = new THREE.Mesh(
-    new THREE.PlaneGeometry(2.8, 3.4),
+    new THREE.PlaneGeometry(2.8, 5.2),
     new THREE.MeshBasicMaterial({
       color: 0xc9a56a,
       transparent: true,
-      opacity: 0.13,
+      opacity: 0.16,
       depthWrite: false,
     })
   );
-  nicheGlow.position.set(0, 3.25, -0.88);
+  nicheGlow.position.set(0, 4.2, -0.88);
   plat.add(nicheGlow);
 
   // side window glow (architectural light, not a photo)
@@ -297,10 +341,12 @@ function makeHall() {
   });
   for (const x of [-HALL_W / 2 + 0.16, HALL_W / 2 - 0.16]) {
     for (const z of [-3.2, 0.4]) {
-      const w = new THREE.Mesh(new THREE.PlaneGeometry(0.04, 1.6), winMat);
-      w.position.set(x, 2.35, z);
-      w.rotation.y = x < 0 ? Math.PI / 2 : -Math.PI / 2;
-      hall.add(w);
+      for (const y of [2.35, 5.35]) {
+        const w = new THREE.Mesh(new THREE.PlaneGeometry(0.04, 1.7), winMat);
+        w.position.set(x, y, z);
+        w.rotation.y = x < 0 ? Math.PI / 2 : -Math.PI / 2;
+        hall.add(w);
+      }
     }
   }
 }
@@ -453,7 +499,7 @@ hands.left.position.set(-0.20, -0.14, -0.30);
 hands.right.position.set(0.20, -0.14, -0.30);
 hands.left.rotation.set(0.42, 0.14, 0.16);
 hands.right.rotation.set(0.42, -0.14, -0.16);
-hands.root.scale.setScalar(0.78);
+hands.root.scale.setScalar(0.50);
 hands.root.add(hands.left, hands.right);
 camera.add(hands.root);
 const handFill = new THREE.PointLight(0xffe6cc, 0.08, 0.8, 2.0);
@@ -462,39 +508,40 @@ camera.add(handFill);
 
 const POSITIONS = {
   rest: {
-    L: { p: [-0.20, -0.14, -0.30], r: [0.42, 0.14, 0.16], curl: 0.22, thumb: 0.18 },
-    R: { p: [0.20, -0.14, -0.30], r: [0.42, -0.14, -0.16], curl: 0.22, thumb: 0.18 },
+    L: { p: [-0.23, -0.18, -0.36], r: [0.42, 0.14, 0.16], curl: 0.22, thumb: 0.18 },
+    R: { p: [0.23, -0.18, -0.36], r: [0.42, -0.14, -0.16], curl: 0.22, thumb: 0.18 },
   },
   anjali: {
-    L: { p: [-0.022, -0.10, -0.32], r: [0.10, 1.48, 0.0], curl: 0.04, thumb: 0.2 },
-    R: { p: [0.022, -0.10, -0.32], r: [0.10, -1.48, 0.0], curl: 0.04, thumb: 0.2 },
+    L: { p: [-0.028, -0.20, -0.44], r: [0.10, 1.48, 0.0], curl: 0.04, thumb: 0.2 },
+    R: { p: [0.028, -0.20, -0.44], r: [0.10, -1.48, 0.0], curl: 0.04, thumb: 0.2 },
   },
   incense: {
-    L: { p: [-0.16, -0.16, -0.30], r: [0.20, 0.16, 0.16], curl: 0.26, thumb: 0.2 },
-    R: { p: [0.08, -0.08, -0.32], r: [-0.15, -0.08, 0.06], curl: 0.62, thumb: 0.45 },
+    L: { p: [-0.22, -0.22, -0.42], r: [0.20, 0.16, 0.16], curl: 0.26, thumb: 0.2 },
+    R: { p: [0.10, -0.14, -0.40], r: [-0.15, -0.08, 0.06], curl: 0.62, thumb: 0.45 },
   },
   beads: {
-    L: { p: [-0.08, -0.13, -0.30], r: [0.55, 0.22, 0.12], curl: 0.42, thumb: 0.25 },
-    R: { p: [0.08, -0.13, -0.30], r: [0.55, -0.22, -0.12], curl: 0.48, thumb: 0.38 },
+    L: { p: [-0.10, -0.20, -0.40], r: [0.55, 0.22, 0.12], curl: 0.42, thumb: 0.25 },
+    R: { p: [0.10, -0.20, -0.40], r: [0.55, -0.22, -0.12], curl: 0.48, thumb: 0.38 },
   },
   bow: {
-    L: { p: [-0.14, -0.26, -0.28], r: [0.85, 0.10, 0.10], curl: 0.55, thumb: 0.3 },
-    R: { p: [0.14, -0.26, -0.28], r: [0.85, -0.10, -0.10], curl: 0.55, thumb: 0.3 },
+    L: { p: [-0.18, -0.28, -0.40], r: [0.85, 0.10, 0.10], curl: 0.55, thumb: 0.3 },
+    R: { p: [0.18, -0.28, -0.40], r: [0.85, -0.10, -0.10], curl: 0.55, thumb: 0.3 },
   },
   muyu: {
-    L: { p: [-0.20, -0.14, -0.30], r: [0.42, 0.14, 0.16], curl: 0.22, thumb: 0.18 },
-    R: { p: [0.14, -0.10, -0.31], r: [0.15, -0.20, 0.45], curl: 0.4, thumb: 0.25 },
+    L: { p: [-0.23, -0.18, -0.36], r: [0.42, 0.14, 0.16], curl: 0.22, thumb: 0.18 },
+    R: { p: [0.16, -0.16, -0.38], r: [0.15, -0.20, 0.45], curl: 0.4, thumb: 0.25 },
   },
 };
 
 let handPose = "rest";
 
-function poseHands(dt) {
+function poseHands(dt, now = 0) {
   const pose = POSITIONS[handPose] || POSITIONS.rest;
   const k = 1 - Math.exp(-dt * 8);
+  const breath = Math.sin(now * 1.35) * (handPose === "rest" || handPose === "anjali" ? 0.01 : 0.004);
   const apply = (hand, t) => {
     hand.position.x += (t.p[0] - hand.position.x) * k;
-    hand.position.y += (t.p[1] - hand.position.y) * k;
+    hand.position.y += (t.p[1] + breath - hand.position.y) * k;
     hand.position.z += (t.p[2] - hand.position.z) * k;
     hand.rotation.x += (t.r[0] - hand.rotation.x) * k;
     hand.rotation.y += (t.r[1] - hand.rotation.y) * k;
@@ -728,18 +775,18 @@ function seedSmoke() {
 }
 
 /* ---------- lights ---------- */
-scene.add(new THREE.AmbientLight(0x7a6a52, 0.62));
-const hemi = new THREE.HemisphereLight(0xc8b898, 0x3a2c20, 0.85);
+scene.add(new THREE.AmbientLight(0x8a7860, 0.86));
+const hemi = new THREE.HemisphereLight(0xe8d8b8, 0x4a3a28, 1.05);
 scene.add(hemi);
-const key = new THREE.DirectionalLight(0xffe6c4, 0.95);
-key.position.set(1.6, 5.2, 2.4);
+const key = new THREE.DirectionalLight(0xffefd6, 1.22);
+key.position.set(1.8, 7.4, 3.0);
 scene.add(key);
-const fill = new THREE.DirectionalLight(0xfff0d8, 0.45);
-fill.position.set(0, 3.2, 4.5);
+const fill = new THREE.DirectionalLight(0xfff3e4, 0.62);
+fill.position.set(-0.6, 4.4, 4.8);
 scene.add(fill);
-const statueLight = new THREE.SpotLight(0xffefd0, 5.2, 16, 0.55, 0.48, 1.15);
-statueLight.position.set(0, 5.8, -1.6);
-statueLight.target.position.set(0, 4.05, TEMPLE.statueZ);
+const statueLight = new THREE.SpotLight(0xfff2dc, 6.4, 22, 0.62, 0.55, 1.05);
+statueLight.position.set(0, 7.6, -1.15);
+statueLight.target.position.set(0, 4.95, TEMPLE.statueZ);
 scene.add(statueLight, statueLight.target);
 const candleLights = [];
 function addCandleLight(x, y, z) {
@@ -753,7 +800,14 @@ function addCandleLight(x, y, z) {
 const audio = {
   foyin: null,
   wantedNian: false,
+  ctx: null,
   buffers: {},
+  decoded: {},
+  urls: {
+    muyu: "./assets/audio/muyu.ogg",
+    qing: "./assets/audio/qing.ogg",
+    bead: "./assets/audio/bead.ogg",
+  },
 };
 function loadAudioEl(src, loop = false, volume = 0.42) {
   const el = new Audio(src);
@@ -763,30 +817,107 @@ function loadAudioEl(src, loop = false, volume = 0.42) {
   el.setAttribute("playsinline", "");
   return el;
 }
+const MUSIC_TRACKS = [
+  { id: "singing-bowls-meditation", title: "钵音禅修", src: "./assets/audio/music/singing-bowls-meditation.ogg", credit: "Ahjay Stelino · Mixkit" },
+  { id: "smooth-meditation", title: "静心缓韵", src: "./assets/audio/music/smooth-meditation.ogg", credit: "Arulo · Mixkit" },
+  { id: "organic-meditations-one", title: "安然一", src: "./assets/audio/music/organic-meditations-one.ogg", credit: "Kevin MacLeod (incompetech.com) · CC BY 3.0 · 已截取约 3 分钟" },
+  { id: "organic-meditations-three", title: "安然三", src: "./assets/audio/music/organic-meditations-three.ogg", credit: "Kevin MacLeod (incompetech.com) · CC BY 3.0 · 已截取约 3 分钟" },
+  { id: "contemplation", title: "澄观", src: "./assets/audio/music/contemplation.ogg", credit: "Joth · CC0" },
+  { id: "bowl-strikes-bed", title: "钵声缓击", src: "./assets/audio/music/bowl-strikes-bed.ogg", credit: "原录音 BambooBeast（公有领域），本包编排为缓击床" },
+];
+const FOYIN_TRACKS = [
+  { id: "foyin-singing-bowl-sustain", title: "持钵", src: "./assets/audio/foyin-singing-bowl-sustain.ogg", credit: "Valera N. Trubin · CC BY 4.0 · 已交叉淡化" },
+  { id: "foyin-bowl-strike", title: "击钵", src: "./assets/audio/foyin-bowl-strike.ogg", credit: "JAMBATI eu · CC BY 4.0 · 已按间隔重放" },
+  { id: "foyin-temple-bell", title: "梵钟", src: "./assets/audio/foyin-temple-bell.ogg", credit: "Jnn · CC BY 2.1 JP · 滋贺县长命寺梵钟，已去掉直流偏置" },
+];
+const DEFAULT_MUSIC_ID = "singing-bowls-meditation";
+const DEFAULT_FOYIN_ID = "foyin-singing-bowl-sustain";
+const AUDIO_CREDIT_SUMMARY = "佛乐与佛音：安然一 / 安然三，Kevin MacLeod (incompetech.com)，CC BY 3.0；持钵，Valera N. Trubin，CC BY 4.0；击钵，JAMBATI eu，CC BY 4.0；梵钟，Jnn，CC BY 2.1 JP。详情见选曲面板。";
+
 function setupAudio() {
-  audio.foyin = loadAudioEl("./assets/audio/foyin-loop.ogg", true, 0.4);
-  audio.buffers.muyu = "./assets/audio/muyu.ogg";
-  audio.buffers.qing = "./assets/audio/qing.ogg";
-  audio.buffers.bead = "./assets/audio/bead.ogg";
+  audio.foyinId = DEFAULT_FOYIN_ID;
+  const first = FOYIN_TRACKS.find((t) => t.id === DEFAULT_FOYIN_ID) || FOYIN_TRACKS[0];
+  audio.foyin = loadAudioEl(first.src, true, 0.4);
+  audio.buffers.muyu = audio.urls.muyu;
+  audio.buffers.qing = audio.urls.qing;
+  audio.buffers.bead = audio.urls.bead;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (AC) audio.ctx = new AC();
 }
-function playOneShot(url, volume = 0.7) {
+async function decodeSfx() {
+  if (!audio.ctx) return;
+  await Promise.all(
+    Object.entries(audio.urls).map(async ([key, url]) => {
+      const res = await fetch(url);
+      const raw = await res.arrayBuffer();
+      audio.decoded[key] = await audio.ctx.decodeAudioData(raw.slice(0));
+    })
+  );
+}
+function unlockAudio() {
+  if (audio.ctx && audio.ctx.state === "suspended") {
+    audio.ctx.resume().catch(() => {});
+  }
+}
+function sfxKey(keyOrUrl) {
+  if (keyOrUrl === "bead" || keyOrUrl === "muyu" || keyOrUrl === "qing") return keyOrUrl;
+  if (keyOrUrl === audio.urls.bead || keyOrUrl === audio.buffers.bead) return "bead";
+  if (keyOrUrl === audio.urls.muyu || keyOrUrl === audio.buffers.muyu) return "muyu";
+  if (keyOrUrl === audio.urls.qing || keyOrUrl === audio.buffers.qing) return "qing";
+  return null;
+}
+function playOneShot(keyOrUrl, volume = 0.7) {
+  const key = sfxKey(keyOrUrl);
+  const buf = key ? audio.decoded[key] : null;
+  if (audio.ctx && buf) {
+    if (audio.ctx.state === "suspended") audio.ctx.resume().catch(() => {});
+    const src = audio.ctx.createBufferSource();
+    src.buffer = buf;
+    const gain = audio.ctx.createGain();
+    const boost = key === "bead" ? 1.25 : 1;
+    gain.gain.value = Math.min(1.0, volume * boost);
+    src.connect(gain);
+    gain.connect(audio.ctx.destination);
+    try { src.start(0); } catch (_) {}
+    return;
+  }
+  const url = (key && audio.urls[key]) || keyOrUrl;
   const el = new Audio(url);
-  el.volume = volume;
+  el.volume = key === "bead" ? Math.min(1, volume * 1.25) : volume;
   el.setAttribute("playsinline", "");
   const p = el.play();
   if (p && p.catch) p.catch(() => {});
 }
-async function startNian() {
+function foyinTrack(id) {
+  return FOYIN_TRACKS.find((item) => item.id === (id || audio.foyinId || DEFAULT_FOYIN_ID));
+}
+
+function loadFoyin(id) {
+  const track = foyinTrack(id);
+  if (!track) return null;
+  if (audio.foyin) {
+    audio.foyin.pause();
+    audio.foyin.src = "";
+  }
+  audio.foyinId = track.id;
+  audio.foyin = loadAudioEl(track.src, true, 0.4);
+  return audio.foyin;
+}
+
+async function startNian(id) {
   audio.wantedNian = true;
-  handPose = "anjali";
+  // 佛音只开声音，不合十挡像；双手保持在画面下角
   document.getElementById("btn-nian").classList.add("is-on");
+  if (id && id !== audio.foyinId) loadFoyin(id);
+  if (!audio.foyin) loadFoyin(audio.foyinId || DEFAULT_FOYIN_ID);
   try {
     audio.foyin.volume = 0;
+    audio.foyin.currentTime = 0;
     await audio.foyin.play();
     const start = performance.now();
     const fade = () => {
       const k = Math.min(1, (performance.now() - start) / 900);
-      if (audio.wantedNian) audio.foyin.volume = 0.4 * k;
+      if (audio.wantedNian) audio.foyin.volume = 0.18 * k;
       if (k < 1 && audio.wantedNian) requestAnimationFrame(fade);
     };
     requestAnimationFrame(fade);
@@ -810,6 +941,17 @@ function showMerit(text, hold = 2000) {
   clearTimeout(meritTimer);
   meritTimer = setTimeout(() => meritEl.classList.remove("show"), hold);
 }
+function showHint() {
+  hintEl.classList.remove("fade");
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => hintEl.classList.add("fade"), 3800);
+}
+function hideHint() {
+  hintEl.classList.add("fade");
+  clearTimeout(hintTimer);
+  lookCtl.hinted = true;
+}
+
 function flashButton(btn) {
   btn.classList.add("is-hit");
   setTimeout(() => btn.classList.remove("is-hit"), 180);
@@ -888,16 +1030,28 @@ async function loadModels(onProg) {
       gltf.load(path, (g) => resolve(g.scene), undefined, reject);
     });
 
-  const [guanyin, table, xianglu, candles] = await Promise.all([
+  const [guanyin, eleven, table, xianglu, candles] = await Promise.all([
     load("./assets/models/mia_32122_water_moon_guanyin.glb"),
+    load("./assets/models/cma_1981.53_eleven_headed_guanyin.glb"),
     load("./assets/models/polyhaven_chinese_console_table_1k.glb"),
     load("./assets/models/si_F1947.15_lidded_xianglu_150k_2048.glb"),
     load("./assets/models/polyhaven_brass_candleholders_1k.glb"),
   ]);
 
-  // 主尊 on the platform (platform top ~ 0.64)
-  scene.add(guanyin);
-  fitModel(guanyin, { targetHeight: TEMPLE.statueHeight, sitY: TEMPLE.platformTop, x: 0, z: TEMPLE.statueZ, yaw: 0 });
+  const placeStatue = (root, view) => {
+    scene.add(root);
+    fitModel(root, {
+      targetHeight: view.statueHeight,
+      sitY: view.platformTop,
+      x: 0,
+      z: view.statueZ,
+      yaw: 0,
+    });
+    root.visible = false;
+    return root;
+  };
+  statues.water_moon = placeStatue(guanyin, HALL_VIEWS.water_moon);
+  statues.eleven = placeStatue(eleven, HALL_VIEWS.eleven);
 
   scene.add(table);
   fitModel(table, { targetHeight: 0.66, sitY: 0, x: 0, z: TABLE_Z });
@@ -989,7 +1143,7 @@ async function bowToBuddha() {
     player.pitch = from.pitch;
     player.z = from.z;
   } finally {
-    handPose = audio.wantedNian ? "anjali" : "rest";
+    handPose = "rest";
     player.busy = false;
   }
   showMerit("虔诚礼拜");
@@ -1053,7 +1207,7 @@ async function offerIncense() {
   } finally {
     stickHeld.visible = false;
     stickHeld.position.y = 0.08;
-    handPose = audio.wantedNian ? "anjali" : "rest";
+    handPose = "rest";
     player.busy = false;
   }
 }
@@ -1138,15 +1292,20 @@ function stopBeads() {
   beadsGroup.visible = false;
   hands.right.userData.thumbRoll = 0;
   hands.left.userData.thumbRoll = 0;
-  if (handPose === "beads") handPose = audio.wantedNian ? "anjali" : "rest";
+  if (handPose === "beads") handPose = "rest";
   const btn = document.getElementById("btn-beads");
   btn.textContent = "佛珠";
   btn.classList.remove("is-on");
 }
-function startBeads() {
+function zhCount(n) {
+  const map = { 21: "二十一", 50: "五十", 100: "一百", 108: "一百零八" };
+  return map[n] || String(n);
+}
+function startBeads(target = 100) {
   if (player.busy) return;
   ritual.beads.running = true;
   ritual.beads.count = 0;
+  ritual.beads.target = target;
   ritual.beads.timer = 0.2;
   ritual.beads.anim = 0;
   ritual.beads.rolling = false;
@@ -1158,18 +1317,18 @@ function startBeads() {
   const btn = document.getElementById("btn-beads");
   btn.textContent = "停止";
   btn.classList.add("is-on");
-  showMerit("佛珠 0 / 100");
+  showMerit(`佛珠 0 / ${target}`);
 }
 function beginBeadRoll() {
   if (ritual.beads.rolling) return;
   ritual.beads.rolling = true;
   ritual.beads.anim = 0;
   ritual.beads.count += 1;
-  playOneShot(audio.buffers.bead, 0.72);
+  playOneShot("bead", 0.9);
   if (ritual.beads.count >= ritual.beads.target) {
-    showMerit("佛珠一百 · 圆满", 2600);
+    showMerit(`佛珠${zhCount(ritual.beads.target)} · 圆满`, 2600);
   } else {
-    showMerit(`佛珠 ${ritual.beads.count} / 100`);
+    showMerit(`佛珠 ${ritual.beads.count} / ${ritual.beads.target}`);
   }
 }
 function updateBeads(dt) {
@@ -1207,15 +1366,16 @@ const muyuSet = makeMuyu();
 
 function stopMuyu() {
   ritual.muyu.running = false;
-  if (handPose === "muyu") handPose = audio.wantedNian ? "anjali" : "rest";
+  if (handPose === "muyu") handPose = "rest";
   const btn = document.getElementById("btn-muyu");
   btn.textContent = "木鱼";
   btn.classList.remove("is-on");
 }
-function startMuyu() {
+function startMuyu(target = 50) {
   if (player.busy) return;
   ritual.muyu.running = true;
   ritual.muyu.count = 0;
+  ritual.muyu.target = target;
   ritual.muyu.timer = 0;
   ritual.muyu.strike = 0;
   handPose = "muyu";
@@ -1223,24 +1383,167 @@ function startMuyu() {
   const btn = document.getElementById("btn-muyu");
   btn.textContent = "停止";
   btn.classList.add("is-on");
-  showMerit("木鱼 0 / 50");
+  showMerit(`木鱼 0 / ${target}`);
 }
 function tickMuyu() {
   ritual.muyu.count += 1;
   ritual.muyu.strike = 1;
-  playOneShot(audio.buffers.muyu, 0.8);
+  playOneShot("muyu", 0.8);
   if (ritual.muyu.count >= ritual.muyu.target) {
-    playOneShot(audio.buffers.qing, 0.45);
-    showMerit("木鱼五十声 · 圆满", 2600);
+    playOneShot("qing", 0.45);
+    showMerit(`木鱼${zhCount(ritual.muyu.target)}声 · 圆满`, 2600);
     stopMuyu();
   } else {
-    showMerit(`木鱼 ${ritual.muyu.count} / 50`);
+    showMerit(`木鱼 ${ritual.muyu.count} / ${ritual.muyu.target}`);
   }
+}
+
+function openCountPicker(kind) {
+  unlockAudio();
+  const isBeads = kind === "beads";
+  const options = isBeads
+    ? [
+        { n: 21, label: "二十一" },
+        { n: 100, label: "一百" },
+        { n: 108, label: "一百零八" },
+      ]
+    : [
+        { n: 21, label: "二十一" },
+        { n: 50, label: "五十" },
+        { n: 108, label: "一百零八" },
+      ];
+  const def = isBeads ? 100 : 50;
+  openModal(isBeads ? "佛珠" : "木鱼", (body) => {
+    const lead = document.createElement("p");
+    lead.textContent = isBeads ? "请选择诵珠遍数" : "请选择敲木鱼声数";
+    body.appendChild(lead);
+    const box = document.createElement("div");
+    box.className = "choices";
+    for (const opt of options) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "choice" + (opt.n === def ? " is-default" : "");
+      b.textContent = opt.label;
+      b.addEventListener("click", () => {
+        closeModal();
+        unlockAudio();
+        if (isBeads) startBeads(opt.n);
+        else startMuyu(opt.n);
+      });
+      box.appendChild(b);
+    }
+    body.appendChild(box);
+  });
+}
+
+const music = { el: null, id: null };
+
+function stopMusic() {
+  if (music.el) {
+    music.el.pause();
+    music.el.src = "";
+    music.el = null;
+  }
+  music.id = null;
+  const btn = document.getElementById("btn-music");
+  if (btn) btn.classList.remove("is-on");
+}
+
+function playMusic(id) {
+  const track = MUSIC_TRACKS.find((item) => item.id === id);
+  if (!track) return;
+  const prev = music.el;
+  music.el = null;
+  if (prev) {
+    prev.pause();
+    prev.src = "";
+  }
+  unlockAudio();
+  const el = loadAudioEl(track.src, true, 0.22);
+  music.el = el;
+  music.id = id;
+  const p = el.play();
+  if (p && p.catch) p.catch(() => {});
+  document.getElementById("btn-music").classList.add("is-on");
+}
+
+function addTrackButtons(box, tracks, currentId, onPick) {
+  for (const track of tracks) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "choice" + (currentId === track.id ? " is-default" : "");
+    b.append(track.title);
+    if (track.credit) {
+      const sm = document.createElement("small");
+      sm.textContent = track.credit;
+      b.appendChild(sm);
+    }
+    b.addEventListener("click", () => onPick(track));
+    box.appendChild(b);
+  }
+}
+
+function openMusicPicker() {
+  unlockAudio();
+  openModal("选曲", (body) => {
+    const lead = document.createElement("p");
+    lead.textContent = "佛乐与佛音分开选择。这批佛音是钵声和梵钟氛围，不是唱诵。";
+    body.appendChild(lead);
+
+    const hMusic = document.createElement("h3");
+    hMusic.className = "modal-section";
+    hMusic.textContent = "佛乐";
+    body.appendChild(hMusic);
+    const box = document.createElement("div");
+    box.className = "choices";
+    addTrackButtons(box, MUSIC_TRACKS, music.id, (track) => {
+      playMusic(track.id);
+      closeModal();
+    });
+    const off = document.createElement("button");
+    off.type = "button";
+    off.className = "choice";
+    off.textContent = "关闭佛乐";
+    off.addEventListener("click", () => {
+      stopMusic();
+      closeModal();
+    });
+    box.appendChild(off);
+    body.appendChild(box);
+
+    const hFoyin = document.createElement("h3");
+    hFoyin.className = "modal-section";
+    hFoyin.textContent = "佛音";
+    body.appendChild(hFoyin);
+    const box2 = document.createElement("div");
+    box2.className = "choices";
+    addTrackButtons(box2, FOYIN_TRACKS, audio.wantedNian ? audio.foyinId : null, (track) => {
+      startNian(track.id);
+      closeModal();
+    });
+    const offF = document.createElement("button");
+    offF.type = "button";
+    offF.className = "choice";
+    offF.textContent = "关闭佛音";
+    offF.addEventListener("click", () => {
+      stopNian();
+      closeModal();
+    });
+    box2.appendChild(offF);
+    body.appendChild(box2);
+
+    const cred = document.createElement("p");
+    cred.className = "audio-credit";
+    cred.textContent = AUDIO_CREDIT_SUMMARY;
+    body.appendChild(cred);
+  });
 }
 
 /* ---------- look controls ---------- */
 const lookCtl = { down: false, id: null, lx: 0, ly: 0, hinted: false };
 function onDown(e) {
+  if (!inHall) return;
+  if (performance.now() - enterAt < 600) return;
   if (e.target !== renderer.domElement) return;
   if (!modalEl.hidden) return;
   lookCtl.down = true;
@@ -1248,10 +1551,7 @@ function onDown(e) {
   lookCtl.lx = e.clientX;
   lookCtl.ly = e.clientY;
   try { renderer.domElement.setPointerCapture(e.pointerId); } catch (_) {}
-  if (!lookCtl.hinted) {
-    lookCtl.hinted = true;
-    hintEl.classList.add("fade");
-  }
+  hideHint();
 }
 function onMove(e) {
   if (!lookCtl.down || e.pointerId !== lookCtl.id) return;
@@ -1308,12 +1608,108 @@ document.getElementById("btn-nian").addEventListener("click", (e) => {
 document.getElementById("btn-beads").addEventListener("click", (e) => {
   flashButton(e.currentTarget);
   if (ritual.beads.running) stopBeads();
-  else startBeads();
+  else openCountPicker("beads");
 });
 document.getElementById("btn-muyu").addEventListener("click", (e) => {
   flashButton(e.currentTarget);
   if (ritual.muyu.running) stopMuyu();
-  else startMuyu();
+  else openCountPicker("muyu");
+});
+
+function setHallUi(visible) {
+  document.querySelectorAll(".hall-ui").forEach((el) => {
+    el.hidden = !visible;
+  });
+}
+function applyHallCamera(view) {
+  player.standY = view.standY;
+  player.sitY = view.sitY;
+  player.homeZ = view.homeZ;
+  player.sitZ = view.sitZ;
+  player.homeX = 0;
+  player.x = 0;
+  player.z = view.homeZ;
+  player.y = view.standY;
+  player.yaw = 0;
+  player.pitch = view.pitch;
+  player.seated = false;
+  player.busy = false;
+  camera.fov = view.fov;
+  camera.updateProjectionMatrix();
+  const btn = document.getElementById("btn-sit");
+  btn.textContent = "坐下";
+  btn.classList.remove("is-on");
+  if (statueLight) {
+    statueLight.position.set(0, view.lightY || 7.6, -1.15);
+    statueLight.target.position.set(0, view.lightTargetY, view.statueZ);
+  }
+  applyView();
+}
+function resetRituals() {
+  if (ritual.beads.running) stopBeads();
+  if (ritual.muyu.running) stopMuyu();
+  if (audio.wantedNian) stopNian();
+  stopMusic();
+  closeModal();
+  meritEl.classList.remove("show");
+  meritEl.textContent = "";
+}
+function showSelectHall() {
+  inHall = false;
+  currentHall = null;
+  document.body.classList.add("is-select");
+  document.body.classList.remove("is-hall");
+  setHallUi(false);
+  const selectEl = document.getElementById("select-hall");
+  selectEl.hidden = false;
+  selectEl.scrollTop = 0;
+}
+function enterHall(id) {
+  const view = HALL_VIEWS[id];
+  if (!view || !statues[id]) return;
+  unlockAudio();
+  currentHall = id;
+  inHall = true;
+  for (const [key, root] of Object.entries(statues)) {
+    if (root) root.visible = key === id;
+  }
+  applyHallCamera(view);
+  document.getElementById("credit").textContent = CREDITS[id] + " · 佛乐与佛音署名见右上角选曲";
+  document.getElementById("select-hall").hidden = true;
+  document.body.classList.remove("is-select");
+  document.body.classList.add("is-hall");
+  setHallUi(true);
+  lookCtl.hinted = false;
+  lookCtl.down = false;
+  enterAt = performance.now();
+  setTimeout(showHint, 80);
+  startNian(DEFAULT_FOYIN_ID);
+  playMusic(DEFAULT_MUSIC_ID);
+}
+function returnToSelect() {
+  resetRituals();
+  player.busy = false;
+  player.seated = false;
+  while (planted.children.length) planted.remove(planted.children[0]);
+  smokeOn = false;
+  smokeMat.opacity = 0;
+  for (const root of Object.values(statues)) {
+    if (root) root.visible = false;
+  }
+  lookCtl.down = false;
+  showSelectHall();
+}
+
+document.getElementById("btn-back").addEventListener("click", (e) => {
+  flashButton(e.currentTarget);
+  returnToSelect();
+});
+document.getElementById("btn-music").addEventListener("click", (e) => {
+  flashButton(e.currentTarget);
+  openMusicPicker();
+});
+document.querySelectorAll(".btn-enter").forEach((btn) => {
+  btn.addEventListener("click", () => enterHall(btn.dataset.hall));
 });
 
 window.addEventListener("resize", () => {
@@ -1355,7 +1751,7 @@ function frame() {
     // slight settle only
   }
   applyView();
-  poseHands(dt);
+  poseHands(dt, t);
 
   if (smokeOn) {
     const arr = smoke.geometry.attributes.position.array;
@@ -1376,7 +1772,7 @@ function frame() {
     candleLights[i].intensity = 1.05 + Math.sin(t * 3.2 + i * 1.7) * 0.18 + Math.sin(t * 7.1 + i) * 0.06;
   }
   if (statueLight) {
-    statueLight.intensity = 4.8 + Math.sin(t * 0.6) * 0.2;
+    statueLight.intensity = 6.2 + Math.sin(t * 0.6) * 0.18;
   }
   dust.rotation.y = t * 0.02;
 
@@ -1409,17 +1805,20 @@ requestAnimationFrame(frame);
 
 (async function init() {
   try {
-    await loadModels((p) => {
-      loaderBar.style.width = `${p}%`;
-      loaderText.textContent = `正在进殿… ${p}%`;
-    });
+    await Promise.all([
+      loadModels((p) => {
+        loaderBar.style.width = `${p}%`;
+        loaderText.textContent = `正在备殿… ${p}%`;
+      }),
+      decodeSfx(),
+    ]);
     loaderBar.style.width = "100%";
-    loaderText.textContent = "请进殿";
+    loaderText.textContent = "请进山门";
     await new Promise((r) => setTimeout(r, 280));
+    showSelectHall();
     loaderEl.classList.add("hide");
-    applyView();
   } catch (err) {
     console.error(err);
-    loaderText.textContent = "进殿未能完成，请刷新重试";
+    loaderText.textContent = "备殿未能完成，请刷新重试";
   }
 })();
