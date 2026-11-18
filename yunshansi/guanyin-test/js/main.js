@@ -35,13 +35,13 @@ stage.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0c0a08);
-scene.fog = new THREE.FogExp2(0x16110c, 0.046);
+scene.fog = new THREE.FogExp2(0x16110c, 0.032);
 
 const camera = new THREE.PerspectiveCamera(
-  64,
+  52,
   window.innerWidth / window.innerHeight,
   0.08,
-  40
+  48
 );
 scene.add(camera);
 
@@ -50,17 +50,30 @@ const _v = new THREE.Vector3();
 const _v2 = new THREE.Vector3();
 
 /* ---------- first-person look ---------- */
+/* 殿内尺度（水月观音坐像）：站在殿中偏前，抬头瞻仰高台大像 */
+const TEMPLE = {
+  fov: 52,
+  standY: 1.56,
+  sitY: 1.06,
+  homeZ: 0.20,
+  sitZ: -0.70,
+  pitch: 0.40,
+  statueHeight: 3.28,
+  platformTop: 1.38,
+  statueZ: -5.45,
+  platformZ: -5.35,
+};
 const player = {
   x: 0,
-  z: 0.55,
-  y: 1.58,
-  standY: 1.58,
-  sitY: 1.08,
+  z: TEMPLE.homeZ,
+  y: TEMPLE.standY,
+  standY: TEMPLE.standY,
+  sitY: TEMPLE.sitY,
   homeX: 0,
-  homeZ: 0.55,
-  sitZ: -0.70,
+  homeZ: TEMPLE.homeZ,
+  sitZ: TEMPLE.sitZ,
   yaw: 0,
-  pitch: 0.10,
+  pitch: TEMPLE.pitch,
   seated: false,
   busy: false,
 };
@@ -177,7 +190,7 @@ scene.add(hall);
 
 const HALL_W = 8.6;
 const HALL_D = 12.2;
-const HALL_H = 5.5;
+const HALL_H = 6.2;
 const WALL_Z_BACK = -6.15;
 const WALL_Z_FRONT = 6.05;
 
@@ -255,24 +268,24 @@ function makeHall() {
     hall.add(base);
   }
 
-  // platform / 佛台
+  // platform / 佛台：加高加宽，让坐像明显高出视平线
   const plat = new THREE.Group();
-  plat.position.set(0, 0, -5.2);
+  plat.position.set(0, 0, TEMPLE.platformZ);
   hall.add(plat);
-  box(3.6, 0.5, 1.55, matStone, 0, 0.25, 0, plat);
-  box(3.35, 0.14, 1.35, matWoodDark, 0, 0.57, 0.02, plat);
-  // niche panel behind statue
-  box(3.2, 3.4, 0.08, matWoodDark, 0, 2.15, -0.7, plat);
+  box(4.5, 1.04, 2.10, matStone, 0, 0.52, 0, plat);
+  box(4.15, 0.34, 1.80, matWoodDark, 0, 1.21, 0.04, plat);
+  box(4.3, 0.12, 0.28, matStone, 0, 1.10, 1.02, plat);
+  box(3.9, 3.85, 0.10, matWoodDark, 0, 3.25, -0.95, plat);
   const nicheGlow = new THREE.Mesh(
-    new THREE.PlaneGeometry(2.2, 3.0),
+    new THREE.PlaneGeometry(2.8, 3.4),
     new THREE.MeshBasicMaterial({
       color: 0xc9a56a,
       transparent: true,
-      opacity: 0.11,
+      opacity: 0.13,
       depthWrite: false,
     })
   );
-  nicheGlow.position.set(0, 2.15, -0.64);
+  nicheGlow.position.set(0, 3.25, -0.88);
   plat.add(nicheGlow);
 
   // side window glow (architectural light, not a photo)
@@ -354,80 +367,122 @@ function makeMuyu() {
 }
 
 /* ---------- ghost hands, beads, incense stick ---------- */
+/* Quest 风格：饱满圆润、半透明，无方块硬边，无写实关节扫描 */
 const handMat = new THREE.MeshStandardMaterial({
-  color: 0xe8dcc8,
-  roughness: 0.5,
+  color: 0xf2e8d8,
+  roughness: 0.38,
   metalness: 0.0,
   transparent: true,
-  opacity: 0.45,
+  opacity: 0.5,
   depthWrite: false,
-  emissive: new THREE.Color(0x3a3228),
-  emissiveIntensity: 0.35,
+  emissive: new THREE.Color(0x4a4034),
+  emissiveIntensity: 0.28,
+  side: THREE.DoubleSide,
 });
 
-function makeFinger(len, rad) {
-  const m = new THREE.Mesh(new THREE.CapsuleGeometry(rad, len, 4, 8), handMat);
-  m.castShadow = false;
-  return m;
+function makeFinger(rad, l1, l2) {
+  const root = new THREE.Group();
+  const s1 = new THREE.Group();
+  const m1 = new THREE.Mesh(new THREE.CapsuleGeometry(rad, l1, 6, 12), handMat);
+  m1.position.y = l1 * 0.5 + rad * 0.05;
+  s1.add(m1);
+  const s2 = new THREE.Group();
+  s2.position.y = l1 + rad * 0.15;
+  const m2 = new THREE.Mesh(new THREE.CapsuleGeometry(rad * 0.9, l2, 6, 12), handMat);
+  m2.position.y = l2 * 0.5 + rad * 0.05;
+  s2.add(m2);
+  s1.add(s2);
+  root.add(s1);
+  root.userData.segs = [s1, s2];
+  return root;
+}
+
+function applyCurl(finger, curl) {
+  const segs = finger.userData.segs;
+  if (!segs) return;
+  segs[0].rotation.x = curl * 0.48;
+  segs[1].rotation.x = curl * 0.85;
 }
 
 function makeOneHand(side) {
   const g = new THREE.Group();
-  const palm = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.1, 0.024), handMat);
-  palm.position.y = 0.02;
+  const palm = new THREE.Mesh(new THREE.SphereGeometry(0.04, 18, 14), handMat);
+  palm.scale.set(1.22, 1.12, 0.68);
+  palm.position.set(0, 0.008, 0);
   g.add(palm);
-  const fingers = [
-    [-0.028, 0.07, 0, 0.055, 0.007],
-    [-0.01, 0.075, 0, 0.065, 0.0075],
-    [0.01, 0.075, 0, 0.062, 0.0075],
-    [0.028, 0.068, 0, 0.05, 0.0065],
+  const heel = new THREE.Mesh(new THREE.SphereGeometry(0.027, 14, 12), handMat);
+  heel.scale.set(1.12, 0.9, 0.72);
+  heel.position.set(0.002 * side, -0.029, 0.002);
+  g.add(heel);
+  const wrist = new THREE.Mesh(new THREE.CapsuleGeometry(0.019, 0.028, 6, 12), handMat);
+  wrist.position.set(0, -0.058, 0);
+  g.add(wrist);
+
+  const defs = [
+    { x: 0.027, y: 0.037, z: 0.003, l1: 0.024, l2: 0.019, r: 0.009, splay: -0.2 },
+    { x: 0.010, y: 0.043, z: 0.006, l1: 0.029, l2: 0.022, r: 0.0098, splay: -0.05 },
+    { x: -0.009, y: 0.043, z: 0.006, l1: 0.027, l2: 0.021, r: 0.0095, splay: 0.07 },
+    { x: -0.026, y: 0.037, z: 0.002, l1: 0.021, l2: 0.017, r: 0.0084, splay: 0.22 },
   ];
-  for (const [x, y, z, len, rad] of fingers) {
-    const f = makeFinger(len, rad);
-    f.position.set(x * side, y, z);
+  const fingers = [];
+  for (const d of defs) {
+    const f = makeFinger(d.r, d.l1, d.l2);
+    f.position.set(d.x * side, d.y, d.z);
+    f.rotation.z = d.splay * side;
     g.add(f);
+    fingers.push(f);
   }
-  const thumb = makeFinger(0.04, 0.0075);
-  thumb.position.set(-0.05 * side, 0.02, 0.01);
-  thumb.rotation.z = side * 0.8;
-  thumb.rotation.x = -0.4;
+  const thumb = makeFinger(0.0104, 0.021, 0.017);
+  thumb.position.set(-0.037 * side, -0.005, 0.013);
+  thumb.rotation.z = 1.12 * side;
+  thumb.rotation.x = -0.55;
+  thumb.rotation.y = -0.28 * side;
   g.add(thumb);
+
   g.userData.side = side;
+  g.userData.fingers = fingers;
+  g.userData.thumb = thumb;
+  g.userData.curl = 0.3;
+  g.userData.thumbCurl = 0.2;
+  g.userData.thumbRoll = 0;
   return g;
 }
 
 const hands = { root: new THREE.Group(), left: makeOneHand(-1), right: makeOneHand(1) };
-hands.left.position.set(-0.15, -0.13, -0.30);
-hands.right.position.set(0.15, -0.13, -0.30);
-hands.left.rotation.set(0.35, 0.15, 0.15);
-hands.right.rotation.set(0.35, -0.15, -0.15);
+hands.left.position.set(-0.15, -0.15, -0.32);
+hands.right.position.set(0.15, -0.15, -0.32);
+hands.left.rotation.set(-0.95, 0.12, 0.22);
+hands.right.rotation.set(-0.95, -0.12, -0.22);
 hands.root.add(hands.left, hands.right);
 camera.add(hands.root);
+const handFill = new THREE.PointLight(0xffe6cc, 0.45, 1.4, 1.8);
+handFill.position.set(0, 0.02, -0.12);
+camera.add(handFill);
 
 const POSITIONS = {
   rest: {
-    L: { p: [-0.15, -0.13, -0.30], r: [0.35, 0.18, 0.18] },
-    R: { p: [0.15, -0.13, -0.30], r: [0.35, -0.18, -0.18] },
+    L: { p: [-0.15, -0.15, -0.32], r: [-0.95, 0.12, 0.22], curl: 0.28, thumb: 0.2 },
+    R: { p: [0.15, -0.15, -0.32], r: [-0.95, -0.12, -0.22], curl: 0.28, thumb: 0.2 },
   },
   anjali: {
-    L: { p: [-0.028, -0.08, -0.34], r: [0.12, 0.55, 0.05] },
-    R: { p: [0.028, -0.08, -0.34], r: [0.12, -0.55, -0.05] },
+    L: { p: [-0.018, -0.085, -0.33], r: [0.06, 1.48, 0.0], curl: 0.04, thumb: 0.2 },
+    R: { p: [0.018, -0.085, -0.33], r: [0.06, -1.48, 0.0], curl: 0.04, thumb: 0.2 },
   },
   incense: {
-    L: { p: [-0.10, -0.12, -0.30], r: [0.2, 0.2, 0.1] },
-    R: { p: [0.08, -0.02, -0.34], r: [-0.15, -0.1, 0] },
+    L: { p: [-0.11, -0.14, -0.32], r: [-0.7, 0.16, 0.16], curl: 0.26, thumb: 0.2 },
+    R: { p: [0.07, -0.04, -0.34], r: [-0.35, -0.08, 0.06], curl: 0.62, thumb: 0.45 },
   },
   beads: {
-    L: { p: [-0.07, -0.11, -0.30], r: [0.7, 0.35, 0.15] },
-    R: { p: [0.07, -0.11, -0.30], r: [0.7, -0.35, -0.15] },
+    L: { p: [-0.065, -0.125, -0.31], r: [-1.05, 0.22, 0.18], curl: 0.42, thumb: 0.25 },
+    R: { p: [0.065, -0.125, -0.31], r: [-1.05, -0.22, -0.18], curl: 0.48, thumb: 0.38 },
   },
   bow: {
-    L: { p: [-0.12, -0.22, -0.28], r: [0.9, 0.1, 0.1] },
-    R: { p: [0.12, -0.22, -0.28], r: [0.9, -0.1, -0.1] },
+    L: { p: [-0.12, -0.22, -0.30], r: [-0.2, 0.1, 0.1], curl: 0.55, thumb: 0.3 },
+    R: { p: [0.12, -0.22, -0.30], r: [-0.2, -0.1, -0.1], curl: 0.55, thumb: 0.3 },
   },
   muyu: {
-    L: { p: [-0.16, -0.14, -0.30], r: [0.35, 0.18, 0.18] },
-    R: { p: [0.13, -0.06, -0.32], r: [0.2, -0.3, 0.6] },
+    L: { p: [-0.15, -0.15, -0.32], r: [-0.95, 0.12, 0.22], curl: 0.28, thumb: 0.2 },
+    R: { p: [0.12, -0.07, -0.33], r: [-0.55, -0.2, 0.45], curl: 0.4, thumb: 0.25 },
   },
 };
 
@@ -443,6 +498,16 @@ function poseHands(dt) {
     hand.rotation.x += (t.r[0] - hand.rotation.x) * k;
     hand.rotation.y += (t.r[1] - hand.rotation.y) * k;
     hand.rotation.z += (t.r[2] - hand.rotation.z) * k;
+    hand.userData.curl += (t.curl - hand.userData.curl) * k;
+    hand.userData.thumbCurl += (t.thumb - hand.userData.thumbCurl) * k;
+    const fingers = hand.userData.fingers || [];
+    fingers.forEach((f, i) => applyCurl(f, hand.userData.curl * (1 + i * 0.06)));
+    const th = hand.userData.thumb;
+    if (th) {
+      applyCurl(th, hand.userData.thumbCurl + (hand.userData.thumbRoll || 0) * 0.7);
+      const side = hand.userData.side || 1;
+      th.rotation.y = -0.28 * side - (hand.userData.thumbRoll || 0) * 0.35 * side;
+    }
   };
   apply(hands.left, pose.L);
   apply(hands.right, pose.R);
@@ -451,7 +516,7 @@ function poseHands(dt) {
 // incense stick in right hand
 const stickHeld = new THREE.Group();
 const stickBody = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.004, 0.0045, 0.22, 6),
+  new THREE.CylinderGeometry(0.004, 0.0045, 0.22, 8),
   new THREE.MeshStandardMaterial({ color: 0x5a3a22, roughness: 0.8 })
 );
 const stickTip = new THREE.Mesh(
@@ -461,7 +526,7 @@ const stickTip = new THREE.Mesh(
 stickTip.position.y = 0.12;
 stickBody.position.y = 0.02;
 stickHeld.add(stickBody, stickTip);
-stickHeld.position.set(0.01, 0.08, 0.01);
+stickHeld.position.set(0.0, 0.07, 0.012);
 stickHeld.visible = false;
 hands.right.add(stickHeld);
 
@@ -469,45 +534,150 @@ hands.right.add(stickHeld);
 const planted = new THREE.Group();
 scene.add(planted);
 
-// prayer beads between hands
-const BEAD_COUNT = 18;
-const beadsGroup = new THREE.Group();
-const beadGeo = new THREE.SphereGeometry(0.01, 12, 10);
+// prayer beads: hanging loop with volume, wood grain, guru bead and tassel
+const BEAD_COUNT = 24;
+const BEAD_R = 0.0076;
+function makeBeadTexture() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 128;
+  const g = c.getContext("2d");
+  const grd = g.createRadialGradient(48, 44, 8, 64, 64, 72);
+  grd.addColorStop(0, "#c08048");
+  grd.addColorStop(0.45, "#8a4a28");
+  grd.addColorStop(1, "#3a1c10");
+  g.fillStyle = grd;
+  g.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 28; i++) {
+    g.strokeStyle = `rgba(40,18,8,${0.08 + Math.random() * 0.12})`;
+    g.beginPath();
+    const y = 8 + i * 4 + Math.sin(i * 0.7) * 2;
+    g.moveTo(0, y);
+    g.quadraticCurveTo(64, y + 3, 128, y - 1);
+    g.stroke();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.needsUpdate = true;
+  return t;
+}
+const beadMap = makeBeadTexture();
 const beadMat = new THREE.MeshStandardMaterial({
-  color: 0x6b3a28,
-  roughness: 0.4,
-  metalness: 0.08,
+  map: beadMap,
+  color: 0xffe0c0,
+  roughness: 0.36,
+  metalness: 0.06,
+  emissive: 0x3a2414,
+  emissiveIntensity: 0.16,
 });
-const beadMatActive = new THREE.MeshStandardMaterial({
-  color: 0xc9a56a,
-  roughness: 0.3,
-  metalness: 0.25,
-  emissive: 0x3a2a10,
-  emissiveIntensity: 0.4,
+const beadMatMark = new THREE.MeshStandardMaterial({
+  map: beadMap,
+  color: 0xe8c898,
+  roughness: 0.32,
+  metalness: 0.16,
+  emissive: 0x2a1c08,
+  emissiveIntensity: 0.18,
 });
+const beadMatGuru = new THREE.MeshStandardMaterial({
+  color: 0x5a2414,
+  roughness: 0.28,
+  metalness: 0.12,
+  map: beadMap,
+});
+const beadGeo = new THREE.SphereGeometry(1, 16, 12);
+const beadsGroup = new THREE.Group();
 const beadMeshes = [];
 for (let i = 0; i < BEAD_COUNT; i++) {
-  const b = new THREE.Mesh(beadGeo, i === 0 ? beadMatActive : beadMat);
+  const isGuru = i === Math.floor(BEAD_COUNT / 2);
+  const isMark = !isGuru && i % 6 === 0;
+  const b = new THREE.Mesh(
+    beadGeo,
+    isGuru ? beadMatGuru : isMark ? beadMatMark : beadMat
+  );
+  const r = isGuru ? BEAD_R * 1.42 : isMark ? BEAD_R * 1.12 : BEAD_R;
+  b.scale.set(r, r * 0.9, r);
+  b.userData.radius = r;
+  b.userData.isGuru = isGuru;
   beadsGroup.add(b);
   beadMeshes.push(b);
+  if (isGuru) {
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(r * 0.72, r * 0.12, 8, 16),
+      new THREE.MeshStandardMaterial({ color: 0xc4a056, roughness: 0.3, metalness: 0.7 })
+    );
+    ring.rotation.x = Math.PI / 2;
+    b.add(ring);
+  }
 }
-// a simple cord
-beadsGroup.position.set(0, -0.08, -0.28);
+const tassel = new THREE.Group();
+const tasselCord = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.0016, 0.0016, 0.046, 6),
+  new THREE.MeshStandardMaterial({ color: 0x6a2a1a, roughness: 0.6 })
+);
+tasselCord.position.y = -0.028;
+tassel.add(tasselCord);
+for (let i = 0; i < 5; i++) {
+  const strand = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.0022, 0.03, 3, 6),
+    new THREE.MeshStandardMaterial({ color: 0x8a3020, roughness: 0.55 })
+  );
+  strand.position.set((i - 2) * 0.004, -0.055, 0);
+  tassel.add(strand);
+}
+beadsGroup.add(tassel);
+
+const cordPts = [];
+for (let i = 0; i <= 64; i++) cordPts.push(new THREE.Vector3());
+const cordCurve = new THREE.CatmullRomCurve3(cordPts, true, "catmullrom", 0.15);
+const cordGeo = new THREE.TubeGeometry(cordCurve, 64, 0.0017, 5, true);
+const cordMesh = new THREE.Mesh(
+  cordGeo,
+  new THREE.MeshStandardMaterial({ color: 0x3a2418, roughness: 0.72 })
+);
+beadsGroup.add(cordMesh);
+beadsGroup.position.set(0, -0.118, -0.30);
 beadsGroup.visible = false;
 hands.root.add(beadsGroup);
 
-function layoutBeads(active = 0, t = 0) {
-  for (let i = 0; i < BEAD_COUNT; i++) {
-    const u = i / (BEAD_COUNT - 1);
-    const a = Math.PI * (0.15 + 0.7 * u);
-    const x = Math.cos(a) * 0.09;
-    const y = Math.sin(a) * 0.035 - 0.02;
-    const z = -0.01 * Math.sin(a);
-    beadMeshes[i].position.set(x, y, z);
-    beadMeshes[i].material = i === (active % BEAD_COUNT) ? beadMatActive : beadMat;
-  }
+function wrapPi(a) {
+  while (a > Math.PI) a -= Math.PI * 2;
+  while (a < -Math.PI) a += Math.PI * 2;
+  return a;
 }
-layoutBeads(0);
+function beadPath(angle, lift = 0) {
+  const rx = 0.056;
+  const ry = 0.05;
+  const x = Math.sin(angle) * rx;
+  const y = -0.016 + Math.cos(angle) * ry;
+  const z = Math.cos(angle) * 0.01;
+  return [x, y + lift, z];
+}
+function layoutBeads(scroll = 0, roll = 0) {
+  const pinch = 0.22;
+  for (let i = 0; i < BEAD_COUNT; i++) {
+    const angle = ((i - scroll) / BEAD_COUNT) * Math.PI * 2;
+    const d = Math.abs(wrapPi(angle - pinch));
+    const near = Math.max(0, 1 - d / 0.55);
+    const lift = Math.sin(roll * Math.PI) * 0.01 * near;
+    const [x, y, z] = beadPath(angle, lift);
+    const b = beadMeshes[i];
+    b.position.set(x, y, z);
+    b.rotation.z = angle + roll * near * 1.6;
+    b.rotation.x = 0.35 + roll * near * 0.8;
+    if (b.userData.isGuru) {
+      tassel.position.set(x, y - b.userData.radius - 0.004, z);
+      tassel.rotation.z = Math.sin(angle) * 0.15;
+    }
+  }
+  for (let i = 0; i <= 64; i++) {
+    const a = (i / 64) * Math.PI * 2;
+    const [x, y, z] = beadPath(a, 0);
+    cordPts[i].set(x, y, z);
+  }
+  const newGeo = new THREE.TubeGeometry(cordCurve, 64, 0.0017, 5, true);
+  cordMesh.geometry.dispose();
+  cordMesh.geometry = newGeo;
+}
+layoutBeads(0, 0);
 
 /* ---------- smoke ---------- */
 const smokeCount = 60;
@@ -566,9 +736,9 @@ scene.add(key);
 const fill = new THREE.DirectionalLight(0xfff0d8, 0.45);
 fill.position.set(0, 3.2, 4.5);
 scene.add(fill);
-const statueLight = new THREE.SpotLight(0xffefd0, 4.2, 12, 0.58, 0.5, 1.2);
-statueLight.position.set(0, 4.4, -2.4);
-statueLight.target.position.set(0, 2.1, -5.15);
+const statueLight = new THREE.SpotLight(0xffefd0, 5.2, 16, 0.55, 0.48, 1.15);
+statueLight.position.set(0, 5.8, -1.6);
+statueLight.target.position.set(0, 4.05, TEMPLE.statueZ);
 scene.add(statueLight, statueLight.target);
 const candleLights = [];
 function addCandleLight(x, y, z) {
@@ -726,7 +896,7 @@ async function loadModels(onProg) {
 
   // 主尊 on the platform (platform top ~ 0.64)
   scene.add(guanyin);
-  fitModel(guanyin, { targetHeight: 1.88, sitY: 0.64, x: 0, z: -5.15, yaw: 0 });
+  fitModel(guanyin, { targetHeight: TEMPLE.statueHeight, sitY: TEMPLE.platformTop, x: 0, z: TEMPLE.statueZ, yaw: 0 });
 
   scene.add(table);
   fitModel(table, { targetHeight: 0.66, sitY: 0, x: 0, z: TABLE_Z });
@@ -849,7 +1019,7 @@ async function offerIncense() {
   player.busy = true;
   const wasSeated = player.seated;
   const start = { x: player.x, y: player.y, z: player.z, pitch: player.pitch, yaw: player.yaw };
-  const mid = { x: 0, y: player.standY, z: -2.95, pitch: -0.18, yaw: 0 };
+  const mid = { x: 0, y: player.standY, z: -2.75, pitch: -0.22, yaw: 0 };
   stickHeld.visible = true;
   handPose = "incense";
   showMerit("上前上香");
@@ -956,13 +1126,17 @@ function openVow() {
 
 /* beads / muyu loops */
 const ritual = {
-  beads: { running: false, count: 0, timer: 0, target: 100 },
+  beads: { running: false, count: 0, timer: 0, target: 100, anim: 0, rolling: false },
   muyu: { running: false, count: 0, timer: 0, target: 50, strike: 0 },
 };
 
 function stopBeads() {
   ritual.beads.running = false;
+  ritual.beads.rolling = false;
+  ritual.beads.anim = 0;
   beadsGroup.visible = false;
+  hands.right.userData.thumbRoll = 0;
+  hands.left.userData.thumbRoll = 0;
   if (handPose === "beads") handPose = audio.wantedNian ? "anjali" : "rest";
   const btn = document.getElementById("btn-beads");
   btn.textContent = "佛珠";
@@ -972,8 +1146,11 @@ function startBeads() {
   if (player.busy) return;
   ritual.beads.running = true;
   ritual.beads.count = 0;
-  ritual.beads.timer = 0;
+  ritual.beads.timer = 0.2;
+  ritual.beads.anim = 0;
+  ritual.beads.rolling = false;
   beadsGroup.visible = true;
+  layoutBeads(0, 0);
   handPose = "beads";
   if (audio.wantedNian) stopNian();
   if (ritual.muyu.running) stopMuyu();
@@ -982,16 +1159,46 @@ function startBeads() {
   btn.classList.add("is-on");
   showMerit("佛珠 0 / 100");
 }
-function tickBead() {
+function beginBeadRoll() {
+  if (ritual.beads.rolling) return;
+  ritual.beads.rolling = true;
+  ritual.beads.anim = 0;
   ritual.beads.count += 1;
-  playOneShot(audio.buffers.bead, 0.7);
-  layoutBeads(ritual.beads.count);
+  playOneShot(audio.buffers.bead, 0.72);
   if (ritual.beads.count >= ritual.beads.target) {
-    playOneShot(audio.buffers.qing, 0.5);
     showMerit("佛珠一百 · 圆满", 2600);
-    stopBeads();
   } else {
     showMerit(`佛珠 ${ritual.beads.count} / 100`);
+  }
+}
+function updateBeads(dt) {
+  const b = ritual.beads;
+  if (!b.running) return;
+  if (!b.rolling) {
+    b.timer += dt;
+    if (b.timer >= 0.16) {
+      b.timer = 0;
+      if (b.count < b.target) beginBeadRoll();
+    }
+  }
+  if (b.rolling) {
+    b.anim = Math.min(1, b.anim + dt / 0.4);
+    const p = easeInOut(b.anim);
+    layoutBeads(b.count - 1 + p, p);
+    const roll = Math.sin(p * Math.PI);
+    hands.right.userData.thumbRoll = roll;
+    hands.left.userData.thumbRoll = roll * 0.35;
+    if (b.anim >= 1) {
+      b.rolling = false;
+      b.anim = 0;
+      layoutBeads(b.count, 0);
+      hands.right.userData.thumbRoll = 0;
+      hands.left.userData.thumbRoll = 0;
+      if (b.count >= b.target) {
+        playOneShot(audio.buffers.qing, 0.5);
+        stopBeads();
+      }
+    }
   }
 }
 
@@ -1168,18 +1375,11 @@ function frame() {
     candleLights[i].intensity = 1.05 + Math.sin(t * 3.2 + i * 1.7) * 0.18 + Math.sin(t * 7.1 + i) * 0.06;
   }
   if (statueLight) {
-    statueLight.intensity = 2.3 + Math.sin(t * 0.6) * 0.15;
+    statueLight.intensity = 4.8 + Math.sin(t * 0.6) * 0.2;
   }
   dust.rotation.y = t * 0.02;
 
-  if (ritual.beads.running) {
-    ritual.beads.timer += dt;
-    if (ritual.beads.timer >= 0.42) {
-      ritual.beads.timer = 0;
-      tickBead();
-    }
-    beadsGroup.rotation.y = Math.sin(t * 2) * 0.05;
-  }
+  updateBeads(dt);
   if (ritual.muyu.running) {
     ritual.muyu.timer += dt;
     if (ritual.muyu.timer >= 0.4) {
