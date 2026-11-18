@@ -1039,6 +1039,9 @@ const hallLoad = {
   total: Object.keys(MODEL_PATHS).length,
   draco: null,
   currentLabel: "",
+  gen: 0,
+  fileRecv: 0,
+  fileTotal: 0,
 };
 
 function hallReady(id) {
@@ -1120,7 +1123,7 @@ function setEnterButtons() {
       delete btn.dataset.retry;
       return;
     }
-    if (hallLoad.failed.size && !hallLoad.inflight) {
+    if (hallLoad.failed.size) {
       btn.disabled = false;
       btn.textContent = "连接中断，点此重试";
       btn.classList.add("is-fail");
@@ -1128,7 +1131,8 @@ function setEnterButtons() {
       btn.dataset.retry = "1";
       return;
     }
-    const n = hallLoad.total ? Math.round((hallLoad.done / hallLoad.total) * 100) : 0;
+    const frac = hallLoad.fileTotal ? hallLoad.fileRecv / hallLoad.fileTotal : 0;
+    const n = hallLoad.total ? Math.round(((hallLoad.done + frac) / hallLoad.total) * 100) : 0;
     const cur = hallLoad.currentLabel ? `正在下载${hallLoad.currentLabel}…` : "正在下载…";
     btn.disabled = false;
     btn.textContent = n ? `${cur} ${n}%` : cur;
@@ -1163,29 +1167,54 @@ function bustUrl(path, attempt) {
   return path + (path.includes("?") ? "&" : "?") + "r=" + attempt + "&t=" + Date.now();
 }
 
-async function fetchBuffer(path, timeoutMs, attempt) {
+async function fetchBuffer(path, timeoutMs, attempt, onProg) {
   const ctrl = new AbortController();
-  let timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  const bump = () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  let reader = null;
+  const stallError = () => Object.assign(new Error("stall " + path), { name: "AbortError" });
+  const abortStall = () => {
+    try { if (reader) reader.cancel(); } catch (e) {}
+    try { ctrl.abort(); } catch (e) {}
   };
+  let headerTimer;
   try {
-    const res = await fetch(attempt ? bustUrl(path, attempt) : path, {
-      signal: ctrl.signal,
-      cache: "no-store",
-    });
+    const res = await Promise.race([
+      fetch(bustUrl(path, attempt + 1), { signal: ctrl.signal, cache: "no-store" }),
+      new Promise((_, reject) => {
+        headerTimer = setTimeout(() => {
+          abortStall();
+          reject(stallError());
+        }, timeoutMs);
+      }),
+    ]);
     if (!res.ok) throw new Error("HTTP " + res.status + " " + path);
-    if (!res.body) return await res.arrayBuffer();
-    const reader = res.body.getReader();
+    const total = Number(res.headers.get("content-length")) || 0;
+    if (onProg) onProg(0, total);
+    if (!res.body) {
+      const buf = await res.arrayBuffer();
+      if (onProg) onProg(buf.byteLength, total || buf.byteLength);
+      return buf;
+    }
+    reader = res.body.getReader();
     const chunks = [];
     let received = 0;
     while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value);
-      received += value.byteLength;
-      bump();
+      let stallTimer;
+      const stall = new Promise((_, reject) => {
+        stallTimer = setTimeout(() => {
+          abortStall();
+          reject(stallError());
+        }, timeoutMs);
+      });
+      let part;
+      try {
+        part = await Promise.race([reader.read(), stall]);
+      } finally {
+        clearTimeout(stallTimer);
+      }
+      if (part.done) break;
+      chunks.push(part.value);
+      received += part.value.byteLength;
+      if (onProg) onProg(received, total);
     }
     const out = new Uint8Array(received);
     let offset = 0;
@@ -1195,7 +1224,7 @@ async function fetchBuffer(path, timeoutMs, attempt) {
     }
     return out.buffer;
   } finally {
-    clearTimeout(timer);
+    clearTimeout(headerTimer);
   }
 }
 
@@ -1206,12 +1235,12 @@ function parseGltf(gltf, path, buffer) {
   });
 }
 
-async function loadGltfRetry(gltf, path, tries = 3, timeoutMs = 45000) {
+async function loadGltfRetry(gltf, path, tries = 1, timeoutMs = 15000, onProg) {
   let last = null;
   for (let i = 0; i < tries; i++) {
     try {
-      if (i) await sleep(700 * i);
-      const buf = await fetchBuffer(path, timeoutMs, i);
+      if (i) await sleep(400 * i);
+      const buf = await fetchBuffer(path, timeoutMs, i, onProg);
       return await parseGltf(gltf, path, buf);
     } catch (err) {
       last = err;
@@ -1250,7 +1279,8 @@ function hardenPreviewImages() {
 }
 
 async function loadModels() {
-  if (hallLoad.inflight) return hallLoad.inflight;
+  if (hallLoad.inflight && !hallLoad.failed.size) return hallLoad.inflight;
+  const gen = ++hallLoad.gen;
   const manager = new THREE.LoadingManager();
   const draco = new DRACOLoader(manager);
   draco.setDecoderPath("./vendor/addons/libs/draco/gltf/");
@@ -1266,12 +1296,23 @@ async function loadModels() {
   hallLoad.failed.clear();
   hallLoad.done = hallLoad.total - jobs.length;
   hallLoad.currentLabel = "";
+  hallLoad.fileRecv = 0;
+  hallLoad.fileTotal = 0;
 
   const work = runPool(jobs, 2, async ([key, path]) => {
+    if (hallLoad.gen !== gen) return;
     hallLoad.currentLabel = MODEL_LABELS[key] || "";
+    hallLoad.fileRecv = 0;
+    hallLoad.fileTotal = 0;
     setEnterButtons();
     try {
-      const root = await loadGltfRetry(gltf, path);
+      const root = await loadGltfRetry(gltf, path, 1, 15000, (recvd, total) => {
+        if (hallLoad.gen !== gen) return;
+        hallLoad.fileRecv = recvd;
+        hallLoad.fileTotal = total;
+        setEnterButtons();
+      });
+      if (hallLoad.gen !== gen) return;
       if (key === "water_moon" || key === "eleven") {
         statues[key] = placeStatue(root, HALL_VIEWS[key]);
       } else {
@@ -1279,17 +1320,26 @@ async function loadModels() {
         flushPendingProps();
       }
       hallLoad.failed.delete(key);
+      hallLoad.fileRecv = 0;
+      hallLoad.fileTotal = 0;
       hallLoad.done = Math.min(hallLoad.total, hallLoad.done + 1);
       setEnterButtons();
       tryEnterPending();
     } catch (err) {
+      if (hallLoad.gen !== gen) return;
       console.error("load failed", key, err);
       hallLoad.failed.add(key);
+      hallLoad.fileRecv = 0;
+      hallLoad.fileTotal = 0;
+      hallLoad.inflight = null;
       setEnterButtons();
     }
   }).then(() => {
+    if (hallLoad.gen !== gen) return;
     hallLoad.inflight = null;
     hallLoad.currentLabel = "";
+    hallLoad.fileRecv = 0;
+    hallLoad.fileTotal = 0;
     flushPendingProps();
     setEnterButtons();
     tryEnterPending();
@@ -1939,7 +1989,9 @@ document.querySelectorAll(".btn-enter").forEach((btn) => {
       return;
     }
     hallLoad.pendingEnter = id;
-    if (!hallLoad.inflight) loadModels().catch((err) => console.error(err));
+    if (hallLoad.failed.size || !hallLoad.inflight) {
+      loadModels().catch((err) => console.error(err));
+    }
     setEnterButtons();
   });
 });
