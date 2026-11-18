@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0c0a08" />
+  <title>云山寺观音殿 · 测试占位</title>
+  <link rel="stylesheet" href="./css/style.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three.module.js",
+      "three/addons/": "./vendor/addons/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="stage"></div>
+
+  <header class="ui-top">
+    <p class="eyebrow">云山寺 · 测试页</p>
+    <h1>观音殿</h1>
+    <p class="banner">测试占位，非正式白玉观音</p>
+  </header>
+
+  <p class="credit" id="credit">
+    主尊占位：克利夫兰美术馆《十一面观音》1981.53（CC0）· 香案/烛台：Poly Haven（CC0）· 香炉：Freer/SI F1947.15（公共领域）· 蒲团木鱼佛珠殿壳自制 · 不算验收通过
+  </p>
+
+  <p class="hint" id="hint">左右滑动可环顾殿内</p>
+  <p class="merit" id="merit"></p>
+
+  <nav class="actions" aria-label="礼敬">
+    <button type="button" id="btn-sit">坐下</button>
+    <button type="button" id="btn-bai">礼拜</button>
+    <button type="button" id="btn-incense">上香</button>
+    <button type="button" id="btn-pray">祈福</button>
+    <button type="button" id="btn-vow">还愿</button>
+    <button type="button" id="btn-nian">念佛</button>
+    <button type="button" id="btn-beads">佛珠</button>
+    <button type="button" id="btn-muyu">木鱼</button>
+  </nav>
+
+  <div id="loader">
+    <div class="loader-inner">
+      <div class="lotus"></div>
+      <p id="loader-text">正在进殿…</p>
+      <div class="bar"><span id="loader-bar"></span></div>
+    </div>
+  </div>
+
+  <div id="modal" class="modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <h2 id="modal-title"></h2>
+      <div id="modal-body"></div>
+      <button type="button" id="modal-close">关闭</button>
+    </div>
+  </div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
