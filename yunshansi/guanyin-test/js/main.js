@@ -97,12 +97,12 @@ const CREDITS = {
 
 const HALL_VIEWS = {
   water_moon: {
-    // 主尊含莲座仍约 5 米，不缩小。机位再推近，视线对准上胸，让面容宝冠落在画面上半，不要整尊中景陈列。
+    // 主尊含莲座仍约 5 米，不缩小。按简报第 24 节，默认站位比 112b3db 拉远约 0.7 米（半米到一米之间），视线仍对准上胸，面容宝冠留在上半幅，可多看见一些肩胸，不退回整尊中景。
     fov: 50,
     standY: 1.60,
     sitY: 1.10,
-    homeZ: -2.15,
-    sitZ: -2.50,
+    homeZ: -1.45,
+    sitZ: -1.80,
     pitch: 0.58,
     statueHeight: 5.0,
     platformTop: 1.10,
@@ -111,12 +111,12 @@ const HALL_VIEWS = {
     lightY: 7.6,
   },
   eleven: {
-    // 立像面容更高，单独略抬仰角；同样推近，避免上半幅只剩梁柱和黑顶。
+    // 立像面容更高，单独略抬仰角；按第 24 节同样拉远约 0.7 米，避免又变成整尊中景或上半幅只剩梁柱黑顶。
     fov: 56,
     standY: 1.60,
     sitY: 1.10,
-    homeZ: -2.25,
-    sitZ: -2.55,
+    homeZ: -1.55,
+    sitZ: -1.85,
     pitch: 0.58,
     statueHeight: 5.0,
     platformTop: 1.10,
