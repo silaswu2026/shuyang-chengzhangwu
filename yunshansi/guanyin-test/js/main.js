@@ -718,7 +718,7 @@ async function loadModels(onProg) {
     });
 
   const [guanyin, table, xianglu, candles] = await Promise.all([
-    load("./assets/models/cma_1981.53_eleven_headed_guanyin.glb"),
+    load("./assets/models/mia_32122_water_moon_guanyin.glb"),
     load("./assets/models/polyhaven_chinese_console_table_1k.glb"),
     load("./assets/models/si_F1947.15_lidded_xianglu_150k_2048.glb"),
     load("./assets/models/polyhaven_brass_candleholders_1k.glb"),
@@ -726,7 +726,7 @@ async function loadModels(onProg) {
 
   // 主尊 on the platform (platform top ~ 0.64)
   scene.add(guanyin);
-  fitModel(guanyin, { targetHeight: 2.18, sitY: 0.64, x: 0, z: -5.15 });
+  fitModel(guanyin, { targetHeight: 1.88, sitY: 0.64, x: 0, z: -5.15, yaw: 0 });
 
   scene.add(table);
   fitModel(table, { targetHeight: 0.66, sitY: 0, x: 0, z: TABLE_Z });
