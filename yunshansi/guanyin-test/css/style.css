@@ -457,6 +457,13 @@ h1 {
 .select-card button.btn-enter {
   border-color: var(--gold-bright);
 }
+.select-card button.btn-enter.is-wait {
+  opacity: 0.9;
+}
+.select-card button.btn-enter.is-fail {
+  border-color: rgba(201, 165, 106, 0.55);
+}
+
 .select-card button:disabled,
 .select-card button.btn-soon {
   cursor: not-allowed;

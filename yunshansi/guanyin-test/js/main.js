@@ -1018,73 +1018,220 @@ const TABLE_Y = 0;
 let tableTopY = 0.66;
 const burnerWorld = new THREE.Vector3(0, 0.9, TABLE_Z);
 
-async function loadModels(onProg) {
+const MODEL_PATHS = {
+  water_moon: "./assets/models/mia_32122_water_moon_guanyin.glb",
+  eleven: "./assets/models/cma_1981.53_eleven_headed_guanyin.glb",
+  table: "./assets/models/polyhaven_chinese_console_table_1k.glb",
+  xianglu: "./assets/models/si_F1947.15_lidded_xianglu_150k_2048.glb",
+  candles: "./assets/models/polyhaven_brass_candleholders_1k.glb",
+};
+
+const hallLoad = {
+  roots: { table: null, xianglu: null, candles: null },
+  stash: { table: null, xianglu: null, candles: null },
+  propsReady: false,
+  failed: new Set(),
+  inflight: null,
+  pendingEnter: null,
+  done: 0,
+  total: Object.keys(MODEL_PATHS).length,
+  draco: null,
+};
+
+function hallReady(id) {
+  return !!(hallLoad.propsReady && statues[id]);
+}
+
+function placeStatue(root, view) {
+  scene.add(root);
+  fitModel(root, {
+    targetHeight: view.statueHeight,
+    sitY: view.platformTop,
+    x: 0,
+    z: view.statueZ,
+    yaw: 0,
+  });
+  root.visible = false;
+  return root;
+}
+
+function placeHallProps(kind, root) {
+  if (kind === "table") {
+    scene.add(root);
+    fitModel(root, { targetHeight: 0.66, sitY: 0, x: 0, z: TABLE_Z });
+    root.updateMatrixWorld(true);
+    const tbox = new THREE.Box3().setFromObject(root);
+    tableTopY = tbox.max.y;
+    hallLoad.roots.table = root;
+    return;
+  }
+  if (!hallLoad.roots.table) return;
+  if (kind === "xianglu") {
+    root.rotation.x = -Math.PI / 2;
+    scene.add(root);
+    fitModel(root, { targetHeight: 0.185, sitY: tableTopY, x: 0, z: TABLE_Z });
+    root.updateMatrixWorld(true);
+    const xbox = new THREE.Box3().setFromObject(root);
+    burnerWorld.set(0, xbox.max.y, TABLE_Z);
+    smoke.position.copy(burnerWorld);
+    hallLoad.roots.xianglu = root;
+    return;
+  }
+  if (kind === "candles") {
+    root.traverse((o) => {
+      if (o.name && /candleholder_02/i.test(o.name)) o.visible = false;
+    });
+    scene.add(root);
+    fitModel(root, { targetHeight: 0.36, sitY: tableTopY, x: 0, z: TABLE_Z });
+    root.updateMatrixWorld(true);
+    const cbox = new THREE.Box3().setFromObject(root);
+    addCandleLight(-0.48, cbox.max.y - 0.02, TABLE_Z);
+    addCandleLight(0.48, cbox.max.y - 0.02, TABLE_Z);
+    hallLoad.roots.candles = root;
+  }
+}
+
+function flushPendingProps() {
+  if (!hallLoad.roots.table && hallLoad.stash.table) {
+    placeHallProps("table", hallLoad.stash.table);
+    hallLoad.stash.table = null;
+  }
+  if (hallLoad.roots.table && hallLoad.stash.xianglu) {
+    placeHallProps("xianglu", hallLoad.stash.xianglu);
+    hallLoad.stash.xianglu = null;
+  }
+  if (hallLoad.roots.table && hallLoad.stash.candles) {
+    placeHallProps("candles", hallLoad.stash.candles);
+    hallLoad.stash.candles = null;
+  }
+  hallLoad.propsReady = !!(hallLoad.roots.table && hallLoad.roots.xianglu && hallLoad.roots.candles);
+}
+
+function setEnterButtons() {
+  document.querySelectorAll(".btn-enter").forEach((btn) => {
+    const id = btn.dataset.hall;
+    if (hallReady(id)) {
+      btn.disabled = false;
+      btn.textContent = "入殿礼敬";
+      btn.classList.remove("is-wait", "is-fail");
+      delete btn.dataset.retry;
+      return;
+    }
+    if (hallLoad.failed.size && !hallLoad.inflight) {
+      btn.disabled = false;
+      btn.textContent = "迎请未成，点此重试";
+      btn.classList.add("is-fail");
+      btn.classList.remove("is-wait");
+      btn.dataset.retry = "1";
+      return;
+    }
+    const n = hallLoad.total ? Math.round((hallLoad.done / hallLoad.total) * 100) : 0;
+    btn.disabled = false;
+    btn.textContent = n ? `正在迎请… ${n}%` : "正在迎请…";
+    btn.classList.add("is-wait");
+    btn.classList.remove("is-fail");
+    delete btn.dataset.retry;
+  });
+}
+
+function tryEnterPending() {
+  const id = hallLoad.pendingEnter;
+  if (id && hallReady(id)) {
+    hallLoad.pendingEnter = null;
+    enterHall(id);
+  }
+}
+
+function loadGltfScene(gltf, path, timeoutMs = 180000) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      reject(new Error("超时 " + path));
+    }, timeoutMs);
+    gltf.load(
+      path,
+      (g) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(g.scene);
+      },
+      undefined,
+      (err) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+}
+
+async function loadGltfRetry(gltf, path, tries = 2) {
+  let last = null;
+  for (let i = 0; i < tries; i++) {
+    try {
+      return await loadGltfScene(gltf, path);
+    } catch (err) {
+      last = err;
+    }
+  }
+  throw last;
+}
+
+async function loadModels() {
+  if (hallLoad.inflight) return hallLoad.inflight;
   const manager = new THREE.LoadingManager();
-  manager.onProgress = (url, loaded, total) => {
-    const p = total ? Math.round((loaded / total) * 100) : 0;
-    onProg(p, url);
-  };
   const draco = new DRACOLoader(manager);
   draco.setDecoderPath("./vendor/addons/libs/draco/gltf/");
   draco.preload();
+  hallLoad.draco = draco;
   const gltf = new GLTFLoader(manager);
   gltf.setDRACOLoader(draco);
 
-  const load = (path) =>
-    new Promise((resolve, reject) => {
-      gltf.load(path, (g) => resolve(g.scene), undefined, reject);
-    });
-
-  const [guanyin, eleven, table, xianglu, candles] = await Promise.all([
-    load("./assets/models/mia_32122_water_moon_guanyin.glb"),
-    load("./assets/models/cma_1981.53_eleven_headed_guanyin.glb"),
-    load("./assets/models/polyhaven_chinese_console_table_1k.glb"),
-    load("./assets/models/si_F1947.15_lidded_xianglu_150k_2048.glb"),
-    load("./assets/models/polyhaven_brass_candleholders_1k.glb"),
-  ]);
-
-  const placeStatue = (root, view) => {
-    scene.add(root);
-    fitModel(root, {
-      targetHeight: view.statueHeight,
-      sitY: view.platformTop,
-      x: 0,
-      z: view.statueZ,
-      yaw: 0,
-    });
-    root.visible = false;
-    return root;
-  };
-  statues.water_moon = placeStatue(guanyin, HALL_VIEWS.water_moon);
-  statues.eleven = placeStatue(eleven, HALL_VIEWS.eleven);
-
-  scene.add(table);
-  fitModel(table, { targetHeight: 0.66, sitY: 0, x: 0, z: TABLE_Z });
-  table.updateMatrixWorld(true);
-  const tbox = new THREE.Box3().setFromObject(table);
-  tableTopY = tbox.max.y;
-
-  // 香炉 is Z-up in millimeters
-  xianglu.rotation.x = -Math.PI / 2;
-  scene.add(xianglu);
-  fitModel(xianglu, { targetHeight: 0.185, sitY: tableTopY, x: 0, z: TABLE_Z });
-  xianglu.updateMatrixWorld(true);
-  const xbox = new THREE.Box3().setFromObject(xianglu);
-  burnerWorld.set(0, xbox.max.y, TABLE_Z);
-  smoke.position.copy(burnerWorld);
-
-  // 烛台：略缩小，只留左右两支，中间让给香炉
-  candles.traverse((o) => {
-    if (o.name && /candleholder_02/i.test(o.name)) o.visible = false;
+  const jobs = Object.entries(MODEL_PATHS).filter(([key]) => {
+    if (key === "water_moon" || key === "eleven") return !statues[key];
+    return !hallLoad.roots[key] && !hallLoad.stash[key];
   });
-  scene.add(candles);
-  fitModel(candles, { targetHeight: 0.36, sitY: tableTopY, x: 0, z: TABLE_Z });
-  candles.updateMatrixWorld(true);
-  const cbox = new THREE.Box3().setFromObject(candles);
-  addCandleLight(-0.48, cbox.max.y - 0.02, TABLE_Z);
-  addCandleLight(0.48, cbox.max.y - 0.02, TABLE_Z);
+  hallLoad.failed.clear();
+  hallLoad.done = hallLoad.total - jobs.length;
 
-  draco.dispose();
+  const work = Promise.all(
+    jobs.map(async ([key, path]) => {
+      try {
+        const root = await loadGltfRetry(gltf, path);
+        if (key === "water_moon" || key === "eleven") {
+          statues[key] = placeStatue(root, HALL_VIEWS[key]);
+        } else {
+          hallLoad.stash[key] = root;
+          flushPendingProps();
+        }
+        hallLoad.failed.delete(key);
+        hallLoad.done = Math.min(hallLoad.total, hallLoad.done + 1);
+        setEnterButtons();
+        tryEnterPending();
+      } catch (err) {
+        console.error("load failed", key, err);
+        hallLoad.failed.add(key);
+        setEnterButtons();
+      }
+    })
+  ).then(() => {
+    hallLoad.inflight = null;
+    flushPendingProps();
+    setEnterButtons();
+    tryEnterPending();
+    if (hallLoad.propsReady && statues.water_moon && statues.eleven && hallLoad.draco) {
+      hallLoad.draco.dispose();
+      hallLoad.draco = null;
+    }
+  });
+
+  hallLoad.inflight = work;
+  setEnterButtons();
+  return work;
 }
 
 /* ---------- rituals ---------- */
@@ -1672,7 +1819,7 @@ function showSelectHall() {
 }
 function enterHall(id) {
   const view = HALL_VIEWS[id];
-  if (!view || !statues[id]) return;
+  if (!view || !hallReady(id)) return;
   unlockAudio();
   currentHall = id;
   inHall = true;
@@ -1715,7 +1862,16 @@ document.getElementById("btn-music").addEventListener("click", (e) => {
   openMusicPicker();
 });
 document.querySelectorAll(".btn-enter").forEach((btn) => {
-  btn.addEventListener("click", () => enterHall(btn.dataset.hall));
+  btn.addEventListener("click", () => {
+    const id = btn.dataset.hall;
+    if (hallReady(id)) {
+      enterHall(id);
+      return;
+    }
+    hallLoad.pendingEnter = id;
+    if (!hallLoad.inflight) loadModels().catch((err) => console.error(err));
+    setEnterButtons();
+  });
 });
 
 function resizeRenderer() {
@@ -1818,22 +1974,15 @@ setupAudio();
 requestAnimationFrame(frame);
 
 (async function init() {
+  setEnterButtons();
+  showSelectHall();
+  resizeRenderer();
+  loaderEl.classList.add("hide");
+  decodeSfx().catch((err) => console.error(err));
   try {
-    await Promise.all([
-      loadModels((p) => {
-        loaderBar.style.width = `${p}%`;
-        loaderText.textContent = `正在备殿… ${p}%`;
-      }),
-      decodeSfx(),
-    ]);
-    loaderBar.style.width = "100%";
-    loaderText.textContent = "请进山门";
-    await new Promise((r) => setTimeout(r, 280));
-    showSelectHall();
-    resizeRenderer();
-    loaderEl.classList.add("hide");
+    await loadModels();
   } catch (err) {
     console.error(err);
-    loaderText.textContent = "备殿未能完成，请刷新重试";
+    setEnterButtons();
   }
 })();
