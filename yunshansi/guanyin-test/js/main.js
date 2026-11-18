@@ -38,7 +38,7 @@ scene.background = new THREE.Color(0x0c0a08);
 scene.fog = new THREE.FogExp2(0x16110c, 0.032);
 
 const camera = new THREE.PerspectiveCamera(
-  52,
+  60,
   window.innerWidth / window.innerHeight,
   0.08,
   48
@@ -52,14 +52,14 @@ const _v2 = new THREE.Vector3();
 /* ---------- first-person look ---------- */
 /* 殿内尺度（水月观音坐像）：站在殿中偏前，抬头瞻仰高台大像 */
 const TEMPLE = {
-  fov: 52,
-  standY: 1.56,
-  sitY: 1.06,
-  homeZ: 0.20,
-  sitZ: -0.70,
-  pitch: 0.40,
-  statueHeight: 3.28,
-  platformTop: 1.38,
+  fov: 60,
+  standY: 1.60,
+  sitY: 1.10,
+  homeZ: 2.15,
+  sitZ: 0.40,
+  pitch: 0.18,
+  statueHeight: 2.85,
+  platformTop: 1.10,
   statueZ: -5.45,
   platformZ: -5.35,
 };
@@ -370,13 +370,13 @@ function makeMuyu() {
 /* Quest 风格：饱满圆润、半透明，无方块硬边，无写实关节扫描 */
 const handMat = new THREE.MeshStandardMaterial({
   color: 0xf2e8d8,
-  roughness: 0.38,
+  roughness: 0.42,
   metalness: 0.0,
   transparent: true,
-  opacity: 0.5,
+  opacity: 0.38,
   depthWrite: false,
-  emissive: new THREE.Color(0x4a4034),
-  emissiveIntensity: 0.28,
+  emissive: new THREE.Color(0x3a342c),
+  emissiveIntensity: 0.05,
   side: THREE.DoubleSide,
 });
 
@@ -449,40 +449,41 @@ function makeOneHand(side) {
 }
 
 const hands = { root: new THREE.Group(), left: makeOneHand(-1), right: makeOneHand(1) };
-hands.left.position.set(-0.15, -0.15, -0.32);
-hands.right.position.set(0.15, -0.15, -0.32);
-hands.left.rotation.set(-0.95, 0.12, 0.22);
-hands.right.rotation.set(-0.95, -0.12, -0.22);
+hands.left.position.set(-0.20, -0.14, -0.30);
+hands.right.position.set(0.20, -0.14, -0.30);
+hands.left.rotation.set(0.42, 0.14, 0.16);
+hands.right.rotation.set(0.42, -0.14, -0.16);
+hands.root.scale.setScalar(0.78);
 hands.root.add(hands.left, hands.right);
 camera.add(hands.root);
-const handFill = new THREE.PointLight(0xffe6cc, 0.45, 1.4, 1.8);
-handFill.position.set(0, 0.02, -0.12);
+const handFill = new THREE.PointLight(0xffe6cc, 0.08, 0.8, 2.0);
+handFill.position.set(0, -0.04, -0.10);
 camera.add(handFill);
 
 const POSITIONS = {
   rest: {
-    L: { p: [-0.15, -0.15, -0.32], r: [-0.95, 0.12, 0.22], curl: 0.28, thumb: 0.2 },
-    R: { p: [0.15, -0.15, -0.32], r: [-0.95, -0.12, -0.22], curl: 0.28, thumb: 0.2 },
+    L: { p: [-0.20, -0.14, -0.30], r: [0.42, 0.14, 0.16], curl: 0.22, thumb: 0.18 },
+    R: { p: [0.20, -0.14, -0.30], r: [0.42, -0.14, -0.16], curl: 0.22, thumb: 0.18 },
   },
   anjali: {
-    L: { p: [-0.018, -0.085, -0.33], r: [0.06, 1.48, 0.0], curl: 0.04, thumb: 0.2 },
-    R: { p: [0.018, -0.085, -0.33], r: [0.06, -1.48, 0.0], curl: 0.04, thumb: 0.2 },
+    L: { p: [-0.022, -0.10, -0.32], r: [0.10, 1.48, 0.0], curl: 0.04, thumb: 0.2 },
+    R: { p: [0.022, -0.10, -0.32], r: [0.10, -1.48, 0.0], curl: 0.04, thumb: 0.2 },
   },
   incense: {
-    L: { p: [-0.11, -0.14, -0.32], r: [-0.7, 0.16, 0.16], curl: 0.26, thumb: 0.2 },
-    R: { p: [0.07, -0.04, -0.34], r: [-0.35, -0.08, 0.06], curl: 0.62, thumb: 0.45 },
+    L: { p: [-0.16, -0.16, -0.30], r: [0.20, 0.16, 0.16], curl: 0.26, thumb: 0.2 },
+    R: { p: [0.08, -0.08, -0.32], r: [-0.15, -0.08, 0.06], curl: 0.62, thumb: 0.45 },
   },
   beads: {
-    L: { p: [-0.065, -0.125, -0.31], r: [-1.05, 0.22, 0.18], curl: 0.42, thumb: 0.25 },
-    R: { p: [0.065, -0.125, -0.31], r: [-1.05, -0.22, -0.18], curl: 0.48, thumb: 0.38 },
+    L: { p: [-0.08, -0.13, -0.30], r: [0.55, 0.22, 0.12], curl: 0.42, thumb: 0.25 },
+    R: { p: [0.08, -0.13, -0.30], r: [0.55, -0.22, -0.12], curl: 0.48, thumb: 0.38 },
   },
   bow: {
-    L: { p: [-0.12, -0.22, -0.30], r: [-0.2, 0.1, 0.1], curl: 0.55, thumb: 0.3 },
-    R: { p: [0.12, -0.22, -0.30], r: [-0.2, -0.1, -0.1], curl: 0.55, thumb: 0.3 },
+    L: { p: [-0.14, -0.26, -0.28], r: [0.85, 0.10, 0.10], curl: 0.55, thumb: 0.3 },
+    R: { p: [0.14, -0.26, -0.28], r: [0.85, -0.10, -0.10], curl: 0.55, thumb: 0.3 },
   },
   muyu: {
-    L: { p: [-0.15, -0.15, -0.32], r: [-0.95, 0.12, 0.22], curl: 0.28, thumb: 0.2 },
-    R: { p: [0.12, -0.07, -0.33], r: [-0.55, -0.2, 0.45], curl: 0.4, thumb: 0.25 },
+    L: { p: [-0.20, -0.14, -0.30], r: [0.42, 0.14, 0.16], curl: 0.22, thumb: 0.18 },
+    R: { p: [0.14, -0.10, -0.31], r: [0.15, -0.20, 0.45], curl: 0.4, thumb: 0.25 },
   },
 };
 
