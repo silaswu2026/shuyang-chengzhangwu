@@ -1131,8 +1131,8 @@ function setEnterButtons() {
       btn.dataset.retry = "1";
       return;
     }
-    const frac = hallLoad.fileTotal ? hallLoad.fileRecv / hallLoad.fileTotal : 0;
-    const n = hallLoad.total ? Math.round(((hallLoad.done + frac) / hallLoad.total) * 100) : 0;
+    const frac = hallLoad.fileTotal ? Math.min(1, hallLoad.fileRecv / hallLoad.fileTotal) : 0;
+    const n = hallLoad.total ? Math.min(100, Math.round(((hallLoad.done + frac) / hallLoad.total) * 100)) : 0;
     const cur = hallLoad.currentLabel ? `正在下载${hallLoad.currentLabel}…` : "正在下载…";
     btn.disabled = false;
     btn.textContent = n ? `${cur} ${n}%` : cur;
@@ -1169,62 +1169,89 @@ function bustUrl(path, attempt) {
 
 async function fetchBuffer(path, timeoutMs, attempt, onProg) {
   const ctrl = new AbortController();
+  if (!hallLoad.controllers) hallLoad.controllers = [];
+  hallLoad.controllers.push(ctrl);
   let reader = null;
+  let stalled = false;
   const stallError = () => Object.assign(new Error("stall " + path), { name: "AbortError" });
   const abortStall = () => {
+    stalled = true;
     try { if (reader) reader.cancel(); } catch (e) {}
     try { ctrl.abort(); } catch (e) {}
   };
   let headerTimer;
   try {
-    const res = await Promise.race([
-      fetch(bustUrl(path, attempt + 1), { signal: ctrl.signal, cache: "no-store" }),
-      new Promise((_, reject) => {
-        headerTimer = setTimeout(() => {
-          abortStall();
-          reject(stallError());
-        }, timeoutMs);
-      }),
-    ]);
+    headerTimer = setTimeout(abortStall, timeoutMs);
+    let res;
+    try {
+      res = await fetch(bustUrl(path, attempt + 1), { signal: ctrl.signal, cache: "no-store" });
+    } finally {
+      clearTimeout(headerTimer);
+      headerTimer = null;
+    }
+    if (stalled) throw stallError();
     if (!res.ok) throw new Error("HTTP " + res.status + " " + path);
-    const total = Number(res.headers.get("content-length")) || 0;
+    const encoding = (res.headers.get("content-encoding") || "").toLowerCase();
+    const encoded = !!(encoding && encoding !== "identity");
+    const announced = Number(res.headers.get("content-length")) || 0;
+    const total = encoded ? 0 : announced;
     if (onProg) onProg(0, total);
+    let buf;
     if (!res.body) {
-      const buf = await res.arrayBuffer();
+      buf = await res.arrayBuffer();
       if (onProg) onProg(buf.byteLength, total || buf.byteLength);
-      return buf;
-    }
-    reader = res.body.getReader();
-    const chunks = [];
-    let received = 0;
-    while (true) {
-      let stallTimer;
-      const stall = new Promise((_, reject) => {
-        stallTimer = setTimeout(() => {
-          abortStall();
-          reject(stallError());
-        }, timeoutMs);
-      });
-      let part;
-      try {
-        part = await Promise.race([reader.read(), stall]);
-      } finally {
-        clearTimeout(stallTimer);
+    } else {
+      reader = res.body.getReader();
+      const chunks = [];
+      let received = 0;
+      while (true) {
+        let stallTimer;
+        const stall = new Promise((_, reject) => {
+          stallTimer = setTimeout(() => {
+            abortStall();
+            reject(stallError());
+          }, timeoutMs);
+        });
+        let part;
+        try {
+          part = await Promise.race([reader.read(), stall]);
+        } finally {
+          clearTimeout(stallTimer);
+        }
+        if (part.done) break;
+        chunks.push(part.value);
+        received += part.value.byteLength;
+        if (onProg) onProg(received, total);
       }
-      if (part.done) break;
-      chunks.push(part.value);
-      received += part.value.byteLength;
-      if (onProg) onProg(received, total);
+      const out = new Uint8Array(received);
+      let offset = 0;
+      for (const chunk of chunks) {
+        out.set(chunk, offset);
+        offset += chunk.byteLength;
+      }
+      buf = out.buffer;
     }
-    const out = new Uint8Array(received);
-    let offset = 0;
-    for (const chunk of chunks) {
-      out.set(chunk, offset);
-      offset += chunk.byteLength;
+    if (total && buf.byteLength < total) {
+      throw new Error("truncated " + path + " " + buf.byteLength + "/" + total);
     }
-    return out.buffer;
+    return buf;
   } finally {
-    clearTimeout(headerTimer);
+    if (headerTimer) clearTimeout(headerTimer);
+    hallLoad.controllers = (hallLoad.controllers || []).filter((c) => c !== ctrl);
+  }
+}
+
+function assertCompleteGlb(buffer, path) {
+  if (!buffer || buffer.byteLength < 12) {
+    throw new Error("truncated glb " + path + " " + (buffer ? buffer.byteLength : 0));
+  }
+  const view = new DataView(buffer);
+  if (view.getUint32(0, true) !== 0x46546C67) {
+    throw new Error("not glb " + path);
+  }
+  const declared = view.getUint32(8, true);
+  if (buffer.byteLength < declared) {
+    throw new Error("truncated glb " + path + " " + buffer.byteLength + "/" + declared);
   }
 }
 
@@ -1241,6 +1268,7 @@ async function loadGltfRetry(gltf, path, tries = 1, timeoutMs = 15000, onProg) {
     try {
       if (i) await sleep(400 * i);
       const buf = await fetchBuffer(path, timeoutMs, i, onProg);
+      assertCompleteGlb(buf, path);
       return await parseGltf(gltf, path, buf);
     } catch (err) {
       last = err;
@@ -1281,6 +1309,8 @@ function hardenPreviewImages() {
 async function loadModels() {
   if (hallLoad.inflight && !hallLoad.failed.size) return hallLoad.inflight;
   const gen = ++hallLoad.gen;
+  (hallLoad.controllers || []).forEach((c) => { try { c.abort(); } catch (e) {} });
+  hallLoad.controllers = [];
   const manager = new THREE.LoadingManager();
   const draco = new DRACOLoader(manager);
   draco.setDecoderPath("./vendor/addons/libs/draco/gltf/");

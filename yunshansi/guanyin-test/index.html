@@ -113,6 +113,7 @@
     var STALL_MS = 45000;
     var TRIES = 3;
     var busy = false;
+    var bootClick;
 
     function setBtns(text, fail) {
       if (window.__hallBooted) return;
@@ -135,7 +136,10 @@
       }
       return fetch(url, { signal: ctrl.signal, cache: cache }).then(function (res) {
         if (!res.ok) throw new Error("http " + res.status);
-        var total = Number(res.headers.get("content-length")) || 0;
+        var encoding = (res.headers.get("content-encoding") || "").toLowerCase();
+        var encoded = encoding && encoding !== "identity";
+        var announced = Number(res.headers.get("content-length")) || 0;
+        var total = encoded ? 0 : announced;
         if (!res.body || !res.body.getReader) {
           return res.arrayBuffer().then(function (buf) {
             clearTimeout(timer);
@@ -172,15 +176,12 @@
       });
     }
 
-    function prefetch(url, label) {
+    function prefetch(url, onProg) {
       var attempt = 0;
       function once() {
         attempt += 1;
         var cache = attempt === 1 ? "default" : "reload";
-        return stallFetch(url, cache, function (recvd, total) {
-          var n = total ? Math.round(recvd / total * 100) : 0;
-          setBtns(n ? ("正在下载" + label + "… " + n + "%") : ("正在下载" + label + "…"), false);
-        }).catch(function (err) {
+        return stallFetch(url, cache, onProg).catch(function (err) {
           if (attempt < TRIES) {
             return new Promise(function (ok) { setTimeout(ok, 800 * attempt); }).then(once);
           }
@@ -197,16 +198,31 @@
       var stamp = Date.now();
       var mainUrl = "./js/main.js?v=select-html&t=" + stamp;
       var files = FILES.concat([[mainUrl, "殿页"]]);
+      var doneFiles = 0;
       var chain = Promise.resolve();
       for (var i = 0; i < files.length; i++) {
         (function (file) {
-          chain = chain.then(function () { return prefetch(file[0], file[1]); });
+          chain = chain.then(function () {
+            return prefetch(file[0], function (recvd, total) {
+              var frac = total ? Math.min(1, recvd / total) : 0;
+              var n = Math.min(100, Math.round(((doneFiles + frac) / files.length) * 100));
+              setBtns(n ? ("正在下载引擎… " + n + "%") : "正在下载引擎…", false);
+            }).then(function () {
+              doneFiles += 1;
+              var n = Math.min(100, Math.round((doneFiles / files.length) * 100));
+              setBtns("正在下载引擎… " + n + "%", false);
+            });
+          });
         })(files[i]);
       }
       chain.then(function () {
         return import(mainUrl);
       }).then(function () {
         busy = false;
+        if (bootClick) {
+          document.removeEventListener("click", bootClick, true);
+          bootClick = null;
+        }
       }).catch(function (err) {
         console.error(err);
         busy = false;
@@ -214,14 +230,15 @@
       });
     }
 
-    document.addEventListener("click", function (e) {
+    bootClick = function (e) {
       if (window.__hallBooted) return;
       var btn = e.target.closest ? e.target.closest(".btn-enter") : null;
       if (!btn || !btn.classList.contains("is-fail")) return;
       e.preventDefault();
       e.stopPropagation();
       boot();
-    }, true);
+    };
+    document.addEventListener("click", bootClick, true);
 
     boot();
   })();
