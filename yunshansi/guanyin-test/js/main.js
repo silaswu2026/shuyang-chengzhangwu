@@ -26,7 +26,7 @@ const renderer = new THREE.WebGLRenderer({
   powerPreference: "high-performance",
 });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(window.innerWidth, window.innerHeight, false);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.38;
@@ -97,13 +97,13 @@ const CREDITS = {
 
 const HALL_VIEWS = {
   water_moon: {
-    // 坐像：含莲座约 5 米，站距约 5 米。默认仰望面容与宝冠占画面上半，不为此缩小主尊或拉远机位；低头可见佛台。
-    fov: 64,
+    // 主尊含莲座仍约 5 米，不缩小。机位再推近，视线对准上胸，让面容宝冠落在画面上半，不要整尊中景陈列。
+    fov: 50,
     standY: 1.60,
     sitY: 1.10,
-    homeZ: -0.45,
-    sitZ: -0.80,
-    pitch: 0.54,
+    homeZ: -2.15,
+    sitZ: -2.50,
+    pitch: 0.58,
     statueHeight: 5.0,
     platformTop: 1.10,
     statueZ: -5.45,
@@ -111,13 +111,13 @@ const HALL_VIEWS = {
     lightY: 7.6,
   },
   eleven: {
-    // 立像面容更高，单独仰角；仍是约五米像、约五米外，默认以面容宝冠为主
-    fov: 52,
+    // 立像面容更高，单独略抬仰角；同样推近，避免上半幅只剩梁柱和黑顶。
+    fov: 56,
     standY: 1.60,
     sitY: 1.10,
-    homeZ: -0.45,
-    sitZ: -0.80,
-    pitch: 0.66,
+    homeZ: -2.25,
+    sitZ: -2.55,
+    pitch: 0.58,
     statueHeight: 5.0,
     platformTop: 1.10,
     statueZ: -5.45,
@@ -495,21 +495,26 @@ function makeOneHand(side) {
 }
 
 const hands = { root: new THREE.Group(), left: makeOneHand(-1), right: makeOneHand(1) };
-hands.left.position.set(-0.20, -0.14, -0.30);
-hands.right.position.set(0.20, -0.14, -0.30);
+hands.left.position.set(-0.32, -0.08, -0.42);
+hands.right.position.set(0.32, -0.08, -0.42);
 hands.left.rotation.set(0.42, 0.14, 0.16);
 hands.right.rotation.set(0.42, -0.14, -0.16);
-hands.root.scale.setScalar(0.50);
 hands.root.add(hands.left, hands.right);
 camera.add(hands.root);
-const handFill = new THREE.PointLight(0xffe6cc, 0.08, 0.8, 2.0);
+const handFill = new THREE.PointLight(0xffe6cc, 0.06, 0.7, 2.0);
 handFill.position.set(0, -0.04, -0.10);
 camera.add(handFill);
 
+function sizeHands() {
+  const mobile = (window.innerWidth || 0) <= 720;
+  hands.root.scale.setScalar(mobile ? 0.20 : 0.24);
+}
+sizeHands();
+
 const POSITIONS = {
   rest: {
-    L: { p: [-0.23, -0.18, -0.36], r: [0.42, 0.14, 0.16], curl: 0.22, thumb: 0.18 },
-    R: { p: [0.23, -0.18, -0.36], r: [0.42, -0.14, -0.16], curl: 0.22, thumb: 0.18 },
+    L: { p: [-0.32, -0.08, -0.42], r: [0.42, 0.14, 0.16], curl: 0.22, thumb: 0.18 },
+    R: { p: [0.32, -0.08, -0.42], r: [0.42, -0.14, -0.16], curl: 0.22, thumb: 0.18 },
   },
   anjali: {
     L: { p: [-0.028, -0.20, -0.44], r: [0.10, 1.48, 0.0], curl: 0.04, thumb: 0.2 },
@@ -1636,6 +1641,7 @@ function applyHallCamera(view) {
   player.busy = false;
   camera.fov = view.fov;
   camera.updateProjectionMatrix();
+  resizeRenderer();
   const btn = document.getElementById("btn-sit");
   btn.textContent = "坐下";
   btn.classList.remove("is-on");
@@ -1712,11 +1718,19 @@ document.querySelectorAll(".btn-enter").forEach((btn) => {
   btn.addEventListener("click", () => enterHall(btn.dataset.hall));
 });
 
-window.addEventListener("resize", () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+function resizeRenderer() {
+  const stage = document.getElementById("stage");
+  const w = Math.max(1, Math.round(stage?.clientWidth || window.innerWidth));
+  const h = Math.max(1, Math.round(stage?.clientHeight || window.innerHeight));
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+  renderer.setSize(w, h, false);
+  sizeHands();
+}
+window.addEventListener("resize", resizeRenderer);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", resizeRenderer);
+}
 
 /* ---------- dust ---------- */
 const dustCount = 80;
@@ -1816,6 +1830,7 @@ requestAnimationFrame(frame);
     loaderText.textContent = "请进山门";
     await new Promise((r) => setTimeout(r, 280));
     showSelectHall();
+    resizeRenderer();
     loaderEl.classList.add("hide");
   } catch (err) {
     console.error(err);
