@@ -1036,6 +1036,7 @@ const hallLoad = {
   done: 0,
   total: Object.keys(MODEL_PATHS).length,
   draco: null,
+  currentLabel: "",
 };
 
 function hallReady(id) {
@@ -1119,15 +1120,16 @@ function setEnterButtons() {
     }
     if (hallLoad.failed.size && !hallLoad.inflight) {
       btn.disabled = false;
-      btn.textContent = "迎请未成，点此重试";
+      btn.textContent = "连接中断，点此重试";
       btn.classList.add("is-fail");
       btn.classList.remove("is-wait");
       btn.dataset.retry = "1";
       return;
     }
     const n = hallLoad.total ? Math.round((hallLoad.done / hallLoad.total) * 100) : 0;
+    const cur = hallLoad.currentLabel ? `正在下载${hallLoad.currentLabel}…` : "正在下载…";
     btn.disabled = false;
-    btn.textContent = n ? `正在迎请… ${n}%` : "正在迎请…";
+    btn.textContent = n ? `${cur} ${n}%` : cur;
     btn.classList.add("is-wait");
     btn.classList.remove("is-fail");
     delete btn.dataset.retry;
@@ -1142,43 +1144,107 @@ function tryEnterPending() {
   }
 }
 
-function loadGltfScene(gltf, path, timeoutMs = 180000) {
+const MODEL_LABELS = {
+  water_moon: "水月观音",
+  eleven: "十一面观音",
+  table: "香案",
+  xianglu: "香炉",
+  candles: "烛台",
+};
+const LOAD_ORDER = ["table", "candles", "xianglu", "eleven", "water_moon"];
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function bustUrl(path, attempt) {
+  return path + (path.includes("?") ? "&" : "?") + "r=" + attempt + "&t=" + Date.now();
+}
+
+async function fetchBuffer(path, timeoutMs, attempt) {
+  const ctrl = new AbortController();
+  let timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  const bump = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  };
+  try {
+    const res = await fetch(attempt ? bustUrl(path, attempt) : path, {
+      signal: ctrl.signal,
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status + " " + path);
+    if (!res.body) return await res.arrayBuffer();
+    const reader = res.body.getReader();
+    const chunks = [];
+    let received = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      received += value.byteLength;
+      bump();
+    }
+    const out = new Uint8Array(received);
+    let offset = 0;
+    for (const chunk of chunks) {
+      out.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return out.buffer;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function parseGltf(gltf, path, buffer) {
+  const dir = path.slice(0, path.lastIndexOf("/") + 1);
   return new Promise((resolve, reject) => {
-    let settled = false;
-    const timer = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      reject(new Error("超时 " + path));
-    }, timeoutMs);
-    gltf.load(
-      path,
-      (g) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        resolve(g.scene);
-      },
-      undefined,
-      (err) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        reject(err);
-      }
-    );
+    gltf.parse(buffer, dir, (g) => resolve(g.scene), reject);
   });
 }
 
-async function loadGltfRetry(gltf, path, tries = 2) {
+async function loadGltfRetry(gltf, path, tries = 3, timeoutMs = 45000) {
   let last = null;
   for (let i = 0; i < tries; i++) {
     try {
-      return await loadGltfScene(gltf, path);
+      if (i) await sleep(700 * i);
+      const buf = await fetchBuffer(path, timeoutMs, i);
+      return await parseGltf(gltf, path, buf);
     } catch (err) {
       last = err;
+      console.warn("load retry", path, i + 1, err);
     }
   }
   throw last;
+}
+
+async function runPool(items, limit, worker) {
+  const queue = items.slice();
+  const n = Math.min(limit, Math.max(1, queue.length));
+  await Promise.all(
+    Array.from({ length: n }, async () => {
+      while (queue.length) {
+        const item = queue.shift();
+        await worker(item);
+      }
+    })
+  );
+}
+
+function hardenPreviewImages() {
+  document.querySelectorAll(".select-preview img").forEach((img) => {
+    let tries = 0;
+    img.addEventListener("error", () => {
+      if (tries >= 3) return;
+      tries += 1;
+      const base = (img.getAttribute("src") || "").split("?")[0];
+      if (!base) return;
+      setTimeout(() => {
+        img.src = bustUrl(base, tries);
+      }, 400 * tries);
+    });
+  });
 }
 
 async function loadModels() {
@@ -1191,35 +1257,37 @@ async function loadModels() {
   const gltf = new GLTFLoader(manager);
   gltf.setDRACOLoader(draco);
 
-  const jobs = Object.entries(MODEL_PATHS).filter(([key]) => {
+  const jobs = LOAD_ORDER.filter((key) => {
     if (key === "water_moon" || key === "eleven") return !statues[key];
     return !hallLoad.roots[key] && !hallLoad.stash[key];
-  });
+  }).map((key) => [key, MODEL_PATHS[key]]);
   hallLoad.failed.clear();
   hallLoad.done = hallLoad.total - jobs.length;
+  hallLoad.currentLabel = "";
 
-  const work = Promise.all(
-    jobs.map(async ([key, path]) => {
-      try {
-        const root = await loadGltfRetry(gltf, path);
-        if (key === "water_moon" || key === "eleven") {
-          statues[key] = placeStatue(root, HALL_VIEWS[key]);
-        } else {
-          hallLoad.stash[key] = root;
-          flushPendingProps();
-        }
-        hallLoad.failed.delete(key);
-        hallLoad.done = Math.min(hallLoad.total, hallLoad.done + 1);
-        setEnterButtons();
-        tryEnterPending();
-      } catch (err) {
-        console.error("load failed", key, err);
-        hallLoad.failed.add(key);
-        setEnterButtons();
+  const work = runPool(jobs, 2, async ([key, path]) => {
+    hallLoad.currentLabel = MODEL_LABELS[key] || "";
+    setEnterButtons();
+    try {
+      const root = await loadGltfRetry(gltf, path);
+      if (key === "water_moon" || key === "eleven") {
+        statues[key] = placeStatue(root, HALL_VIEWS[key]);
+      } else {
+        hallLoad.stash[key] = root;
+        flushPendingProps();
       }
-    })
-  ).then(() => {
+      hallLoad.failed.delete(key);
+      hallLoad.done = Math.min(hallLoad.total, hallLoad.done + 1);
+      setEnterButtons();
+      tryEnterPending();
+    } catch (err) {
+      console.error("load failed", key, err);
+      hallLoad.failed.add(key);
+      setEnterButtons();
+    }
+  }).then(() => {
     hallLoad.inflight = null;
+    hallLoad.currentLabel = "";
     flushPendingProps();
     setEnterButtons();
     tryEnterPending();
@@ -1974,6 +2042,7 @@ setupAudio();
 requestAnimationFrame(frame);
 
 (async function init() {
+  hardenPreviewImages();
   setEnterButtons();
   showSelectHall();
   resizeRenderer();
