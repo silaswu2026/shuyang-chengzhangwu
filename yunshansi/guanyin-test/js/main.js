@@ -2046,6 +2046,7 @@ requestAnimationFrame(frame);
   setEnterButtons();
   showSelectHall();
   resizeRenderer();
+  loaderEl.hidden = true;
   loaderEl.classList.add("hide");
   decodeSfx().catch((err) => console.error(err));
   try {

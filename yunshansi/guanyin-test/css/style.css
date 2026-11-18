@@ -245,6 +245,7 @@ h1 {
   visibility: hidden;
   pointer-events: none;
 }
+#loader[hidden] { display: none; }
 .loader-inner { text-align: center; width: min(280px, 70vw); }
 .loader-inner p {
   margin-top: 18px;
