@@ -2,6 +2,8 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
+window.__hallBooted = true;
+
 const stage = document.getElementById("stage");
 const loaderEl = document.getElementById("loader");
 const loaderText = document.getElementById("loader-text");

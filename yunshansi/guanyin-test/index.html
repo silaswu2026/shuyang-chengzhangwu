@@ -99,6 +99,132 @@
     </div>
   </div>
 
-  <script type="module" src="./js/main.js?v=select-html"></script>
+  <script>
+  (function () {
+    var FILES = [
+      ["./vendor/three.module.js", "引擎"],
+      ["./vendor/addons/utils/BufferGeometryUtils.js", "引擎"],
+      ["./vendor/addons/loaders/GLTFLoader.js", "引擎"],
+      ["./vendor/addons/loaders/DRACOLoader.js", "引擎"],
+      ["./vendor/addons/libs/draco/gltf/draco_wasm_wrapper.js", "引擎"],
+      ["./vendor/addons/libs/draco/gltf/draco_decoder.js", "引擎"],
+      ["./vendor/addons/libs/draco/gltf/draco_decoder.wasm", "引擎"]
+    ];
+    var STALL_MS = 45000;
+    var TRIES = 3;
+    var busy = false;
+
+    function setBtns(text, fail) {
+      if (window.__hallBooted) return;
+      var list = document.querySelectorAll(".btn-enter");
+      for (var i = 0; i < list.length; i++) {
+        var btn = list[i];
+        btn.disabled = false;
+        btn.textContent = text;
+        btn.classList.toggle("is-fail", !!fail);
+        btn.classList.toggle("is-wait", !fail);
+      }
+    }
+
+    function stallFetch(url, cache, onProg) {
+      var ctrl = new AbortController();
+      var timer = setTimeout(function () { ctrl.abort(); }, STALL_MS);
+      function bump() {
+        clearTimeout(timer);
+        timer = setTimeout(function () { ctrl.abort(); }, STALL_MS);
+      }
+      return fetch(url, { signal: ctrl.signal, cache: cache }).then(function (res) {
+        if (!res.ok) throw new Error("http " + res.status);
+        var total = Number(res.headers.get("content-length")) || 0;
+        if (!res.body || !res.body.getReader) {
+          return res.arrayBuffer().then(function (buf) {
+            clearTimeout(timer);
+            if (onProg) onProg(buf.byteLength, total || buf.byteLength);
+            return buf;
+          });
+        }
+        var reader = res.body.getReader();
+        var chunks = [];
+        var recvd = 0;
+        function read() {
+          return reader.read().then(function (part) {
+            if (part.done) {
+              clearTimeout(timer);
+              var out = new Uint8Array(recvd);
+              var o = 0;
+              for (var i = 0; i < chunks.length; i++) {
+                out.set(chunks[i], o);
+                o += chunks[i].byteLength;
+              }
+              return out.buffer;
+            }
+            bump();
+            chunks.push(part.value);
+            recvd += part.value.byteLength;
+            if (onProg) onProg(recvd, total);
+            return read();
+          });
+        }
+        return read();
+      }).catch(function (err) {
+        clearTimeout(timer);
+        throw err;
+      });
+    }
+
+    function prefetch(url, label) {
+      var attempt = 0;
+      function once() {
+        attempt += 1;
+        var cache = attempt === 1 ? "default" : "reload";
+        return stallFetch(url, cache, function (recvd, total) {
+          var n = total ? Math.round(recvd / total * 100) : 0;
+          setBtns(n ? ("正在下载" + label + "… " + n + "%") : ("正在下载" + label + "…"), false);
+        }).catch(function (err) {
+          if (attempt < TRIES) {
+            return new Promise(function (ok) { setTimeout(ok, 800 * attempt); }).then(once);
+          }
+          throw err;
+        });
+      }
+      return once();
+    }
+
+    function boot() {
+      if (busy || window.__hallBooted) return;
+      busy = true;
+      setBtns("正在下载引擎…", false);
+      var stamp = Date.now();
+      var mainUrl = "./js/main.js?v=select-html&t=" + stamp;
+      var files = FILES.concat([[mainUrl, "殿页"]]);
+      var chain = Promise.resolve();
+      for (var i = 0; i < files.length; i++) {
+        (function (file) {
+          chain = chain.then(function () { return prefetch(file[0], file[1]); });
+        })(files[i]);
+      }
+      chain.then(function () {
+        return import(mainUrl);
+      }).then(function () {
+        busy = false;
+      }).catch(function (err) {
+        console.error(err);
+        busy = false;
+        setBtns("连接中断，点此重试", true);
+      });
+    }
+
+    document.addEventListener("click", function (e) {
+      if (window.__hallBooted) return;
+      var btn = e.target.closest ? e.target.closest(".btn-enter") : null;
+      if (!btn || !btn.classList.contains("is-fail")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      boot();
+    }, true);
+
+    boot();
+  })();
+  </script>
 </body>
 </html>
